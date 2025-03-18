@@ -27,7 +27,7 @@ public class CustomGroupBox : GroupBox
 
         Rectangle textRect = e.ClipRectangle;
         textRect.X = textRect.X + 6;
-        textRect.Width = tSize.Width + 2;
+        textRect.Width = tSize.Width + 4;
         textRect.Height = tSize.Height;
         e.Graphics.FillRectangle(new SolidBrush(this.BackColor), textRect);
         e.Graphics.DrawString(this.Text, this.Font, new SolidBrush(this.ForeColor), textRect);

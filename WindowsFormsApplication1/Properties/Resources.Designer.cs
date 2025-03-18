@@ -63,9 +63,9 @@ namespace WindowsFormsApplication1.Properties {
         /// <summary>
         ///   Busca un recurso adaptado de tipo System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap Pikachu_PNG_File {
+        internal static System.Drawing.Bitmap Fondo {
             get {
-                object obj = ResourceManager.GetObject("Pikachu-PNG-File", resourceCulture);
+                object obj = ResourceManager.GetObject("Fondo", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -73,9 +73,9 @@ namespace WindowsFormsApplication1.Properties {
         /// <summary>
         ///   Busca un recurso adaptado de tipo System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap PokemonSO {
+        internal static System.Drawing.Bitmap menuIcono {
             get {
-                object obj = ResourceManager.GetObject("PokemonSO", resourceCulture);
+                object obj = ResourceManager.GetObject("menuIcono", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
