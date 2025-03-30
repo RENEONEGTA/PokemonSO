@@ -9,6 +9,7 @@ using System.Windows.Forms;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using System.Drawing.Drawing2D;
 
 namespace WindowsFormsApplication1
 {
@@ -23,6 +24,12 @@ namespace WindowsFormsApplication1
         private bool registro = false;
         private GestorCratas gestorCartas = new GestorCratas();
         private bool combate = false;
+        private PanelDobleBuffer panelCartas;
+        private bool panelCreado = false;
+        int PokedexLocationX = 700; // Posición X de la Pokeball
+        int PokedexLocationY = 700; // Posición Y de la Pokeball
+        int panelCartasTop = 0; // Posición Top del panel de cartas
+
 
         public Form1()
         {
@@ -119,10 +126,158 @@ namespace WindowsFormsApplication1
             salirJuegoBox.Visible = true;
             salirJuegoBox.Location = new Point(32, 320);
 
-
+            PictureBox pokedexBox = new PictureBox
+            {
+                Size = new Size(100, 100), // Ajusta el tamaño según sea necesario
+                Location = new Point(PokedexLocationX, PokedexLocationY),
+                SizeMode = PictureBoxSizeMode.StretchImage // Opcional: para ajustar la imagen al tamaño del control
+            };
+            string pokeballPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "images", "pokeball.png");
+            pokedexBox.Image = Image.FromFile(pokeballPath);
+            this.Controls.Add(pokedexBox);
+            pokedexBox.Visible = true;
+            pokedexBox.Click += pokedexBox_Click;
+            
 
         }
 
+        // Evento para desplazar los controles dentro del panel
+        private void PanelCartas_MouseWheel(object sender, MouseEventArgs e)
+        {
+            int desplazamiento = 15; // Velocidad de desplazamiento
+
+            // Usar BeginUpdate y EndUpdate para evitar parpadeos
+            panelCartas.SuspendLayout();
+
+            // Mover todos los controles dentro de panelCartas
+            foreach (Control ctrl in panelCartas.Controls)
+            {
+                // Excluir los botones específicos del desplazamiento
+                if (ctrl is RoundButton || ctrl is RombeButton)
+                {
+                    continue;
+                }
+
+                // Desplazar hacia abajo solo hasta el punto de partida
+                if (e.Delta > 0 && ctrl.Top < panelCartasTop)
+                {
+                    ctrl.Top += desplazamiento;
+                    if (ctrl.Top > panelCartasTop)
+                    {
+                        ctrl.Top = panelCartasTop;
+                    }
+                }
+                // Desplazar hacia arriba
+                else if (e.Delta < 0)
+                {
+                    ctrl.Top -= desplazamiento;
+                }
+            }
+
+            panelCartas.ResumeLayout();
+            panelCartas.Update(); // Forzar la redibujación del panel
+        }
+
+
+
+
+        private void pokedexBox_Click(object sender, EventArgs e)
+        {
+
+            if (!panelCreado)
+            {
+                int PanelSizeX = 780;
+                int PanelSizeY = 600;
+
+                panelCartas = new PanelDobleBuffer
+                {
+                    Size = new Size(PanelSizeX, PanelSizeY), // Tamaño ajustado
+                    Location = new Point(PokedexLocationX-(PanelSizeX/2)+50, PokedexLocationY-PanelSizeY-20),
+                    BackColor = Color.Black,
+                };
+                this.Controls.Add(panelCartas);
+                panelCartas.Visible = false;
+                panelCreado = true;
+
+                // Evento para manejar el desplazamiento
+                panelCartas.MouseWheel += PanelCartas_MouseWheel;
+
+                // Configurar el evento Paint para aplicar bordes redondeados y degradado
+                panelCartas.Paint += new PaintEventHandler((object senderPanel, PaintEventArgs ePanel) =>
+                {
+                    PanelDobleBuffer panel = (PanelDobleBuffer)senderPanel;
+                    int radio = 20; // Radio para las esquinas redondeadas
+                    Rectangle rect = new Rectangle(0, 0, panel.Width, panel.Height);
+
+                    // Crear la ruta con esquinas redondeadas
+                    using (GraphicsPath path = new GraphicsPath())
+                    {
+                        path.AddArc(rect.X, rect.Y, radio, radio, 180, 90);
+                        path.AddArc(rect.Right - radio, rect.Y, radio, radio, 270, 90);
+                        path.AddArc(rect.Right - radio, rect.Bottom - radio, radio, radio, 0, 90);
+                        path.AddArc(rect.X, rect.Bottom - radio, radio, radio, 90, 90);
+                        path.CloseFigure();
+
+                        // Asigna la región redondeada al panel
+                        panelCartas.Region = new Region(path);
+
+                        // Configurar el suavizado
+                        ePanel.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+                        // Crear un pincel de degradado: de blanco a un gris muy claro
+                        using (LinearGradientBrush brush = new LinearGradientBrush(
+                            rect,
+                            Color.Black,
+                            Color.DarkGray,
+                            LinearGradientMode.Vertical))
+                        {
+                            // Rellenar la ruta con el degradado
+                            ePanel.Graphics.FillPath(brush, path);
+                        }
+
+                        // Si deseas dibujar un borde:
+                        using (Pen pen = new Pen(Color.FromArgb(38, 209, 255), 4))
+                        {
+                            ePanel.Graphics.DrawPath(pen, path);
+                        }
+
+                        panelCartasTop = panelCartas.Top-50;
+                    }
+                });
+            }
+
+            
+
+
+
+            if (!combate)
+            {
+                List<CartaPokemon> cartas = new List<CartaPokemon>
+                {
+                    new CartaPokemon("Charmander", 120, "Fuego", "images/Charmander.png", new List<(string, int)> { ("Garrazo", 30), ("Rugido", 10) }),
+                    new CartaPokemon("Squirtle", 100, "Agua", "images/Squirtle.png", new List<(string, int)> { ("Mordisco", 40), ("Chapoteo", 15) }),
+                    new CartaPokemon("Bulbasaur", 90, "Planta", "images/Bulbasaur.png", new List<(string, int)> { ("Picotazo", 20), ("Remolino", 25) })
+                };
+
+
+
+                panelCartas.BringToFront();
+
+
+                combate = true;
+
+                gestorCartas.DibujarCartas(cartas, panelCartas);
+                panelCartas.Visible = true;
+            }
+            else
+            {
+                panelCartas.Visible = false;
+                combate = false;
+
+
+            }
+
+        }
 
 
         private async void ConectarServidor()
@@ -297,7 +452,7 @@ namespace WindowsFormsApplication1
                         {
                             control.Visible = false;
                             crearFondo();
-                            this.FormBorderStyle = FormBorderStyle.None;
+                            //this.FormBorderStyle = FormBorderStyle.None;
                         }
                     }
 
@@ -543,27 +698,8 @@ namespace WindowsFormsApplication1
 
         private void combatir_MouseClick(object sender, MouseEventArgs e)
         {
-            if (!combate)
-            {
-                List<CartaPokemon> cartas = new List<CartaPokemon>
-                {
-                    new CartaPokemon("Charmander", 120, "Fuego", "images/Charmander.png", new List<(string, int)> { ("Garrazo", 30), ("Rugido", 10) }),
-                    new CartaPokemon("Squirtle", 100, "Agua", "images/Squirtle.png", new List<(string, int)> { ("Mordisco", 40), ("Chapoteo", 15) }),
-                    new CartaPokemon("Bulbasaur", 90, "Planta", "images/Bulbasaur.png", new List<(string, int)> { ("Picotazo", 20), ("Remolino", 25) })
-                };
-                panelCartas.Visible = true;
-                panelCartas.Location = new Point(720, 128);
-                combate = true;
 
-                gestorCartas.DibujarCartas(cartas, panelCartas);
-            }
-            else
-            {
-                panelCartas.Visible = false;
-                combate = false;
-
-
-            }
+            
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -27,11 +28,26 @@ namespace WindowsFormsApplication1
             Ataques = ataques;
         }
     }
+
+    public class PanelDobleBuffer : Panel
+    {
+        public PanelDobleBuffer()
+        {
+            this.DoubleBuffered = true;
+            this.SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
+            this.SetStyle(ControlStyles.AllPaintingInWmPaint, true);
+            this.UpdateStyles();
+        }
+    }
+
+
     public class GestorCratas
     {
-
-        public void DibujarCartas(List<CartaPokemon> cartas, Panel panelCartas)
+        public void DibujarCartas(List<CartaPokemon> cartas, PanelDobleBuffer panelCartas)
         {
+
+            
+
             panelCartas.Controls.Clear(); // Limpiar cartas anteriores
 
             int x = 10; // Posición inicial
@@ -45,12 +61,13 @@ namespace WindowsFormsApplication1
                 Color colorFin = ControlPaint.Light(colorInicio); // Un tono más claro para el degradado
 
                 // Panel principal de la carta con bordes redondeados
-                Panel panelCarta = new Panel
+                Panel panelCarta = new PanelDobleBuffer
                 {
                     Size = new Size(240, 340), // Tamaño ajustado
                     Location = new Point(x, y),
                     BackColor = colorFondo
                 };
+                panelCarta.Visible=false;
 
                 // Aplicar bordes redondeados, degradado y borde grueso
                 panelCarta.Paint += (sender, e) =>
@@ -95,7 +112,7 @@ namespace WindowsFormsApplication1
                 int grosorBorde = 2; // Grosor del borde blanco
 
                 // Crear un Panel circular que será el fondo del icono
-                Panel panelCirculo = new Panel
+                Panel panelCirculo = new PanelDobleBuffer
                 {
                     Size = new Size(tamanoCirculo, tamanoCirculo),
                     Location = new Point(panelCarta.Width - tamanoCirculo - 10, 5), // Pegado a la derecha
@@ -172,7 +189,7 @@ namespace WindowsFormsApplication1
                 Image fondoElemento = ObtenerImagenFondo(carta.Elemento);
 
                 // Crear un Panel que servirá como fondo de la imagen del Pokémon
-                Panel panelFondo = new Panel
+                Panel panelFondo = new PanelDobleBuffer
                 {
                     Size = new Size(195, 120),
                     Location = new Point(25, 40),
@@ -201,7 +218,7 @@ namespace WindowsFormsApplication1
                 panelCarta.Controls.Add(panelFondo);
 
                 // Contenedor para los ataques
-                Panel panelAtaques = new Panel
+                Panel panelAtaques = new PanelDobleBuffer
                 {
                     Size = new Size(210, 100),
                     Location = new Point(15, 170),
@@ -243,6 +260,8 @@ namespace WindowsFormsApplication1
                 // Agregar la carta al panel contenedor
                 panelCartas.Controls.Add(panelCarta);
 
+                panelCarta.Visible = true;
+
                 // Mover la posición para la siguiente carta
                 x += 250;
                 if (x > panelCartas.Width - 250) // Si no cabe en la fila, bajar
@@ -251,6 +270,96 @@ namespace WindowsFormsApplication1
                     y += 360;
                 }
             }
+            string filterPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "images", "filter.png");
+            string fuegoPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "images", "icono_fuego.png");
+            string aguaPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "images", "icono_agua.png");
+            string plantaPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "images", "icono_planta.png");
+            // Crear un botón redondo
+            RombeButton pokedexFilterButton = new RombeButton
+            {
+                Size = new Size(50, 50), // Tamaño del botón
+                BackColor = Color.White, // Color de fondo
+                ForeColor = Color.Gray, // Color del borde
+                Image = Image.FromFile(filterPath), // Ruta del icono
+                Location = new Point(panelCartas.Width - 60, panelCartas.Height - 60) // Ubicación del botón en el panel
+            };
+
+            // Agregar el botón al panel
+            panelCartas.Controls.Add(pokedexFilterButton);
+            pokedexFilterButton.Visible = true;
+            pokedexFilterButton.BringToFront(); // Traer al frente
+
+            
+
+
+            RoundButton elementFireButon = new RoundButton
+            {
+                Size = new Size(50, 50), // Tamaño del botón
+                BackColor = Color.White, // Color de fondo
+                ForeColor = Color.Gray, // Color del borde
+                Image = Image.FromFile(fuegoPath), // Ruta del icono
+                Location = new Point(pokedexFilterButton.Left, pokedexFilterButton.Bottom) // Ubicación del botón en el panel
+            };
+
+            RoundButton elementWaterButon = new RoundButton
+            {
+                Size = new Size(50, 50), // Tamaño del botón
+                BackColor = Color.White, // Color de fondo
+                ForeColor = Color.Gray, // Color del borde
+                Image = Image.FromFile(aguaPath), // Ruta del icono
+                Location = new Point(pokedexFilterButton.Left, pokedexFilterButton.Bottom) // Ubicación del botón en el panel
+            };
+
+            RoundButton elementPlantButon = new RoundButton
+            {
+                Size = new Size(50, 50), // Tamaño del botón
+                BackColor = Color.White, // Color de fondo
+                ForeColor = Color.Gray, // Color del borde
+                Image = Image.FromFile(plantaPath), // Ruta del icono
+                Location = new Point(pokedexFilterButton.Left, pokedexFilterButton.Bottom) // Ubicación del botón en el panel
+            };
+
+            pokedexFilterButton.Click += (sender, e) =>
+            {
+                if (!elementFireButon.Visible)
+                {
+                    // Agregar el botón al panel
+                    panelCartas.Controls.Add(elementFireButon);
+                    elementFireButon.Visible = true;
+                    elementFireButon.BringToFront(); // Traer al frente
+
+                    panelCartas.Controls.Add(elementWaterButon);
+                    elementWaterButon.Visible = true;
+                    elementWaterButon.BringToFront(); // Traer al frente
+
+                    panelCartas.Controls.Add(elementPlantButon);
+                    elementPlantButon.Visible = true;
+                    elementPlantButon.BringToFront(); // Traer al frente
+
+                    // Animar el botón para que aparezca
+                    ButtonAnimator.AnimateButton(elementFireButon, new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), new Point(pokedexFilterButton.Left - 70, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, true);
+                    // Animar el botón para que aparezca
+                    ButtonAnimator.AnimateButton(elementWaterButon, new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), new Point(pokedexFilterButton.Left - 130, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, true);
+                    // Animar el botón para que aparezca
+                    ButtonAnimator.AnimateButton(elementPlantButon, new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), new Point(pokedexFilterButton.Left - 190, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, true);
+                }
+                else
+                {
+                    // Animar el botón para que desaparezca
+                    ButtonAnimator.AnimateButton(elementFireButon, new Point(elementFireButon.Left, elementFireButon.Top), new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, false);
+                    ButtonAnimator.AnimateButton(elementWaterButon, new Point(elementWaterButon.Left, elementFireButon.Top), new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, false);
+                    ButtonAnimator.AnimateButton(elementPlantButon, new Point(elementPlantButon.Left, elementFireButon.Top), new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, false);
+
+                }
+            };
+
+
+
+
+
+
+
+
         }
 
         // Función para crear un rectángulo con esquinas redondeadas
@@ -303,7 +412,7 @@ namespace WindowsFormsApplication1
         }
         Image ObtenerImagenFondo(string elemento)
         {
-            switch (elemento.ToLower())
+            switch (elemento.ToLower()) 
             {
                 case "fuego":
                     return Image.FromFile("images/fondo_fuego.jpeg");
