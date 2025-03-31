@@ -10,6 +10,8 @@
 *.userosscache
 *.sln.docstates
 
+.mp4
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
@@ -362,4 +364,3 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
-WindowsFormsApplication1/Resources/videos/FondoPokemon.mp4
