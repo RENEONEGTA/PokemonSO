@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -43,6 +44,7 @@ namespace WindowsFormsApplication1
 
     public class GestorCratas
     {
+        string directorioBase = Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.FullName).FullName;
         public void DibujarCartas(List<CartaPokemon> cartas, PanelDobleBuffer panelCartas)
         {
 
@@ -61,7 +63,7 @@ namespace WindowsFormsApplication1
                 Color colorFin = ControlPaint.Light(colorInicio); // Un tono más claro para el degradado
 
                 // Panel principal de la carta con bordes redondeados
-                Panel panelCarta = new PanelDobleBuffer
+                PanelDobleBuffer panelCarta = new PanelDobleBuffer
                 {
                     Size = new Size(240, 340), // Tamaño ajustado
                     Location = new Point(x, y),
@@ -112,7 +114,7 @@ namespace WindowsFormsApplication1
                 int grosorBorde = 2; // Grosor del borde blanco
 
                 // Crear un Panel circular que será el fondo del icono
-                Panel panelCirculo = new PanelDobleBuffer
+                PanelDobleBuffer panelCirculo = new PanelDobleBuffer
                 {
                     Size = new Size(tamanoCirculo, tamanoCirculo),
                     Location = new Point(panelCarta.Width - tamanoCirculo - 10, 5), // Pegado a la derecha
@@ -189,7 +191,7 @@ namespace WindowsFormsApplication1
                 Image fondoElemento = ObtenerImagenFondo(carta.Elemento);
 
                 // Crear un Panel que servirá como fondo de la imagen del Pokémon
-                Panel panelFondo = new PanelDobleBuffer
+                PanelDobleBuffer panelFondo = new PanelDobleBuffer
                 {
                     Size = new Size(195, 120),
                     Location = new Point(25, 40),
@@ -205,7 +207,7 @@ namespace WindowsFormsApplication1
                     
                     Size = new Size(tamanoPokemon, tamanoPokemon),
                     Location = new Point(panelFondo.Width/2 - tamanoPokemon/2, panelFondo.Height/2 - tamanoPokemon/2), // Se coloca dentro del panel en el centro
-                    Image = Image.FromFile(carta.ImagenRuta),
+                    Image = Image.FromFile(directorioBase + "/Resources/"+carta.ImagenRuta),
                     SizeMode = PictureBoxSizeMode.Zoom,
                     BorderStyle = BorderStyle.None,
                     BackColor = Color.Transparent // Para que se vea el fondo del panel
@@ -218,7 +220,7 @@ namespace WindowsFormsApplication1
                 panelCarta.Controls.Add(panelFondo);
 
                 // Contenedor para los ataques
-                Panel panelAtaques = new PanelDobleBuffer
+                PanelDobleBuffer panelAtaques = new PanelDobleBuffer
                 {
                     Size = new Size(210, 100),
                     Location = new Point(15, 170),
@@ -234,7 +236,7 @@ namespace WindowsFormsApplication1
                         Text = $"{ataque.Nombre}",
                         Location = new Point(10, ataqueY),
                         AutoSize = true,
-                        MaximumSize = new Size(80, 0),
+                        MaximumSize = new Size(140, 0),
                         Font = new Font("Arial", 10, FontStyle.Bold),
                         ForeColor = Color.Black
                     };
@@ -269,11 +271,18 @@ namespace WindowsFormsApplication1
                     x = 10;
                     y += 360;
                 }
+
+                panelCarta.Click += (sender, e) => {
+                    Form1.ManejarClickCarta(carta);
+                };
+
             }
-            string filterPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "images", "filter.png");
-            string fuegoPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "images", "icono_fuego.png");
-            string aguaPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "images", "icono_agua.png");
-            string plantaPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "images", "icono_planta.png");
+
+            string filterPath = Path.Combine(directorioBase, "Resources", "images", "filter.png");
+            string fuegoPath = Path.Combine(directorioBase, "Resources", "images", "icono_fuego.png");
+            string aguaPath = Path.Combine(directorioBase, "Resources", "images", "icono_agua.png");
+            string plantaPath = Path.Combine(directorioBase, "Resources", "images", "icono_planta.png");
+            string rayoPath = Path.Combine(directorioBase, "Resources", "images", "icono_rayo.png");
             // Crear un botón redondo
             RombeButton pokedexFilterButton = new RombeButton
             {
@@ -319,6 +328,16 @@ namespace WindowsFormsApplication1
                 Location = new Point(pokedexFilterButton.Left, pokedexFilterButton.Bottom) // Ubicación del botón en el panel
             };
 
+            RoundButton elementRayoButon = new RoundButton
+            {
+                Size = new Size(50, 50), // Tamaño del botón
+                BackColor = Color.White, // Color de fondo
+                ForeColor = Color.Gray, // Color del borde
+                Image = Image.FromFile(rayoPath), // Ruta del icono
+                Location = new Point(pokedexFilterButton.Left, pokedexFilterButton.Bottom) // Ubicación del botón en el panel
+            };
+
+
             pokedexFilterButton.Click += (sender, e) =>
             {
                 if (!elementFireButon.Visible)
@@ -335,6 +354,12 @@ namespace WindowsFormsApplication1
                     panelCartas.Controls.Add(elementPlantButon);
                     elementPlantButon.Visible = true;
                     elementPlantButon.BringToFront(); // Traer al frente
+                    pokedexFilterButton.BringToFront(); // Traer al frente
+
+                    panelCartas.Controls.Add(elementRayoButon);
+                    elementPlantButon.Visible = true;
+                    elementPlantButon.BringToFront(); // Traer al frente
+                    pokedexFilterButton.BringToFront(); // Traer al frente
 
                     // Animar el botón para que aparezca
                     ButtonAnimator.AnimateButton(elementFireButon, new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), new Point(pokedexFilterButton.Left - 70, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, true);
@@ -342,6 +367,9 @@ namespace WindowsFormsApplication1
                     ButtonAnimator.AnimateButton(elementWaterButon, new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), new Point(pokedexFilterButton.Left - 130, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, true);
                     // Animar el botón para que aparezca
                     ButtonAnimator.AnimateButton(elementPlantButon, new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), new Point(pokedexFilterButton.Left - 190, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, true);
+                    // Animar el botón para que aparezca
+                    ButtonAnimator.AnimateButton(elementRayoButon, new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), new Point(pokedexFilterButton.Left - 190, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, true);
+
                 }
                 else
                 {
@@ -349,6 +377,7 @@ namespace WindowsFormsApplication1
                     ButtonAnimator.AnimateButton(elementFireButon, new Point(elementFireButon.Left, elementFireButon.Top), new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, false);
                     ButtonAnimator.AnimateButton(elementWaterButon, new Point(elementWaterButon.Left, elementFireButon.Top), new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, false);
                     ButtonAnimator.AnimateButton(elementPlantButon, new Point(elementPlantButon.Left, elementFireButon.Top), new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, false);
+                    ButtonAnimator.AnimateButton(elementRayoButon, new Point(elementRayoButon.Left, elementFireButon.Top), new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, false);
 
                 }
             };
@@ -377,20 +406,20 @@ namespace WindowsFormsApplication1
 
             return path;
         }
-
+       
         // Método para obtener el icono del elemento
         private Image ObtenerIconoElemento(string elemento)
         {
             switch (elemento.ToLower())
             {
-                case "fuego": return Image.FromFile("images/icono_fuego.png");
-                case "agua": return Image.FromFile("images/icono_agua.png");
-                case "planta": return Image.FromFile("images/icono_planta.png");
-                case "eléctrico": return Image.FromFile("images/icono_electrico.png");
-                case "tierra": return Image.FromFile("images/icono_tierra.png");
-                case "hielo": return Image.FromFile("images/icono_hielo.png");
-                case "dragón": return Image.FromFile("images/icono_dragon.png");
-                default: return Image.FromFile("images/icono_default.png"); // Icono por defecto
+                case "fuego": return Image.FromFile(directorioBase + "/Resources/images/icono_fuego.png");
+                case "agua": return Image.FromFile(directorioBase + "/Resources/images/icono_agua.png");
+                case "planta": return Image.FromFile(directorioBase + "/Resources/images/icono_planta.png");
+                case "rayo": return Image.FromFile(directorioBase + "/Resources/images/icono_rayo.png");
+                case "tierra": return Image.FromFile(directorioBase + "/Resources/images/icono_tierra.png");
+                case "hielo": return Image.FromFile(directorioBase + "/Resources/images/icono_hielo.png");
+                case "dragón": return Image.FromFile(directorioBase + "/Resources/images/icono_dragon.png");
+                default: return Image.FromFile(directorioBase + "/Resources/images/default.png"); // Icono por defecto
             }
         }
 
@@ -403,7 +432,7 @@ namespace WindowsFormsApplication1
                 case "fuego": return Color.OrangeRed;
                 case "agua": return Color.SteelBlue;
                 case "planta": return Color.ForestGreen;
-                case "eléctrico": return Color.Yellow;
+                case "rayo": return Color.Yellow;
                 case "tierra": return Color.SaddleBrown;
                 case "hielo": return Color.Cyan;
                 case "dragón": return Color.Purple;
@@ -415,19 +444,21 @@ namespace WindowsFormsApplication1
             switch (elemento.ToLower()) 
             {
                 case "fuego":
-                    return Image.FromFile("images/fondo_fuego.jpeg");
+                    return Image.FromFile(directorioBase + "/Resources/images/fondo_fuego.jpeg");
                 case "agua":
-                    return Image.FromFile("images/fondo_agua.jpeg");
+                    return Image.FromFile(directorioBase + "/Resources/images/fondo_agua.jpeg");
                 case "tierra":
-                    return Image.FromFile("images/fondo_tierra.jpeg");
+                    return Image.FromFile(directorioBase + "/Resources/images/fondo_tierra.jpeg");
                 case "planta":
-                    return Image.FromFile("images/fondo_planta.jpeg");
-                case "eléctrico":
-                    return Image.FromFile("images/fondo_electrico.jpeg");
+                    return Image.FromFile(directorioBase + "/Resources/images/fondo_planta.jpeg");
+                case "rayo":
+                    return Image.FromFile(directorioBase + "/Resources/images/fondo_rayo.jpeg");
                 default:
-                    return Image.FromFile("images/fondo_default.jpeg"); // Fondo genérico
+                    return Image.FromFile(directorioBase + "/Resources/images/default.png"); // Fondo genérico
             }
         }
+        
+
 
     }
 

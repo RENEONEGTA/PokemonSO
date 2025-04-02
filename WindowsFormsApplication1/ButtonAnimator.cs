@@ -14,11 +14,11 @@ public class ButtonAnimator
 
     public static void AnimateButton(Button button, Point start, Point end, AnimationDirection direction, bool fadeIn)
     {
-        int step = 5; // Paso de desplazamiento
+        int step = 10; // Paso de desplazamiento
         float opacityStep = 0.05f; // Paso de opacidad
 
         Timer timer = new Timer();
-        timer.Interval = 10; // Intervalo de tiempo para la animación
+        timer.Interval = 5; // Intervalo de tiempo para la animación
 
         button.Location = start;
         button.BackColor = Color.FromArgb(fadeIn ? 0 : 255, button.BackColor); // Iniciar con opacidad 0 si es fadeIn

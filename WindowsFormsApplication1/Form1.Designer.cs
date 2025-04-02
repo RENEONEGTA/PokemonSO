@@ -30,11 +30,6 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             this.IP = new System.Windows.Forms.TextBox();
-            this.button2 = new System.Windows.Forms.Button();
-            this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.consultaPokedex = new System.Windows.Forms.RadioButton();
-            this.Longitud = new System.Windows.Forms.RadioButton();
-            this.Bonito = new System.Windows.Forms.RadioButton();
             this.textContraR = new System.Windows.Forms.TextBox();
             this.textUsuR = new System.Windows.Forms.TextBox();
             this.ContraseñaRegistrarse = new System.Windows.Forms.Label();
@@ -45,12 +40,18 @@
             this.circuloServidor = new System.Windows.Forms.PictureBox();
             this.aunNoCuenta = new System.Windows.Forms.Label();
             this.fondoPokemon = new AxWMPLib.AxWindowsMediaPlayer();
+            this.progressBar = new System.Windows.Forms.ProgressBar();
             this.salirJuegoBox = new CustomGroupBox();
             this.salirJuego = new System.Windows.Forms.Button();
             this.combatirBox = new CustomGroupBox();
             this.combatir = new System.Windows.Forms.Button();
             this.nuevaPartidaBox = new CustomGroupBox();
             this.nuevaPartida = new System.Windows.Forms.Button();
+            this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.consultaPokedex = new System.Windows.Forms.RadioButton();
+            this.Longitud = new System.Windows.Forms.RadioButton();
+            this.Bonito = new System.Windows.Forms.RadioButton();
+            this.button2 = new System.Windows.Forms.Button();
             this.cargarPartidaBox = new CustomGroupBox();
             this.cargarPartida = new System.Windows.Forms.Button();
             this.repiteContraBox = new CustomGroupBox();
@@ -63,14 +64,13 @@
             this.textContra = new System.Windows.Forms.TextBox();
             this.registroBox = new CustomGroupBox();
             this.SignUp = new System.Windows.Forms.Button();
-            
-            this.groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.circuloServidor)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.fondoPokemon)).BeginInit();
             this.salirJuegoBox.SuspendLayout();
             this.combatirBox.SuspendLayout();
             this.nuevaPartidaBox.SuspendLayout();
+            this.groupBox1.SuspendLayout();
             this.cargarPartidaBox.SuspendLayout();
             this.repiteContraBox.SuspendLayout();
             this.iniciarSesionBox.SuspendLayout();
@@ -89,81 +89,17 @@
             this.IP.Location = new System.Drawing.Point(100, 749);
             this.IP.Margin = new System.Windows.Forms.Padding(6);
             this.IP.Name = "IP";
-            this.IP.Size = new System.Drawing.Size(194, 15);
+            this.IP.Size = new System.Drawing.Size(194, 27);
             this.IP.TabIndex = 2;
             this.IP.TabStop = false;
             this.IP.Text = "192.168.56.102";
-            // 
-            // button2
-            // 
-            this.button2.Location = new System.Drawing.Point(84, 192);
-            this.button2.Margin = new System.Windows.Forms.Padding(6);
-            this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(138, 38);
-            this.button2.TabIndex = 5;
-            this.button2.Text = "Enviar";
-            this.button2.UseVisualStyleBackColor = true;
-            this.button2.Click += new System.EventHandler(this.button2_Click);
-            // 
-            // groupBox1
-            // 
-            this.groupBox1.BackColor = System.Drawing.Color.Transparent;
-            this.groupBox1.Controls.Add(this.consultaPokedex);
-            this.groupBox1.Controls.Add(this.Longitud);
-            this.groupBox1.Controls.Add(this.Bonito);
-            this.groupBox1.Controls.Add(this.button2);
-            this.groupBox1.Location = new System.Drawing.Point(3, 38);
-            this.groupBox1.Margin = new System.Windows.Forms.Padding(6);
-            this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Padding = new System.Windows.Forms.Padding(6);
-            this.groupBox1.Size = new System.Drawing.Size(669, 342);
-            this.groupBox1.TabIndex = 6;
-            this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "Peticion";
-            this.groupBox1.Enter += new System.EventHandler(this.groupBox1_Enter);
-            // 
-            // consultaPokedex
-            // 
-            this.consultaPokedex.AutoSize = true;
-            this.consultaPokedex.Location = new System.Drawing.Point(56, 144);
-            this.consultaPokedex.Margin = new System.Windows.Forms.Padding(6);
-            this.consultaPokedex.Name = "consultaPokedex";
-            this.consultaPokedex.Size = new System.Drawing.Size(201, 19);
-            this.consultaPokedex.TabIndex = 9;
-            this.consultaPokedex.TabStop = true;
-            this.consultaPokedex.Text = "Dame informacion de Charmander";
-            this.consultaPokedex.UseVisualStyleBackColor = true;
-            // 
-            // Longitud
-            // 
-            this.Longitud.AutoSize = true;
-            this.Longitud.Location = new System.Drawing.Point(56, 106);
-            this.Longitud.Margin = new System.Windows.Forms.Padding(6);
-            this.Longitud.Name = "Longitud";
-            this.Longitud.Size = new System.Drawing.Size(212, 19);
-            this.Longitud.TabIndex = 7;
-            this.Longitud.TabStop = true;
-            this.Longitud.Text = "Dime la primera pratida que he echo";
-            this.Longitud.UseVisualStyleBackColor = true;
-            // 
-            // Bonito
-            // 
-            this.Bonito.AutoSize = true;
-            this.Bonito.Location = new System.Drawing.Point(56, 68);
-            this.Bonito.Margin = new System.Windows.Forms.Padding(6);
-            this.Bonito.Name = "Bonito";
-            this.Bonito.Size = new System.Drawing.Size(186, 19);
-            this.Bonito.TabIndex = 8;
-            this.Bonito.TabStop = true;
-            this.Bonito.Text = "Dime cuantos pokemons tengo";
-            this.Bonito.UseVisualStyleBackColor = true;
             // 
             // textContraR
             // 
             this.textContraR.Location = new System.Drawing.Point(997, 1154);
             this.textContraR.Margin = new System.Windows.Forms.Padding(6);
             this.textContraR.Name = "textContraR";
-            this.textContraR.Size = new System.Drawing.Size(237, 22);
+            this.textContraR.Size = new System.Drawing.Size(237, 32);
             this.textContraR.TabIndex = 15;
             // 
             // textUsuR
@@ -171,7 +107,7 @@
             this.textUsuR.Location = new System.Drawing.Point(997, 1097);
             this.textUsuR.Margin = new System.Windows.Forms.Padding(6);
             this.textUsuR.Name = "textUsuR";
-            this.textUsuR.Size = new System.Drawing.Size(237, 22);
+            this.textUsuR.Size = new System.Drawing.Size(237, 32);
             this.textUsuR.TabIndex = 14;
             // 
             // ContraseñaRegistrarse
@@ -180,7 +116,7 @@
             this.ContraseñaRegistrarse.Location = new System.Drawing.Point(869, 1154);
             this.ContraseñaRegistrarse.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.ContraseñaRegistrarse.Name = "ContraseñaRegistrarse";
-            this.ContraseñaRegistrarse.Size = new System.Drawing.Size(66, 15);
+            this.ContraseñaRegistrarse.Size = new System.Drawing.Size(110, 26);
             this.ContraseñaRegistrarse.TabIndex = 13;
             this.ContraseñaRegistrarse.Text = "Contraseña";
             // 
@@ -190,7 +126,7 @@
             this.UsuarioRegistrarse.Location = new System.Drawing.Point(869, 1097);
             this.UsuarioRegistrarse.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.UsuarioRegistrarse.Name = "UsuarioRegistrarse";
-            this.UsuarioRegistrarse.Size = new System.Drawing.Size(47, 15);
+            this.UsuarioRegistrarse.Size = new System.Drawing.Size(79, 26);
             this.UsuarioRegistrarse.TabIndex = 12;
             this.UsuarioRegistrarse.Text = "Usuario";
             // 
@@ -199,7 +135,7 @@
             this.textConRR.Location = new System.Drawing.Point(997, 1202);
             this.textConRR.Margin = new System.Windows.Forms.Padding(6);
             this.textConRR.Name = "textConRR";
-            this.textConRR.Size = new System.Drawing.Size(237, 22);
+            this.textConRR.Size = new System.Drawing.Size(237, 32);
             this.textConRR.TabIndex = 18;
             // 
             // RepetirContraseña
@@ -208,7 +144,7 @@
             this.RepetirContraseña.Location = new System.Drawing.Point(869, 1202);
             this.RepetirContraseña.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.RepetirContraseña.Name = "RepetirContraseña";
-            this.RepetirContraseña.Size = new System.Drawing.Size(66, 30);
+            this.RepetirContraseña.Size = new System.Drawing.Size(110, 52);
             this.RepetirContraseña.TabIndex = 17;
             this.RepetirContraseña.Text = "Repite la \r\nContraseña";
             // 
@@ -225,7 +161,7 @@
             // 
             // circuloServidor
             // 
-            this.circuloServidor.Location = new System.Drawing.Point(273, 733);
+            this.circuloServidor.Location = new System.Drawing.Point(255, 732);
             this.circuloServidor.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
             this.circuloServidor.Name = "circuloServidor";
             this.circuloServidor.Size = new System.Drawing.Size(73, 55);
@@ -243,7 +179,7 @@
             this.aunNoCuenta.Location = new System.Drawing.Point(300, 620);
             this.aunNoCuenta.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.aunNoCuenta.Name = "aunNoCuenta";
-            this.aunNoCuenta.Size = new System.Drawing.Size(171, 18);
+            this.aunNoCuenta.Size = new System.Drawing.Size(311, 32);
             this.aunNoCuenta.TabIndex = 24;
             this.aunNoCuenta.Text = "¿Aún no tienes cuenta?";
             this.aunNoCuenta.Click += new System.EventHandler(this.aunNoCuenta_Click);
@@ -257,6 +193,13 @@
             this.fondoPokemon.OcxState = ((System.Windows.Forms.AxHost.State)(resources.GetObject("fondoPokemon.OcxState")));
             this.fondoPokemon.Size = new System.Drawing.Size(558, 109);
             this.fondoPokemon.TabIndex = 25;
+            // 
+            // progressBar
+            // 
+            this.progressBar.Location = new System.Drawing.Point(255, 1054);
+            this.progressBar.Name = "progressBar";
+            this.progressBar.Size = new System.Drawing.Size(466, 33);
+            this.progressBar.TabIndex = 30;
             // 
             // salirJuegoBox
             // 
@@ -358,6 +301,70 @@
             this.nuevaPartida.MouseEnter += new System.EventHandler(this.nuevaPartida_MouseEnter);
             this.nuevaPartida.MouseLeave += new System.EventHandler(this.nuevaPartida_MouseLeave);
             // 
+            // groupBox1
+            // 
+            this.groupBox1.BackColor = System.Drawing.Color.Transparent;
+            this.groupBox1.Controls.Add(this.consultaPokedex);
+            this.groupBox1.Controls.Add(this.Longitud);
+            this.groupBox1.Controls.Add(this.Bonito);
+            this.groupBox1.Controls.Add(this.button2);
+            this.groupBox1.Location = new System.Drawing.Point(3, 38);
+            this.groupBox1.Margin = new System.Windows.Forms.Padding(6);
+            this.groupBox1.Name = "groupBox1";
+            this.groupBox1.Padding = new System.Windows.Forms.Padding(6);
+            this.groupBox1.Size = new System.Drawing.Size(669, 342);
+            this.groupBox1.TabIndex = 6;
+            this.groupBox1.TabStop = false;
+            this.groupBox1.Text = "Peticion";
+            this.groupBox1.Enter += new System.EventHandler(this.groupBox1_Enter);
+            // 
+            // consultaPokedex
+            // 
+            this.consultaPokedex.AutoSize = true;
+            this.consultaPokedex.Location = new System.Drawing.Point(56, 144);
+            this.consultaPokedex.Margin = new System.Windows.Forms.Padding(6);
+            this.consultaPokedex.Name = "consultaPokedex";
+            this.consultaPokedex.Size = new System.Drawing.Size(337, 30);
+            this.consultaPokedex.TabIndex = 9;
+            this.consultaPokedex.TabStop = true;
+            this.consultaPokedex.Text = "Dame informacion de Charmander";
+            this.consultaPokedex.UseVisualStyleBackColor = true;
+            // 
+            // Longitud
+            // 
+            this.Longitud.AutoSize = true;
+            this.Longitud.Location = new System.Drawing.Point(56, 106);
+            this.Longitud.Margin = new System.Windows.Forms.Padding(6);
+            this.Longitud.Name = "Longitud";
+            this.Longitud.Size = new System.Drawing.Size(355, 30);
+            this.Longitud.TabIndex = 7;
+            this.Longitud.TabStop = true;
+            this.Longitud.Text = "Dime la primera pratida que he echo";
+            this.Longitud.UseVisualStyleBackColor = true;
+            // 
+            // Bonito
+            // 
+            this.Bonito.AutoSize = true;
+            this.Bonito.Location = new System.Drawing.Point(56, 68);
+            this.Bonito.Margin = new System.Windows.Forms.Padding(6);
+            this.Bonito.Name = "Bonito";
+            this.Bonito.Size = new System.Drawing.Size(310, 30);
+            this.Bonito.TabIndex = 8;
+            this.Bonito.TabStop = true;
+            this.Bonito.Text = "Dime cuantos pokemons tengo";
+            this.Bonito.UseVisualStyleBackColor = true;
+            // 
+            // button2
+            // 
+            this.button2.Location = new System.Drawing.Point(84, 192);
+            this.button2.Margin = new System.Windows.Forms.Padding(6);
+            this.button2.Name = "button2";
+            this.button2.Size = new System.Drawing.Size(138, 38);
+            this.button2.TabIndex = 5;
+            this.button2.Text = "Enviar";
+            this.button2.UseVisualStyleBackColor = true;
+            this.button2.Click += new System.EventHandler(this.button2_Click);
+            // 
             // cargarPartidaBox
             // 
             this.cargarPartidaBox.BackColor = System.Drawing.Color.Transparent;
@@ -387,6 +394,7 @@
             this.cargarPartida.TabIndex = 16;
             this.cargarPartida.Text = "CARGAR PARTIDA";
             this.cargarPartida.UseVisualStyleBackColor = false;
+            this.cargarPartida.Click += new System.EventHandler(this.cargarPartida_Click);
             this.cargarPartida.MouseEnter += new System.EventHandler(this.cargarPartida_MouseEnter);
             this.cargarPartida.MouseLeave += new System.EventHandler(this.cargarPartida_MouseLeave);
             // 
@@ -413,7 +421,7 @@
             this.repiteContra.Location = new System.Drawing.Point(20, 29);
             this.repiteContra.Margin = new System.Windows.Forms.Padding(6);
             this.repiteContra.Name = "repiteContra";
-            this.repiteContra.Size = new System.Drawing.Size(543, 19);
+            this.repiteContra.Size = new System.Drawing.Size(543, 33);
             this.repiteContra.TabIndex = 10;
             this.repiteContra.Text = "Repite la contraseña";
             this.repiteContra.Enter += new System.EventHandler(this.repiteContra_Enter);
@@ -475,7 +483,7 @@
             this.textUsu.Location = new System.Drawing.Point(20, 29);
             this.textUsu.Margin = new System.Windows.Forms.Padding(6);
             this.textUsu.Name = "textUsu";
-            this.textUsu.Size = new System.Drawing.Size(549, 19);
+            this.textUsu.Size = new System.Drawing.Size(549, 33);
             this.textUsu.TabIndex = 9;
             this.textUsu.Text = "Usuario";
             this.textUsu.TextChanged += new System.EventHandler(this.textUsu_TextChanged);
@@ -504,7 +512,7 @@
             this.textContra.Location = new System.Drawing.Point(20, 29);
             this.textContra.Margin = new System.Windows.Forms.Padding(6);
             this.textContra.Name = "textContra";
-            this.textContra.Size = new System.Drawing.Size(543, 19);
+            this.textContra.Size = new System.Drawing.Size(543, 33);
             this.textContra.TabIndex = 10;
             this.textContra.Text = "Contraseña";
             this.textContra.Enter += new System.EventHandler(this.textContra_Enter);
@@ -548,8 +556,8 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(22)))), ((int)(((byte)(22)))), ((int)(((byte)(22)))));
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
-            this.ClientSize = new System.Drawing.Size(1522, 807);
-            
+            this.ClientSize = new System.Drawing.Size(1522, 805);
+            this.Controls.Add(this.progressBar);
             this.Controls.Add(this.salirJuegoBox);
             this.Controls.Add(this.combatirBox);
             this.Controls.Add(this.nuevaPartidaBox);
@@ -576,14 +584,14 @@
             this.Name = "Form1";
             this.Text = "Form1";
             this.Load += new System.EventHandler(this.Form1_Load);
-            this.groupBox1.ResumeLayout(false);
-            this.groupBox1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.circuloServidor)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.fondoPokemon)).EndInit();
             this.salirJuegoBox.ResumeLayout(false);
             this.combatirBox.ResumeLayout(false);
             this.nuevaPartidaBox.ResumeLayout(false);
+            this.groupBox1.ResumeLayout(false);
+            this.groupBox1.PerformLayout();
             this.cargarPartidaBox.ResumeLayout(false);
             this.repiteContraBox.ResumeLayout(false);
             this.repiteContraBox.PerformLayout();
@@ -633,7 +641,7 @@
         private System.Windows.Forms.Button combatir;
         private CustomGroupBox salirJuegoBox;
         private System.Windows.Forms.Button salirJuego;
-        
+        private System.Windows.Forms.ProgressBar progressBar;
     }
 }
 

@@ -10,6 +10,10 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using System.Drawing.Drawing2D;
+using System.IO;
+using System.Net.Http;
+using System.Security.Policy;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace WindowsFormsApplication1
 {
@@ -23,12 +27,19 @@ namespace WindowsFormsApplication1
         private bool colorAzul = true;
         private bool registro = false;
         private GestorCratas gestorCartas = new GestorCratas();
+        private Pokemon Pokemon = new Pokemon();
+        private Partida Partida = new Partida();
         private bool combate = false;
         private PanelDobleBuffer panelCartas;
+        private PanelDobleBuffer panelCargarPartida;
+        private bool boolPanelCargarPartida = true;
         private bool panelCreado = false;
         int PokedexLocationX = 700; // Posición X de la Pokeball
         int PokedexLocationY = 700; // Posición Y de la Pokeball
         int panelCartasTop = 0; // Posición Top del panel de cartas
+        private bool isDownloading = false;
+        string directorioBase = Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.FullName).FullName;
+        string user;
 
 
         public Form1()
@@ -38,6 +49,45 @@ namespace WindowsFormsApplication1
             parpadeoTimer.Tick += ParpadeoTimer_Tick;
             
 
+        }
+
+        // Actualiza el progreso de la barra
+        public void UpdateProgress(int percent)
+        {
+            if (progressBar.InvokeRequired)
+            {
+                progressBar.Invoke(new Action<int>(UpdateProgress), percent);
+            }
+            else
+            {
+                progressBar.Value = percent;
+            }
+        }
+
+        // Configura el estilo de la barra de progreso
+        public void SetProgressBarStyle(ProgressBarStyle style)
+        {
+            if (progressBar.InvokeRequired)
+            {
+                progressBar.Invoke(new Action<ProgressBarStyle>(SetProgressBarStyle), style);
+            }
+            else
+            {
+                progressBar.Style = style;
+            }
+        }
+
+        // Establece el valor máximo de la barra
+        public void SetMaxValue(int max)
+        {
+            if (progressBar.InvokeRequired)
+            {
+                progressBar.Invoke(new Action<int>(SetMaxValue), max);
+            }
+            else
+            {
+                progressBar.Maximum = max;
+            }
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -68,23 +118,110 @@ namespace WindowsFormsApplication1
 
         }
 
-        private void crearFondo()
+        private async Task crearFondoAsync()
         {
+
+            if (isDownloading) // Si ya hay una descarga en curso, no hacer nada
+                return;
+
+            isDownloading = true;
+     
+            string videoPath = Path.Combine(directorioBase, "Resources", "videos", "FondoPokemon.mp4");
+            string videoUrl = "https://www.dropbox.com/scl/fi/ztvmhlz5238yno38g4lju/FondoPokemon.mp4?rlkey=q0tle4yqr378txm938bivfayo&st=dexsrxui&dl=1";
+
+            // Verificar si el archivo de video ya existe
+            if (File.Exists(videoPath))
+            {
+                // El video ya existe, omitir la descarga y mostrarlo directamente
+                MostrarVideoYElementos();
+                isDownloading = false; // Permitir futuras descargas (aunque no se realicen)
+                return;
+            }
+
+            progressBar.Visible = true;
+            progressBar.Size = new Size(this.ClientSize.Width/2, 30);
+            progressBar.Location = new Point(this.ClientSize.Width/2 - progressBar.Width/2, this.ClientSize.Height-60);
+
+
+            try
+            {
+                using (HttpClient client = new HttpClient())
+                {
+                    // Obtener las cabeceras primero para conocer el tamaño del contenido
+                    HttpResponseMessage response = await client.GetAsync(videoUrl, HttpCompletionOption.ResponseHeadersRead);
+                    response.EnsureSuccessStatusCode();
+
+                    long? totalBytes = response.Content.Headers.ContentLength;
+                    var progressHandler = new Progress<int>(percent =>
+                    {
+                        UpdateProgress(percent); // Actualiza la barra de progreso
+                    });
+
+                    using (Stream stream = await response.Content.ReadAsStreamAsync())
+                    using (FileStream fileStream = new FileStream(videoPath, FileMode.Create, FileAccess.Write))
+                    {
+                        byte[] buffer = new byte[8192];
+                        int bytesRead;
+                        long totalBytesRead = 0;
+
+                        // Configurar ProgressForm según si se conoce el tamaño total
+                        if (totalBytes.HasValue)
+                        {
+                            SetProgressBarStyle(ProgressBarStyle.Continuous);
+                            SetMaxValue(100);
+                        }
+                        else
+                        {
+                            SetProgressBarStyle(ProgressBarStyle.Marquee);
+                        }
+
+                        while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                        {
+                            await fileStream.WriteAsync(buffer, 0, bytesRead);
+                            totalBytesRead += bytesRead;
+
+                            if (totalBytes.HasValue)
+                            {
+                                int percent = (int)((totalBytesRead * 100) / totalBytes.Value);
+                                (progressHandler as IProgress<int>).Report(percent);
+                            }
+                        }
+                    }
+                }
+
+                
+                MostrarVideoYElementos();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al descargar los archivos del juego: {ex.Message}");
+            }
+            finally
+            {
+                progressBar.Visible = false;
+                isDownloading = false; // Permite nuevas descargas
+            }
+        }
+
+        private void MostrarVideoYElementos()
+        {
+            // Obtén la ruta del directorio bin/debug
+          
+            string videoPath = Path.Combine(directorioBase, "Resources", "videos", "FondoPokemon.mp4");
             fondoPokemon.Visible = true;
             fondoPokemon.uiMode = "none"; // Ocultar controles de reproducción
-            // Rutas del video
-            string videoPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "videos", "FondoPokemon.mp4");
+            
 
             // Tiempos de video (tiempo de inicio, tiempo de fin) en segundos
             List<Tuple<int, int>> tiempos = new List<Tuple<int, int>>()
             {
-                new Tuple<int, int>(0, 118),   // 00:00:00 - 00:01:58
+                new Tuple<int, int>(0, 118),    // 00:00:00 - 00:01:58
                 new Tuple<int, int>(120, 172), // 00:02:00 - 00:02:52
                 new Tuple<int, int>(173, 247), // 00:02:53 - 00:04:07
                 new Tuple<int, int>(249, 414), // 00:04:09 - 00:06:54
                 new Tuple<int, int>(417, 515), // 00:06:57 - 00:08:35
                 new Tuple<int, int>(516, 659), // 00:08:36 - 00:10:59
-                new Tuple<int, int>(661, 736)  // 00:11:01 - 00:12:16
+                new Tuple<int, int>(661, 736)    // 00:11:01 - 00:12:16
             };
 
             // Selección aleatoria de un índice entre 0 y 6
@@ -132,13 +269,12 @@ namespace WindowsFormsApplication1
                 Location = new Point(PokedexLocationX, PokedexLocationY),
                 SizeMode = PictureBoxSizeMode.StretchImage // Opcional: para ajustar la imagen al tamaño del control
             };
-            string pokeballPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "images", "pokeball.png");
+            string pokeballPath = Path.Combine(directorioBase, "Resources", "images", "pokeball.png");
             pokedexBox.Image = Image.FromFile(pokeballPath);
             this.Controls.Add(pokedexBox);
+            pokedexBox.BringToFront();
             pokedexBox.Visible = true;
             pokedexBox.Click += pokedexBox_Click;
-            
-
         }
 
         // Evento para desplazar los controles dentro del panel
@@ -246,28 +382,70 @@ namespace WindowsFormsApplication1
                 });
             }
 
-            
-
-
-
             if (!combate)
-            {
-                List<CartaPokemon> cartas = new List<CartaPokemon>
+            {            
+                if (serverRun == true)
                 {
-                    new CartaPokemon("Charmander", 120, "Fuego", "images/Charmander.png", new List<(string, int)> { ("Garrazo", 30), ("Rugido", 10) }),
-                    new CartaPokemon("Squirtle", 100, "Agua", "images/Squirtle.png", new List<(string, int)> { ("Mordisco", 40), ("Chapoteo", 15) }),
-                    new CartaPokemon("Bulbasaur", 90, "Planta", "images/Bulbasaur.png", new List<(string, int)> { ("Picotazo", 20), ("Remolino", 25) })
-                };
+                    if (user != null)
+                    {
+                        string mensaje = "3/" + user;
+                        // Enviamos al servidor el nombre tecleado
+                        byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
+                        server.Send(msg);
+
+                        //Recibimos la respuesta del servidor
+                        byte[] msg2 = new byte[1000];
+                        server.Receive(msg2);
+                        mensaje = Encoding.ASCII.GetString(msg2);
 
 
+                        MessageBox.Show(mensaje);
+                        List<Pokemon> listaPokemon = new List<Pokemon>();
 
-                panelCartas.BringToFront();
+                        listaPokemon = Pokemon.ParsearDatos(mensaje, listaPokemon);
+                        if (listaPokemon.Count > 0)
+                        {            
+                            List<CartaPokemon> cartas = new List<CartaPokemon>();
+                
+                            foreach (Pokemon pokemon in listaPokemon)
+                            {
+                                // Crear la carta correctamente y añadirla a la lista
+                                CartaPokemon carta = new CartaPokemon(
+                                    pokemon.Nombre,
+                                    pokemon.Vida,
+                                    pokemon.Elemento,
+                                    "images/" + pokemon.Nombre + ".png",
+                                    new List<(string, int)>
+                                    {
+                                        (pokemon.Ataque, pokemon.Daño),
+                                        ("Rugido", 10)
+                                    }
+                                );
+                                cartas.Add(carta); // Agregar la carta a la lista
+                            }
+                           
+                            panelCartas.BringToFront();
+                            combate = true;
+                            gestorCartas.DibujarCartas(cartas, panelCartas);
+                            panelCartas.Visible = true;
+                        }
+                        else
+                        {
+                            MessageBox.Show("No tienes pokemons");
 
+                        }
+                    }
+                    else
+                    {
+                        MessageBox.Show("Ha habido un error al buscar los pokemons del jugador " + user);
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("No tienes conexion con el servidor");
+                }
 
-                combate = true;
-
-                gestorCartas.DibujarCartas(cartas, panelCartas);
-                panelCartas.Visible = true;
+                
             }
             else
             {
@@ -289,7 +467,7 @@ namespace WindowsFormsApplication1
                 //Creamos un IPEndPoint con el ip del servidor y puerto del servidor 
                 //al que deseamos conectarnos
                 IPAddress direc = IPAddress.Parse(IP.Text);
-                IPEndPoint ipep = new IPEndPoint(direc, 9050);
+                IPEndPoint ipep = new IPEndPoint(direc, 9030);
             
 
                 //Creamos el socket 
@@ -398,7 +576,7 @@ namespace WindowsFormsApplication1
             {
                 if (repiteContra.Text == textContra.Text && textContra.Text.Length != 0 && repiteContra.Text.Length != 0 && textUsu.Text.Length != 0)
                 {
-                    string mensaje = "1/" + textUsu.Text + "," + textContra.Text;
+                    string mensaje = "1/" + textUsu.Text + "/" + textContra.Text;
                     // Enviamos al servidor el nombre tecleado
                     byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
                     server.Send(msg);
@@ -430,7 +608,8 @@ namespace WindowsFormsApplication1
             {
                 if (textUsu.Text.Length != 0 && textContra.Text.Length != 0)
                 {
-                    string mensaje = "2/" + textUsu.Text + "," + textContra.Text;
+                    user = textUsu.Text;
+                    string mensaje = "2/" + textUsu.Text + "/" + textContra.Text;
                     // Enviamos al servidor el nombre tecleado
                     byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
                     server.Send(msg);
@@ -448,12 +627,14 @@ namespace WindowsFormsApplication1
                     // Comparamos correctamente
                     if (mensajeRecibido.Equals("Sesion Iniciada exitosamente", StringComparison.OrdinalIgnoreCase))
                     {
+                        
                         foreach (Control control in this.Controls)
                         {
                             control.Visible = false;
-                            crearFondo();
-                            //this.FormBorderStyle = FormBorderStyle.None;
+                            
                         }
+                        crearFondoAsync();
+                        //this.FormBorderStyle = FormBorderStyle.None;
                     }
 
                 }
@@ -700,6 +881,123 @@ namespace WindowsFormsApplication1
         {
 
             
+        }
+        public static void ManejarClickCarta(CartaPokemon carta)
+        {
+            string mensaje = "5/" + carta.Nombre;
+            // Enviamos al servidor el nombre tecleado
+            byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
+            // Cambiar 'server' a 'Form1.server' y hacerlo accesible
+            Form1 form = Application.OpenForms.OfType<Form1>().FirstOrDefault();
+            form?.server.Send(msg);
+
+            //Recibimos la respuesta del servidor
+            byte[] msg2 = new byte[1000];
+            form?.server.Receive(msg2);
+            mensaje = Encoding.ASCII.GetString(msg2).Split(',')[0];
+
+            MessageBox.Show(mensaje);
+        }
+
+
+
+        private void cargarPartida_Click(object sender, EventArgs e)
+        {
+            if(boolPanelCargarPartida)
+            {
+                int PanelSizeX = 500;
+                int PanelSizeY = 300;
+
+                panelCargarPartida = new PanelDobleBuffer
+                {
+                    Size = new Size(PanelSizeX, PanelSizeY), // Tamaño ajustado
+                    Location = new Point(cargarPartidaBox.Left + cargarPartidaBox.Width + 10, cargarPartidaBox.Top + (cargarPartidaBox.Height/2) - (PanelSizeY/2) ),
+                    BackColor = Color.Black,
+                };
+                this.Controls.Add(panelCargarPartida);
+                panelCargarPartida.Visible = true;
+                panelCargarPartida.BringToFront();
+                boolPanelCargarPartida = false;
+               
+
+                // Configurar el evento Paint para aplicar bordes redondeados y degradado
+                panelCargarPartida.Paint += new PaintEventHandler((object senderPanel, PaintEventArgs ePanel) =>
+                {
+                    PanelDobleBuffer panel = (PanelDobleBuffer)senderPanel;
+                    int radio = 20; // Radio para las esquinas redondeadas
+                    Rectangle rect = new Rectangle(0, 0, panel.Width, panel.Height);
+
+                    // Crear la ruta con esquinas redondeadas
+                    using (GraphicsPath path = new GraphicsPath())
+                    {
+                        path.AddArc(rect.X, rect.Y, radio, radio, 180, 90);
+                        path.AddArc(rect.Right - radio, rect.Y, radio, radio, 270, 90);
+                        path.AddArc(rect.Right - radio, rect.Bottom - radio, radio, radio, 0, 90);
+                        path.AddArc(rect.X, rect.Bottom - radio, radio, radio, 90, 90);
+                        path.CloseFigure();
+
+                        // Asigna la región redondeada al panel
+                        panelCargarPartida.Region = new Region(path);
+
+                        // Configurar el suavizado
+                        ePanel.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+                    // Crear un pincel de degradado: de blanco a un gris muy claro
+                    using (LinearGradientBrush brush = new LinearGradientBrush(
+                        rect,
+                        Color.Black,
+                        Color.FromArgb(22,22,22),
+                        LinearGradientMode.Vertical))
+                        {
+                            // Rellenar la ruta con el degradado
+                            ePanel.Graphics.FillPath(brush, path);
+                        }
+
+                        // Dibujar un borde:
+                        using (Pen pen = new Pen(Color.FromArgb(38, 209, 255), 4))
+                        {
+                            ePanel.Graphics.DrawPath(pen, path);
+                        }
+
+                        
+                    }
+                });
+
+                if (user != null)
+                {
+                    string mensaje = "4/" + user;
+                    // Enviamos al servidor el nombre tecleado
+                    byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
+                    server.Send(msg);
+
+                    //Recibimos la respuesta del servidor
+                    byte[] msg2 = new byte[1000];
+                    server.Receive(msg2);
+                    mensaje = Encoding.ASCII.GetString(msg2).Split(',')[0];
+
+                    MessageBox.Show(mensaje);
+
+                    List<Partida> listaPartidas = new List<Partida>();
+                    listaPartidas = Partida.ParsearRespuesta(mensaje, listaPartidas);
+                    if (listaPartidas.Count > 0)
+                    {
+                        Partida.DibujarPartidas(listaPartidas, panelCargarPartida);
+                    }
+                    else
+                    {
+                        MessageBox.Show("No tienes partidas");
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Ha habido un error al buscar las partidas del jugador " + user);
+                }
+            }
+            else
+            {
+                boolPanelCargarPartida = true;
+                panelCargarPartida.Visible = false;
+            }
         }
     }
 }
