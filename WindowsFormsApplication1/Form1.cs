@@ -14,6 +14,7 @@ using System.IO;
 using System.Net.Http;
 using System.Security.Policy;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using System.Diagnostics.Contracts;
 
 namespace WindowsFormsApplication1
 {
@@ -22,7 +23,7 @@ namespace WindowsFormsApplication1
     public partial class Form1 : Form
     {
         Socket server;
-        private int puertoServidor = 9040; // Puerto del servidor
+        private int puertoServidor = 9010; // Puerto del servidor
         private Timer parpadeoTimer = new Timer();
         private bool serverRun = false;
         private bool colorAzul = true;
@@ -45,6 +46,7 @@ namespace WindowsFormsApplication1
         private bool isDownloading = false;
         string directorioBase = Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.FullName).FullName;
         string user;
+        string contra;
 
 
         public Form1()
@@ -509,6 +511,23 @@ namespace WindowsFormsApplication1
             });
 
         }
+
+        private void DesconectarServidor()
+        {
+            if (serverRun == true) //Nos desconectamos
+            {
+                string mensaje = "0/" + user + "/" + contra;
+                // Enviamos al servidor el nombre tecleado
+                byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
+                server.Send(msg);
+            }
+        }
+
+        private void Form1_Form1Closing (object sender, FormClosingEventArgs e)
+        {
+            DesconectarServidor();
+        }
+
         private void ParpadeoTimer_Tick(object sender, EventArgs e)
         {
             Invoke((MethodInvoker)delegate {
@@ -615,6 +634,7 @@ namespace WindowsFormsApplication1
                 if (textUsu.Text.Length != 0 && textContra.Text.Length != 0)
                 {
                     user = textUsu.Text;
+                    contra = textContra.Text;
                     string mensaje = "2/" + textUsu.Text + "/" + textContra.Text;
                     // Enviamos al servidor el nombre tecleado
                     byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
@@ -771,12 +791,8 @@ namespace WindowsFormsApplication1
 
         private void circuloServidor_Click(object sender, EventArgs e)
         {
-            ChangeCircleColor(Color.Blue);
-
-                      
-                ConectarServidor();
-           
-            
+            ChangeCircleColor(Color.Blue);             
+            ConectarServidor(); 
         }
 
         private void cambiarInicioRegistro() 
@@ -880,7 +896,7 @@ namespace WindowsFormsApplication1
 
         private void salirJuego_MouseClick(object sender, MouseEventArgs e)
         {
-            this.Close();
+            DesconectarServidor();
         }
 
         private void combatir_MouseClick(object sender, MouseEventArgs e)
