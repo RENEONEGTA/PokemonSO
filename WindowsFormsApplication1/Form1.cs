@@ -47,6 +47,7 @@ namespace WindowsFormsApplication1
         string directorioBase = Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.FullName).FullName;
         string user;
         string contra;
+        bool iniciado = false;
 
 
         public Form1()
@@ -134,6 +135,7 @@ namespace WindowsFormsApplication1
             isDownloading = true;
      
             string videoPath = Path.Combine(directorioBase, "Resources", "videos", "FondoPokemon.mp4");
+            string directorio = Path.Combine(directorioBase, "Resources", "videos") ;
             string videoUrl = "https://www.dropbox.com/scl/fi/ztvmhlz5238yno38g4lju/FondoPokemon.mp4?rlkey=q0tle4yqr378txm938bivfayo&st=dexsrxui&dl=1";
 
             // Verificar si el archivo de video ya existe
@@ -143,6 +145,11 @@ namespace WindowsFormsApplication1
                 MostrarVideoYElementos();
                 isDownloading = false; // Permitir futuras descargas (aunque no se realicen)
                 return;
+            }
+
+            if (!Directory.Exists(directorio))
+            {
+                DirectoryInfo di = Directory.CreateDirectory(directorio);
             }
 
             progressBar.Visible = true;
@@ -514,13 +521,22 @@ namespace WindowsFormsApplication1
 
         private void DesconectarServidor()
         {
-            if (serverRun == true) //Nos desconectamos
+            if (serverRun == true && iniciado == true ) //Nos desconectamos
             {
                 string mensaje = "0/" + user + "/" + contra;
                 // Enviamos al servidor el nombre tecleado
                 byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
                 server.Send(msg);
             }
+            else if (serverRun == true)
+            {
+                string mensaje = "0/";
+                // Enviamos al servidor el nombre 0
+                byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
+                server.Send(msg);
+            }
+
+
         }
 
         private void Form1_Form1Closing (object sender, FormClosingEventArgs e)
@@ -653,6 +669,7 @@ namespace WindowsFormsApplication1
                     // Comparamos correctamente
                     if (mensajeRecibido.Equals("Sesion Iniciada exitosamente", StringComparison.OrdinalIgnoreCase))
                     {
+                        iniciado = true;
                         
                         foreach (Control control in this.Controls)
                         {
@@ -897,6 +914,7 @@ namespace WindowsFormsApplication1
         private void salirJuego_MouseClick(object sender, MouseEventArgs e)
         {
             DesconectarServidor();
+            Application.Exit();
         }
 
         private void combatir_MouseClick(object sender, MouseEventArgs e)
