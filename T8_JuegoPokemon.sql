@@ -1,6 +1,6 @@
 -- MySQL dump 10.13  Distrib 5.7.17, for Linux (x86_64)
 --
--- Host: localhost    Database: JuegoPokemon
+-- Host: localhost    Database: T8_JuegoPokemon
 -- ------------------------------------------------------
 -- Server version	5.7.17-0ubuntu0.16.04.1
 
@@ -16,12 +16,12 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Current Database: `JuegoPokemon`
+-- Current Database: `T8_JuegoPokemon`
 --
 
-DROP DATABASE IF EXISTS `JuegoPokemon` /*!40100 DEFAULT CHARACTER SET latin1 */;
+DROP DATABASE IF EXISTS `T8_JuegoPokemon` /*!40100 DEFAULT CHARACTER SET latin1 */;
 
-USE `JuegoPokemon`;
+USE `T8_JuegoPokemon`;
 
 --
 -- Table structure for table `Jugadores`

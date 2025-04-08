@@ -20,7 +20,7 @@ typedef struct{
 
 int i = 0;
 int sockets[100];
-int Puerto = 9070;
+int Puerto = 50081; // Puertos disponibles 50081 - 50085
 
 //Anade nuevo conectado
 int Anade (Listaconectados *lista, char nombre[20], int socket){
@@ -97,7 +97,7 @@ void *AtenderCliente(void *socket)
 	char buff2[1000];
 	
 	
-	strcpy(ubicacion, "localhost");
+	strcpy(ubicacion, "shiva2.upc.es");
 	printf("Socket del cliente: %d\n", socket_conn);
 
 	//Inicio el MYSQL
@@ -115,7 +115,7 @@ void *AtenderCliente(void *socket)
 	}
 	
     // Conectar con el servidor MySQL
-    if (mysql_real_connect(conn, ubicacion, "root", "mysql", "JuegoPokemon", 0, NULL, 0) == NULL) 
+    if (mysql_real_connect(conn, ubicacion, "root", "mysql", "T_JuegoPokemon", 0, NULL, 0) == NULL) 
 	{
         printf("Error al conectar con el servidor MySQL\n");
         mysql_close(conn);
