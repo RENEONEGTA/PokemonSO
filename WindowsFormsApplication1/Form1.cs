@@ -22,6 +22,7 @@ namespace WindowsFormsApplication1
     public partial class Form1 : Form
     {
         Socket server;
+        private int puertoServidor = 9040; // Puerto del servidor
         private Timer parpadeoTimer = new Timer();
         private bool serverRun = false;
         private bool colorAzul = true;
@@ -29,10 +30,14 @@ namespace WindowsFormsApplication1
         private GestorCratas gestorCartas = new GestorCratas();
         private Pokemon Pokemon = new Pokemon();
         private Partida Partida = new Partida();
+        private Conectados Conectados = new Conectados();
+        private Combate Combate = new Combate();
         private bool combate = false;
         private PanelDobleBuffer panelCartas;
         private PanelDobleBuffer panelCargarPartida;
+        private PanelDobleBuffer panelCargarCombate;
         private bool boolPanelCargarPartida = true;
+        private bool boolPanelCargarCombate = true;
         private bool panelCreado = false;
         int PokedexLocationX = 700; // Posición X de la Pokeball
         int PokedexLocationY = 700; // Posición Y de la Pokeball
@@ -403,6 +408,7 @@ namespace WindowsFormsApplication1
                         List<Pokemon> listaPokemon = new List<Pokemon>();
 
                         listaPokemon = Pokemon.ParsearDatos(mensaje, listaPokemon);
+
                         if (listaPokemon.Count > 0)
                         {            
                             List<CartaPokemon> cartas = new List<CartaPokemon>();
@@ -426,7 +432,7 @@ namespace WindowsFormsApplication1
                            
                             panelCartas.BringToFront();
                             combate = true;
-                            gestorCartas.DibujarCartas(cartas, panelCartas);
+                            gestorCartas.DibujarCartas(cartas, panelCartas, true);
                             panelCartas.Visible = true;
                         }
                         else
@@ -467,7 +473,7 @@ namespace WindowsFormsApplication1
                 //Creamos un IPEndPoint con el ip del servidor y puerto del servidor 
                 //al que deseamos conectarnos
                 IPAddress direc = IPAddress.Parse(IP.Text);
-                IPEndPoint ipep = new IPEndPoint(direc, 9030);
+                IPEndPoint ipep = new IPEndPoint(direc, puertoServidor);
             
 
                 //Creamos el socket 
@@ -880,8 +886,106 @@ namespace WindowsFormsApplication1
         private void combatir_MouseClick(object sender, MouseEventArgs e)
         {
 
-            
+            if (boolPanelCargarCombate)
+            {
+                int PanelSizeX = 500;
+                int PanelSizeY = 300;
+
+                panelCargarCombate = new PanelDobleBuffer
+                {
+                    Size = new Size(PanelSizeX, PanelSizeY), // Tamaño ajustado
+                    Location = new Point(combatirBox.Left + combatirBox.Width + 10, combatirBox.Top + (combatirBox.Height / 2) - (PanelSizeY / 2)),
+                    BackColor = Color.Black,
+                };
+                this.Controls.Add(panelCargarCombate);
+                panelCargarCombate.Visible = true;
+                panelCargarCombate.BringToFront();
+                boolPanelCargarCombate = false;
+
+
+                // Configurar el evento Paint para aplicar bordes redondeados y degradado
+                panelCargarCombate.Paint += new PaintEventHandler((object senderPanel, PaintEventArgs ePanel) =>
+                {
+                    PanelDobleBuffer panel = (PanelDobleBuffer)senderPanel;
+                    int radio = 20; // Radio para las esquinas redondeadas
+                    Rectangle rect = new Rectangle(0, 0, panel.Width, panel.Height);
+
+                    // Crear la ruta con esquinas redondeadas
+                    using (GraphicsPath path = new GraphicsPath())
+                    {
+                        path.AddArc(rect.X, rect.Y, radio, radio, 180, 90);
+                        path.AddArc(rect.Right - radio, rect.Y, radio, radio, 270, 90);
+                        path.AddArc(rect.Right - radio, rect.Bottom - radio, radio, radio, 0, 90);
+                        path.AddArc(rect.X, rect.Bottom - radio, radio, radio, 90, 90);
+                        path.CloseFigure();
+
+                        // Asigna la región redondeada al panel
+                        panelCargarCombate.Region = new Region(path);
+
+                        // Configurar el suavizado
+                        ePanel.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+                        // Crear un pincel de degradado: de blanco a un gris muy claro
+                        using (LinearGradientBrush brush = new LinearGradientBrush(
+                            rect,
+                            Color.Black,
+                            Color.FromArgb(22, 22, 22),
+                            LinearGradientMode.Vertical))
+                        {
+                            // Rellenar la ruta con el degradado
+                            ePanel.Graphics.FillPath(brush, path);
+                        }
+
+                        // Dibujar un borde:
+                        using (Pen pen = new Pen(Color.FromArgb(38, 209, 255), 4))
+                        {
+                            ePanel.Graphics.DrawPath(pen, path);
+                        }
+
+
+                    }
+                });
+
+                if (user != null)
+                {
+                    //string mensaje = "4/" + user;
+                    //// Enviamos al servidor el nombre tecleado
+                    //byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
+                    //server.Send(msg);
+
+                    ////Recibimos la respuesta del servidor
+                    //byte[] msg2 = new byte[1000];
+                    //server.Receive(msg2);
+                    //mensaje = Encoding.ASCII.GetString(msg2).Split(',')[0];
+
+                    //MessageBox.Show(mensaje);
+
+                    string mensaje = "/1/Ash/10/5#/2/Misty/5/1#/3/Rock/2/1#";
+
+                    List<Conectados> listaConectados = new List<Conectados>();
+                    listaConectados = Conectados.ParsearDatos(mensaje, listaConectados);
+                    if (listaConectados.Count > 0)
+                    {
+                        Conectados.DibujarConectados(listaConectados, panelCargarCombate, this);
+                    }
+                    else
+                    {
+                        MessageBox.Show("No tienes partidas");
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Ha habido un error al buscar las partidas del jugador " + user);
+                }
+            }
+            else
+            {
+                boolPanelCargarCombate = true;
+                panelCargarCombate.Visible = false;
+            }
+
         }
+
         public static void ManejarClickCarta(CartaPokemon carta)
         {
             string mensaje = "5/" + carta.Nombre;

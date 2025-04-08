@@ -45,7 +45,7 @@ namespace WindowsFormsApplication1
     public class GestorCratas
     {
         string directorioBase = Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.FullName).FullName;
-        public void DibujarCartas(List<CartaPokemon> cartas, PanelDobleBuffer panelCartas)
+        public void DibujarCartas(List<CartaPokemon> cartas, PanelDobleBuffer panelCartas, bool botones)
         {
 
             
@@ -278,116 +278,116 @@ namespace WindowsFormsApplication1
 
             }
 
-            string filterPath = Path.Combine(directorioBase, "Resources", "images", "filter.png");
-            string fuegoPath = Path.Combine(directorioBase, "Resources", "images", "icono_fuego.png");
-            string aguaPath = Path.Combine(directorioBase, "Resources", "images", "icono_agua.png");
-            string plantaPath = Path.Combine(directorioBase, "Resources", "images", "icono_planta.png");
-            string rayoPath = Path.Combine(directorioBase, "Resources", "images", "icono_rayo.png");
-            // Crear un botón redondo
-            RombeButton pokedexFilterButton = new RombeButton
+            if (botones)
             {
-                Size = new Size(50, 50), // Tamaño del botón
-                BackColor = Color.White, // Color de fondo
-                ForeColor = Color.Gray, // Color del borde
-                Image = Image.FromFile(filterPath), // Ruta del icono
-                Location = new Point(panelCartas.Width - 60, panelCartas.Height - 60) // Ubicación del botón en el panel
-            };
-
-            // Agregar el botón al panel
-            panelCartas.Controls.Add(pokedexFilterButton);
-            pokedexFilterButton.Visible = true;
-            pokedexFilterButton.BringToFront(); // Traer al frente
-
-            
 
 
-            RoundButton elementFireButon = new RoundButton
-            {
-                Size = new Size(50, 50), // Tamaño del botón
-                BackColor = Color.White, // Color de fondo
-                ForeColor = Color.Gray, // Color del borde
-                Image = Image.FromFile(fuegoPath), // Ruta del icono
-                Location = new Point(pokedexFilterButton.Left, pokedexFilterButton.Bottom) // Ubicación del botón en el panel
-            };
 
-            RoundButton elementWaterButon = new RoundButton
-            {
-                Size = new Size(50, 50), // Tamaño del botón
-                BackColor = Color.White, // Color de fondo
-                ForeColor = Color.Gray, // Color del borde
-                Image = Image.FromFile(aguaPath), // Ruta del icono
-                Location = new Point(pokedexFilterButton.Left, pokedexFilterButton.Bottom) // Ubicación del botón en el panel
-            };
-
-            RoundButton elementPlantButon = new RoundButton
-            {
-                Size = new Size(50, 50), // Tamaño del botón
-                BackColor = Color.White, // Color de fondo
-                ForeColor = Color.Gray, // Color del borde
-                Image = Image.FromFile(plantaPath), // Ruta del icono
-                Location = new Point(pokedexFilterButton.Left, pokedexFilterButton.Bottom) // Ubicación del botón en el panel
-            };
-
-            RoundButton elementRayoButon = new RoundButton
-            {
-                Size = new Size(50, 50), // Tamaño del botón
-                BackColor = Color.White, // Color de fondo
-                ForeColor = Color.Gray, // Color del borde
-                Image = Image.FromFile(rayoPath), // Ruta del icono
-                Location = new Point(pokedexFilterButton.Left, pokedexFilterButton.Bottom) // Ubicación del botón en el panel
-            };
-
-
-            pokedexFilterButton.Click += (sender, e) =>
-            {
-                if (!elementFireButon.Visible)
+                string filterPath = Path.Combine(directorioBase, "Resources", "images", "filter.png");
+                string fuegoPath = Path.Combine(directorioBase, "Resources", "images", "icono_fuego.png");
+                string aguaPath = Path.Combine(directorioBase, "Resources", "images", "icono_agua.png");
+                string plantaPath = Path.Combine(directorioBase, "Resources", "images", "icono_planta.png");
+                string rayoPath = Path.Combine(directorioBase, "Resources", "images", "icono_rayo.png");
+                // Crear un botón redondo
+                RombeButton pokedexFilterButton = new RombeButton
                 {
-                    // Agregar el botón al panel
-                    panelCartas.Controls.Add(elementFireButon);
-                    elementFireButon.Visible = true;
-                    elementFireButon.BringToFront(); // Traer al frente
+                    Size = new Size(50, 50), // Tamaño del botón
+                    BackColor = Color.White, // Color de fondo
+                    ForeColor = Color.Gray, // Color del borde
+                    Image = Image.FromFile(filterPath), // Ruta del icono
+                    Location = new Point(panelCartas.Width - 60, panelCartas.Height - 60) // Ubicación del botón en el panel
+                };
 
-                    panelCartas.Controls.Add(elementWaterButon);
-                    elementWaterButon.Visible = true;
-                    elementWaterButon.BringToFront(); // Traer al frente
+                // Agregar el botón al panel
+                panelCartas.Controls.Add(pokedexFilterButton);
+                pokedexFilterButton.Visible = true;
+                pokedexFilterButton.BringToFront(); // Traer al frente
 
-                    panelCartas.Controls.Add(elementPlantButon);
-                    elementPlantButon.Visible = true;
-                    elementPlantButon.BringToFront(); // Traer al frente
-                    pokedexFilterButton.BringToFront(); // Traer al frente
 
-                    panelCartas.Controls.Add(elementRayoButon);
-                    elementPlantButon.Visible = true;
-                    elementPlantButon.BringToFront(); // Traer al frente
-                    pokedexFilterButton.BringToFront(); // Traer al frente
 
-                    // Animar el botón para que aparezca
-                    ButtonAnimator.AnimateButton(elementFireButon, new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), new Point(pokedexFilterButton.Left - 70, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, true);
-                    // Animar el botón para que aparezca
-                    ButtonAnimator.AnimateButton(elementWaterButon, new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), new Point(pokedexFilterButton.Left - 130, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, true);
-                    // Animar el botón para que aparezca
-                    ButtonAnimator.AnimateButton(elementPlantButon, new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), new Point(pokedexFilterButton.Left - 190, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, true);
-                    // Animar el botón para que aparezca
-                    ButtonAnimator.AnimateButton(elementRayoButon, new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), new Point(pokedexFilterButton.Left - 190, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, true);
 
-                }
-                else
+                RoundButton elementFireButon = new RoundButton
                 {
-                    // Animar el botón para que desaparezca
-                    ButtonAnimator.AnimateButton(elementFireButon, new Point(elementFireButon.Left, elementFireButon.Top), new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, false);
-                    ButtonAnimator.AnimateButton(elementWaterButon, new Point(elementWaterButon.Left, elementFireButon.Top), new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, false);
-                    ButtonAnimator.AnimateButton(elementPlantButon, new Point(elementPlantButon.Left, elementFireButon.Top), new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, false);
-                    ButtonAnimator.AnimateButton(elementRayoButon, new Point(elementRayoButon.Left, elementFireButon.Top), new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, false);
+                    Size = new Size(50, 50), // Tamaño del botón
+                    BackColor = Color.White, // Color de fondo
+                    ForeColor = Color.Gray, // Color del borde
+                    Image = Image.FromFile(fuegoPath), // Ruta del icono
+                    Location = new Point(pokedexFilterButton.Left, pokedexFilterButton.Bottom) // Ubicación del botón en el panel
+                };
 
-                }
-            };
+                RoundButton elementWaterButon = new RoundButton
+                {
+                    Size = new Size(50, 50), // Tamaño del botón
+                    BackColor = Color.White, // Color de fondo
+                    ForeColor = Color.Gray, // Color del borde
+                    Image = Image.FromFile(aguaPath), // Ruta del icono
+                    Location = new Point(pokedexFilterButton.Left, pokedexFilterButton.Bottom) // Ubicación del botón en el panel
+                };
+
+                RoundButton elementPlantButon = new RoundButton
+                {
+                    Size = new Size(50, 50), // Tamaño del botón
+                    BackColor = Color.White, // Color de fondo
+                    ForeColor = Color.Gray, // Color del borde
+                    Image = Image.FromFile(plantaPath), // Ruta del icono
+                    Location = new Point(pokedexFilterButton.Left, pokedexFilterButton.Bottom) // Ubicación del botón en el panel
+                };
+
+                RoundButton elementRayoButon = new RoundButton
+                {
+                    Size = new Size(50, 50), // Tamaño del botón
+                    BackColor = Color.White, // Color de fondo
+                    ForeColor = Color.Gray, // Color del borde
+                    Image = Image.FromFile(rayoPath), // Ruta del icono
+                    Location = new Point(pokedexFilterButton.Left, pokedexFilterButton.Bottom) // Ubicación del botón en el panel
+                };
 
 
+                pokedexFilterButton.Click += (sender, e) =>
+                {
+                    if (!elementFireButon.Visible)
+                    {
+                        // Agregar el botón al panel
+                        panelCartas.Controls.Add(elementFireButon);
+                        elementFireButon.Visible = true;
+                        elementFireButon.BringToFront(); // Traer al frente
 
+                        panelCartas.Controls.Add(elementWaterButon);
+                        elementWaterButon.Visible = true;
+                        elementWaterButon.BringToFront(); // Traer al frente
 
+                        panelCartas.Controls.Add(elementPlantButon);
+                        elementPlantButon.Visible = true;
+                        elementPlantButon.BringToFront(); // Traer al frente
+                        pokedexFilterButton.BringToFront(); // Traer al frente
 
+                        panelCartas.Controls.Add(elementRayoButon);
+                        elementPlantButon.Visible = true;
+                        elementPlantButon.BringToFront(); // Traer al frente
+                        pokedexFilterButton.BringToFront(); // Traer al frente
 
+                        // Animar el botón para que aparezca
+                        ButtonAnimator.AnimateButton(elementFireButon, new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), new Point(pokedexFilterButton.Left - 70, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, true);
+                        // Animar el botón para que aparezca
+                        ButtonAnimator.AnimateButton(elementWaterButon, new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), new Point(pokedexFilterButton.Left - 130, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, true);
+                        // Animar el botón para que aparezca
+                        ButtonAnimator.AnimateButton(elementPlantButon, new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), new Point(pokedexFilterButton.Left - 190, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, true);
+                        // Animar el botón para que aparezca
+                        ButtonAnimator.AnimateButton(elementRayoButon, new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), new Point(pokedexFilterButton.Left - 190, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, true);
 
+                    }
+                    else
+                    {
+                        // Animar el botón para que desaparezca
+                        ButtonAnimator.AnimateButton(elementFireButon, new Point(elementFireButon.Left, elementFireButon.Top), new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, false);
+                        ButtonAnimator.AnimateButton(elementWaterButon, new Point(elementWaterButon.Left, elementFireButon.Top), new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, false);
+                        ButtonAnimator.AnimateButton(elementPlantButon, new Point(elementPlantButon.Left, elementFireButon.Top), new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, false);
+                        ButtonAnimator.AnimateButton(elementRayoButon, new Point(elementRayoButon.Left, elementFireButon.Top), new Point(pokedexFilterButton.Left, pokedexFilterButton.Top), ButtonAnimator.AnimationDirection.Left, false);
+
+                    }
+                };
+
+            }
 
         }
 

@@ -92,7 +92,7 @@
             this.IP.Size = new System.Drawing.Size(194, 27);
             this.IP.TabIndex = 2;
             this.IP.TabStop = false;
-            this.IP.Text = "192.168.56.102";
+            this.IP.Text = "192.168.56.101";
             // 
             // textContraR
             // 
@@ -556,7 +556,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(22)))), ((int)(((byte)(22)))), ((int)(((byte)(22)))));
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
-            this.ClientSize = new System.Drawing.Size(1522, 805);
+            this.ClientSize = new System.Drawing.Size(1522, 809);
             this.Controls.Add(this.progressBar);
             this.Controls.Add(this.salirJuegoBox);
             this.Controls.Add(this.combatirBox);

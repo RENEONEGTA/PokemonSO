@@ -57,7 +57,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BotonRedondeado.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="ButtonAnimator.cs" />
+    <Compile Include="Combate.cs" />
+    <Compile Include="Conectados.cs" />
     <Compile Include="Partida.cs" />
     <Compile Include="Pokemon.cs" />
     <Compile Include="RombeButton.cs">
