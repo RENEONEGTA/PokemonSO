@@ -20,7 +20,7 @@ typedef struct{
 
 int i = 0;
 int sockets[100];
-int Puerto = 50081; // Puertos disponibles 50081 - 50085
+int Puerto = 9010; // Puertos disponibles 50081 - 50085
 
 //Anade nuevo conectado
 int Anade (Listaconectados *lista, char nombre[20], int socket){
@@ -97,7 +97,7 @@ void *AtenderCliente(void *socket)
 	char buff2[1000];
 	
 	
-	strcpy(ubicacion, "shiva2.upc.es");
+	strcpy(ubicacion, "localhost");
 	printf("Socket del cliente: %d\n", socket_conn);
 
 	//Inicio el MYSQL
@@ -115,7 +115,7 @@ void *AtenderCliente(void *socket)
 	}
 	
     // Conectar con el servidor MySQL
-    if (mysql_real_connect(conn, ubicacion, "root", "mysql", "T_JuegoPokemon", 0, NULL, 0) == NULL) 
+    if (mysql_real_connect(conn, ubicacion, "root", "mysql", "T8_JuegoPokemon", 0, NULL, 0) == NULL) 
 	{
         printf("Error al conectar con el servidor MySQL\n");
         mysql_close(conn);
@@ -175,8 +175,9 @@ void *AtenderCliente(void *socket)
 			sprintf(notificacion, "3/%s",buff2);
 			for (int i=0; i< milista.num; i++){
 				printf("La lista de conectados es: %s\n", milista.cnct[i].nombre);
-				write(sockets[j],notificacion,strlen(notificacion));
+				write(sockets[i],notificacion,strlen(notificacion));
 			}
+			
 
 		}
 		else if (codigo ==1) //piden registrar un usuario teniendo nombre y constrase�a si no esta ya en la base de datos manda un Ok
@@ -272,7 +273,7 @@ void *AtenderCliente(void *socket)
 				{
 					//Anadimos usuario a la lista de conectados
 					//write(socket_conn, buff2, strlen(buff2));
-                    int ana=Anade(&milista, nombre,socket);
+                    int ana=Anade(&milista,nombre,socket);
 					if (ana ==-1 || milista.num >= 100)
 					{
 						printf("No se ha podido anadir a %s a la lista de conectados\n",nombre);
@@ -285,20 +286,14 @@ void *AtenderCliente(void *socket)
 						printf("Usuario %s en lista de conenctados\n",nombre);
 					}
 					
-					
-					
 
-					strcpy(buff2, "2/Sesion Iniciada exitosamente"); // Usuario encontrado
-					printf("%s\n",buff2);
+					
 
 					//Aqui le enviamos toda la lista de conectados a todos los clientes para que la actualizen
-					char notificacion[200];
-					Conectados(&milista, buff2);
-					sprintf(notificacion, "3/%s",buff2);
-					for (int i=0; i< milista.num; i++){
-						printf("La lista de conectados es: %s\n", milista.cnct[i].nombre);
-						write(sockets[j],notificacion,strlen(notificacion));
-					}
+					
+					
+					strcpy(buff2, "Sesion Iniciada exitosamente"); // Usuario encontrado
+					printf("%s\n",buff2);
                     
 				} 
 				else 
@@ -442,7 +437,7 @@ void *AtenderCliente(void *socket)
 				MYSQL_RES *res = mysql_store_result(conn);
 				if (res) {
 					MYSQL_ROW row;
-					strcpy(buff2, "6/")
+					strcpy(buff2, "6/");
 					while ((row = mysql_fetch_row(res)) != NULL) {
 						strcat(buff2, row[0]);
 						strcat(buff2, "/");
@@ -487,6 +482,17 @@ void *AtenderCliente(void *socket)
 			}
 			sprintf(buff2,"7/%s", datosJugadoreseConectados);
 			write(socket_conn, buff2, strlen(buff2));
+		}
+		
+		else if (codigo ==7)//Mostrar lista conectados
+		{
+			char notificacion[200];
+			Conectados(&milista, buff2);
+			sprintf(notificacion, "3/%s",buff2);
+			for (int i=0; i< milista.num; i++){
+				printf("La lista de conectados es: %s\n", milista.cnct[i].nombre);
+				write(sockets[i],notificacion,strlen(notificacion));
+			}	
 		}
 		
 	}

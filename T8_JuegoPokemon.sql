@@ -19,7 +19,9 @@
 -- Current Database: `T8_JuegoPokemon`
 --
 
-DROP DATABASE IF EXISTS `T8_JuegoPokemon` /*!40100 DEFAULT CHARACTER SET latin1 */;
+DROP DATABASE IF EXISTS `T8_JuegoPokemon`;
+
+CREATE DATABASE `T8_JuegoPokemon`;
 
 USE `T8_JuegoPokemon`;
 

@@ -49,14 +49,11 @@ namespace WindowsFormsApplication1
         string contra;
         bool iniciado = false;
 
-
         public Form1()
         {
             InitializeComponent();
             parpadeoTimer.Interval = 500; // Parpadeo cada 500 ms
-            parpadeoTimer.Tick += ParpadeoTimer_Tick;
-            
-
+            parpadeoTimer.Tick += ParpadeoTimer_Tick;            
         }
 
         // Actualiza el progreso de la barra
@@ -119,10 +116,9 @@ namespace WindowsFormsApplication1
             ////Consultas 
             //groupBox1.Visible = false;
             ChangeCircleColor(Color.Blue);
-            
+
 
             ConectarServidor();
-
 
         }
 
@@ -135,8 +131,14 @@ namespace WindowsFormsApplication1
             isDownloading = true;
      
             string videoPath = Path.Combine(directorioBase, "Resources", "videos", "FondoPokemon.mp4");
-            string directorio = Path.Combine(directorioBase, "Resources", "videos") ;
+            string directorio = Path.Combine(directorioBase, "Resources", "videos");
             string videoUrl = "https://www.dropbox.com/scl/fi/ztvmhlz5238yno38g4lju/FondoPokemon.mp4?rlkey=q0tle4yqr378txm938bivfayo&st=dexsrxui&dl=1";
+
+            //Verificar que el directorio existe
+            if (!Directory.Exists(directorio))
+            {
+                DirectoryInfo di = Directory.CreateDirectory(directorio);
+            }
 
             // Verificar si el archivo de video ya existe
             if (File.Exists(videoPath))
@@ -147,10 +149,7 @@ namespace WindowsFormsApplication1
                 return;
             }
 
-            if (!Directory.Exists(directorio))
-            {
-                DirectoryInfo di = Directory.CreateDirectory(directorio);
-            }
+            
 
             progressBar.Visible = true;
             progressBar.Size = new Size(this.ClientSize.Width/2, 30);
@@ -1135,6 +1134,33 @@ namespace WindowsFormsApplication1
             {
                 boolPanelCargarPartida = true;
                 panelCargarPartida.Visible = false;
+            }
+        }
+
+        private void label1_Click(object sender, EventArgs e)
+        {
+            
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            if (serverRun == true)
+            {
+                string mensaje = "7/";
+                // Enviamos al servidor el nombre tecleado
+                byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
+                server.Send(msg);
+
+                //Recibimos la respuesta del servidor
+                byte[] msg2 = new byte[1000];
+                server.Receive(msg2);
+                mensaje = Encoding.ASCII.GetString(msg2).Split(',')[0];
+
+                MessageBox.Show(mensaje);
+            }
+            else
+            {
+                MessageBox.Show("Sin conexion al servidor");
             }
         }
     }

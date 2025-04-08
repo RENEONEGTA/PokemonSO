@@ -41,6 +41,7 @@
             this.aunNoCuenta = new System.Windows.Forms.Label();
             this.fondoPokemon = new AxWMPLib.AxWindowsMediaPlayer();
             this.progressBar = new System.Windows.Forms.ProgressBar();
+            this.label1 = new System.Windows.Forms.Label();
             this.salirJuegoBox = new CustomGroupBox();
             this.salirJuego = new System.Windows.Forms.Button();
             this.combatirBox = new CustomGroupBox();
@@ -64,6 +65,7 @@
             this.textContra = new System.Windows.Forms.TextBox();
             this.registroBox = new CustomGroupBox();
             this.SignUp = new System.Windows.Forms.Button();
+            this.button1 = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.circuloServidor)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.fondoPokemon)).BeginInit();
@@ -200,6 +202,18 @@
             this.progressBar.Name = "progressBar";
             this.progressBar.Size = new System.Drawing.Size(466, 33);
             this.progressBar.TabIndex = 30;
+            // 
+            // label1
+            // 
+            this.label1.BackColor = System.Drawing.Color.Gray;
+            this.label1.Font = new System.Drawing.Font("Microsoft New Tai Lue", 16.2F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label1.ForeColor = System.Drawing.SystemColors.ButtonFace;
+            this.label1.Location = new System.Drawing.Point(686, 40);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(171, 37);
+            this.label1.TabIndex = 31;
+            this.label1.Text = "Conectados";
+            this.label1.Click += new System.EventHandler(this.label1_Click);
             // 
             // salirJuegoBox
             // 
@@ -551,12 +565,25 @@
             this.SignUp.MouseEnter += new System.EventHandler(this.SignUp_MouseEnter);
             this.SignUp.MouseLeave += new System.EventHandler(this.SignUp_MouseLeave);
             // 
+            // button1
+            // 
+            this.button1.Font = new System.Drawing.Font("Microsoft New Tai Lue", 18F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.button1.Location = new System.Drawing.Point(1238, 40);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(183, 42);
+            this.button1.TabIndex = 32;
+            this.button1.Text = "Conectados";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
+            // 
             // Form1
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(22)))), ((int)(((byte)(22)))), ((int)(((byte)(22)))));
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
             this.ClientSize = new System.Drawing.Size(1522, 809);
+            this.Controls.Add(this.button1);
+            this.Controls.Add(this.label1);
             this.Controls.Add(this.progressBar);
             this.Controls.Add(this.salirJuegoBox);
             this.Controls.Add(this.combatirBox);
@@ -643,6 +670,8 @@
         private CustomGroupBox salirJuegoBox;
         private System.Windows.Forms.Button salirJuego;
         private System.Windows.Forms.ProgressBar progressBar;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.Button button1;
     }
 }
 
