@@ -474,7 +474,7 @@ void *AtenderCliente(void *socket)
 					MYSQL_ROW row = mysql_fetch_row(res);
 					if(row!= NULL)
 					{
-						sprintf(datosJugadoreseConectados,"%s/%s/%s/%s/%s/%s/%s/%s#",datosJugadoreseConectados, row[0], row[1], row[2], row[3], row[4], row[5], row[6]);
+						sprintf(datosJugadoreseConectados,"%s/%s/%s/%s/%s#",datosJugadoreseConectados, row[0], row[1], row[4], row[5]);
 					}
 				}
 				n = strtok(NULL, "/");
