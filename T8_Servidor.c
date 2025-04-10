@@ -8,80 +8,51 @@
 #include <mysql.h>
 #include <pthread.h>
 
-typedef struct{
-	char nombre[20];
-    int socket;
-}Conectado;
-
-typedef struct{
-	Conectado cnct [100];
-	int num;
-}Listaconectados;
-
 int i = 0;
 int sockets[100];
 int Puerto = 9010; // Puertos disponibles 50081 - 50085
 
 //Anade nuevo conectado
-int Anade (Listaconectados *lista, char nombre[20], int socket){
-	if( lista->num == 100) return -1;
-	else {
-		strcpy(lista->cnct[lista->num].nombre,nombre);
-		lista-> cnct[lista->num].socket = socket;
-		lista->num++;
-		return 0;
-	}
+int Anade ( char nombre[20], int socket)
+{
+	char query[512];
+			sprintf(query, "INSERT INTO Conectados (nombre, socket) "
+					"SELECT * FROM (SELECT '%s' AS nombre, '%f' AS socket",
+					contrasena, nombre);
+	
+					if (mysql_query(conn, query) == 0 && mysql_affected_rows(conn) > 0) 
+					{
+						// Si se insertó un usuario, enviar 0
+						return 0;
+					} 
+					else 
+					{
+						// Si no se pudo registrar (porque ya existe), enviar -1
+						return -1;
+					}
+					
 }
 
-int Elimina (Listaconectados *lista, char nombre[20]){
-	//Retorna 0 si elimina y -1 si el usuario no esta en la lista
-	int pos = Posicion(lista, nombre);
-	if(pos == -1) 
-		return -1;
-	else {
-		int i;
-		for(i=pos; i<lista->num-1; i++){
-			lista->cnct[i] = lista->cnct[i+1];
-			strcpy(lista->cnct[i].nombre,lista->cnct[i+1].nombre);
-			lista->cnct[i].socket = lista->cnct[i+1].socket;
-		}
-		lista->num--;
-		return 0;
-	}
+//Retorna 0 si elimina y -1 si el usuario no esta en la Base de datos de conectados
+int Elimina (char nombre[20])
+{
+	char query[512];
+			sprintf(query, "DELETE FROM Conectados WHERE nombre = %s", nombre);
+	
+					if (mysql_query(conn, query) == 0 && mysql_affected_rows(conn) > 0) 
+					{
+						// Si se elimino un usuario, devolver 0
+						return 0;
+					} 
+					else 
+					{
+						// Si no se pudo eliminar devolver -1
+						return -1;
+					}
 
 }
-
-int Posicion(Listaconectados *lista, char nombre[20]){
-	//Devuelve socket o -1 si no esta en lista
-	int i=0;
-	int encontrado=0;
-	while((i<lista->num)&& !encontrado){
-		if(strcmp(lista->cnct[i].nombre,nombre)){
-		encontrado = 1; 
-		}
-		if(!encontrado){
-			i++;
-		}
-	}
-	if(encontrado==1){
-		return i;
-	}
-	else
-	return -1;
-}
-
-void Conectados (Listaconectados *lista, char conectados[300]){
-	//Pone en conectados los nombres de todos lo conecntados separados por /. 
-	//Primero proporciona en numero de conectados.
-	sprintf(conectados,"%d",lista->num);
-	int i;
-	for(i=0; i<lista->num; i++){
-		sprintf(conectados,"%s/%s",conectados,lista->cnct[i].nombre);
-	}
-} 
 
 char ubicacion[30];
-
 
 //Esttructura necessaria para acesso excluyente
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -95,6 +66,7 @@ void *AtenderCliente(void *socket)
 	socket_conn = *s;
 	char peticion[512];
 	char buff2[1000];
+	
 	
 	
 	strcpy(ubicacion, "localhost");
@@ -158,9 +130,9 @@ void *AtenderCliente(void *socket)
             if (p != NULL) {
                 char nombre[50];
                 strcpy(nombre, p);  // Guardar el nombre
-                int eli =Elimina(&milista, nombre);
+                int eli =Elimina(nombre);
 				if (eli ==-1)
-					printf("NO se ha podido eliminar a %s de la lista de conectados\n",nombre);
+					printf("No se ha podido eliminar a %s de la lista de conectados\n",nombre);
 				if (eli==0)
 					printf("Usuario %s desconectado\n",nombre);
 					
@@ -171,12 +143,6 @@ void *AtenderCliente(void *socket)
             }
             //Aqui le enviamos toda la lista de conectados a todos los clientes para que la actualizen
 			char notificacion[200];
-			Conectados(&milista, buff2);
-			sprintf(notificacion, "3/%s",buff2);
-			for (int i=0; i< milista.num; i++){
-				printf("La lista de conectados es: %s\n", milista.cnct[i].nombre);
-				write(sockets[i],notificacion,strlen(notificacion));
-			}
 			
 
 		}
@@ -273,8 +239,8 @@ void *AtenderCliente(void *socket)
 				{
 					//Anadimos usuario a la lista de conectados
 					//write(socket_conn, buff2, strlen(buff2));
-                    int ana=Anade(&milista,nombre,socket);
-					if (ana ==-1 || milista.num >= 100)
+                    int ana=Anade(nombre,socket);
+					if (ana ==-1)
 					{
 						printf("No se ha podido anadir a %s a la lista de conectados\n",nombre);
 						sprintf(buff2,"No te has podido conectar");
@@ -284,10 +250,7 @@ void *AtenderCliente(void *socket)
 					if (ana==0)
 					{
 						printf("Usuario %s en lista de conenctados\n",nombre);
-					}
-					
-
-					
+					}	
 
 					//Aqui le enviamos toda la lista de conectados a todos los clientes para que la actualizen
 					
@@ -474,7 +437,7 @@ void *AtenderCliente(void *socket)
 					MYSQL_ROW row = mysql_fetch_row(res);
 					if(row!= NULL)
 					{
-						sprintf(datosJugadoreseConectados,"%s/%s/%s/%s/%s#",datosJugadoreseConectados, row[0], row[1], row[4], row[5]);
+						sprintf(datosJugadoreseConectados,"%s/%s/%s/%s/%s/%s/%s/%s#",datosJugadoreseConectados, row[0], row[1], row[2], row[3], row[4], row[5], row[6]);
 					}
 				}
 				n = strtok(NULL, "/");

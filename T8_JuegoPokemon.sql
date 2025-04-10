@@ -143,6 +143,17 @@ INSERT INTO `Relacio` VALUES (1,1,7),(2,2,5),(3,3,9);
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
+DROP TABLE IF EXISTS `Conectados`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `Conectados` (
+  `idJ` int(11) NOT NULL,
+  `nombre` varchar(20) NOT NULL,
+  `socket` int(11) DEFAULT NULL,
+  PRIMARY KEY (`IdJ`),
+  CONSTRAINT `Relacio_ibfk_1` FOREIGN KEY (`IdJ`) REFERENCES `Jugadores` (`id`) ON DELETE CASCADE,
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
 /*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
