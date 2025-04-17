@@ -15,6 +15,7 @@ using System.Net.Http;
 using System.Security.Policy;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using System.Diagnostics.Contracts;
+using System.Reflection.Emit;
 
 namespace WindowsFormsApplication1
 {
@@ -49,14 +50,11 @@ namespace WindowsFormsApplication1
         string contra;
         bool iniciado = false;
 
-
         public Form1()
         {
             InitializeComponent();
             parpadeoTimer.Interval = 500; // Parpadeo cada 500 ms
             parpadeoTimer.Tick += ParpadeoTimer_Tick;
-            
-
         }
 
         // Actualiza el progreso de la barra
@@ -120,10 +118,8 @@ namespace WindowsFormsApplication1
             //groupBox1.Visible = false;
             ChangeCircleColor(Color.Blue);
             
-
             ConectarServidor();
-
-
+            AtenderServidor();
         }
 
         private async Task crearFondoAsync()
@@ -133,28 +129,38 @@ namespace WindowsFormsApplication1
                 return;
 
             isDownloading = true;
-     
+
             string videoPath = Path.Combine(directorioBase, "Resources", "videos", "FondoPokemon.mp4");
-            string directorio = Path.Combine(directorioBase, "Resources", "videos") ;
+            string directorio = Path.Combine(directorioBase, "Resources", "videos");
             string videoUrl = "https://www.dropbox.com/scl/fi/ztvmhlz5238yno38g4lju/FondoPokemon.mp4?rlkey=q0tle4yqr378txm938bivfayo&st=dexsrxui&dl=1";
 
-            // Verificar si el archivo de video ya existe
-            if (File.Exists(videoPath))
-            {
-                // El video ya existe, omitir la descarga y mostrarlo directamente
-                MostrarVideoYElementos();
-                isDownloading = false; // Permitir futuras descargas (aunque no se realicen)
-                return;
-            }
-
+            //Verificar que el directorio existe
             if (!Directory.Exists(directorio))
             {
                 DirectoryInfo di = Directory.CreateDirectory(directorio);
             }
 
-            progressBar.Visible = true;
-            progressBar.Size = new Size(this.ClientSize.Width/2, 30);
-            progressBar.Location = new Point(this.ClientSize.Width/2 - progressBar.Width/2, this.ClientSize.Height-60);
+            // Verificar si el archivo de video ya existe
+            if (File.Exists(videoPath))
+            {
+                // El video ya existe, omitir la descarga y mostrarlo directamente
+                Invoke((MethodInvoker)delegate
+                {
+                    MostrarVideoYElementos();
+                });
+                isDownloading = false; // Permitir futuras descargas (aunque no se realicen)
+                return;
+            }
+
+
+
+            // Mostrar la barra de progreso en la UI
+            Invoke((MethodInvoker)delegate
+            { 
+                progressBar.Visible = true;
+                progressBar.Size = new Size(this.ClientSize.Width / 2, 30);
+                progressBar.Location = new Point(this.ClientSize.Width / 2 - progressBar.Width / 2, this.ClientSize.Height - 60);
+            });
 
 
             try
@@ -168,7 +174,11 @@ namespace WindowsFormsApplication1
                     long? totalBytes = response.Content.Headers.ContentLength;
                     var progressHandler = new Progress<int>(percent =>
                     {
-                        UpdateProgress(percent); // Actualiza la barra de progreso
+                        // Actualiza la barra de progreso en la UI
+                        Invoke((MethodInvoker)delegate
+                        {
+                            UpdateProgress(percent);
+                        });
                     });
 
                     using (Stream stream = await response.Content.ReadAsStreamAsync())
@@ -203,8 +213,12 @@ namespace WindowsFormsApplication1
                     }
                 }
 
-                
-                MostrarVideoYElementos();
+
+                // Mostrar video y otros elementos UI después de la descarga
+                Invoke((MethodInvoker)delegate
+                {
+                    MostrarVideoYElementos();
+                });
             }
             catch (Exception ex)
             {
@@ -220,11 +234,11 @@ namespace WindowsFormsApplication1
         private void MostrarVideoYElementos()
         {
             // Obtén la ruta del directorio bin/debug
-          
+
             string videoPath = Path.Combine(directorioBase, "Resources", "videos", "FondoPokemon.mp4");
             fondoPokemon.Visible = true;
             fondoPokemon.uiMode = "none"; // Ocultar controles de reproducción
-            
+
 
             // Tiempos de video (tiempo de inicio, tiempo de fin) en segundos
             List<Tuple<int, int>> tiempos = new List<Tuple<int, int>>()
@@ -342,7 +356,7 @@ namespace WindowsFormsApplication1
                 panelCartas = new PanelDobleBuffer
                 {
                     Size = new Size(PanelSizeX, PanelSizeY), // Tamaño ajustado
-                    Location = new Point(PokedexLocationX-(PanelSizeX/2)+50, PokedexLocationY-PanelSizeY-20),
+                    Location = new Point(PokedexLocationX - (PanelSizeX / 2) + 50, PokedexLocationY - PanelSizeY - 20),
                     BackColor = Color.Black,
                 };
                 this.Controls.Add(panelCartas);
@@ -391,13 +405,13 @@ namespace WindowsFormsApplication1
                             ePanel.Graphics.DrawPath(pen, path);
                         }
 
-                        panelCartasTop = panelCartas.Top-50;
+                        panelCartasTop = panelCartas.Top - 50;
                     }
                 });
             }
 
             if (!combate)
-            {            
+            {
                 if (serverRun == true)
                 {
                     if (user != null)
@@ -407,48 +421,48 @@ namespace WindowsFormsApplication1
                         byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
                         server.Send(msg);
 
-                        //Recibimos la respuesta del servidor
-                        byte[] msg2 = new byte[1000];
-                        server.Receive(msg2);
-                        mensaje = Encoding.ASCII.GetString(msg2);
+                        ////Recibimos la respuesta del servidor
+                        //byte[] msg2 = new byte[1000];
+                        //server.Receive(msg2);
+                        //mensaje = Encoding.ASCII.GetString(msg2);
 
 
-                        MessageBox.Show(mensaje);
-                        List<Pokemon> listaPokemon = new List<Pokemon>();
+                        //MessageBox.Show(mensaje);
+                        //List<Pokemon> listaPokemon = new List<Pokemon>();
 
-                        listaPokemon = Pokemon.ParsearDatos(mensaje, listaPokemon);
+                        //listaPokemon = Pokemon.ParsearDatos(mensaje, listaPokemon);
 
-                        if (listaPokemon.Count > 0)
-                        {            
-                            List<CartaPokemon> cartas = new List<CartaPokemon>();
-                
-                            foreach (Pokemon pokemon in listaPokemon)
-                            {
-                                // Crear la carta correctamente y añadirla a la lista
-                                CartaPokemon carta = new CartaPokemon(
-                                    pokemon.Nombre,
-                                    pokemon.Vida,
-                                    pokemon.Elemento,
-                                    "images/" + pokemon.Nombre + ".png",
-                                    new List<(string, int)>
-                                    {
-                                        (pokemon.Ataque, pokemon.Daño),
-                                        ("Rugido", 10)
-                                    }
-                                );
-                                cartas.Add(carta); // Agregar la carta a la lista
-                            }
-                           
-                            panelCartas.BringToFront();
-                            combate = true;
-                            gestorCartas.DibujarCartas(cartas, panelCartas, true);
-                            panelCartas.Visible = true;
-                        }
-                        else
-                        {
-                            MessageBox.Show("No tienes pokemons");
+                        //if (listaPokemon.Count > 0)
+                        //{            
+                        //    List<CartaPokemon> cartas = new List<CartaPokemon>();
 
-                        }
+                        //    foreach (Pokemon pokemon in listaPokemon)
+                        //    {
+                        //        // Crear la carta correctamente y añadirla a la lista
+                        //        CartaPokemon carta = new CartaPokemon(
+                        //            pokemon.Nombre,
+                        //            pokemon.Vida,
+                        //            pokemon.Elemento,
+                        //            "images/" + pokemon.Nombre + ".png",
+                        //            new List<(string, int)>
+                        //            {
+                        //                (pokemon.Ataque, pokemon.Daño),
+                        //                ("Rugido", 10)
+                        //            }
+                        //        );
+                        //        cartas.Add(carta); // Agregar la carta a la lista
+                        //    }
+
+                        //    panelCartas.BringToFront();
+                        //    combate = true;
+                        //    gestorCartas.DibujarCartas(cartas, panelCartas, true);
+                        //    panelCartas.Visible = true;
+                        //}
+                        //else
+                        //{
+                        //    MessageBox.Show("No tienes pokemons");
+
+                        //}
                     }
                     else
                     {
@@ -460,7 +474,7 @@ namespace WindowsFormsApplication1
                     MessageBox.Show("No tienes conexion con el servidor");
                 }
 
-                
+
             }
             else
             {
@@ -472,32 +486,32 @@ namespace WindowsFormsApplication1
 
         }
 
-
         private async void ConectarServidor()
         {
             parpadeoTimer.Start(); // Iniciar el parpadeo
             await Task.Run(() =>
             {
-            
+
                 //Creamos un IPEndPoint con el ip del servidor y puerto del servidor 
                 //al que deseamos conectarnos
                 IPAddress direc = IPAddress.Parse(IP.Text);
                 IPEndPoint ipep = new IPEndPoint(direc, puertoServidor);
-            
+
 
                 //Creamos el socket 
                 server = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 try
                 {
                     server.Connect(ipep);//Intentamos conectar el socket
-                
-                 
+
+
 
                     Invoke((MethodInvoker)delegate
                     {
                         ChangeCircleColor(Color.Green);
                         parpadeoTimer.Stop(); // Detener el parpadeo
                         serverRun = true;
+                        Task.CompletedTask.Wait();
 
                     });
 
@@ -510,18 +524,184 @@ namespace WindowsFormsApplication1
                         ChangeCircleColor(Color.Red);
                         parpadeoTimer.Stop(); // Detener el parpadeo
                         serverRun = false;
+                        Task.CompletedTask.Wait();
 
                     });
                     return;
                 }
-                
+
             });
-
         }
+        private async void AtenderServidor()
+        {
+            await Task.Run(() =>
+            {
+                while (true)
+                {
 
+                    if (serverRun == true)
+                    {
+                        //recivimos mensake del servidor
+                        byte[] msg2 = new byte[2048];
+                        server.Receive(msg2);
+                        try
+                        {
+
+                            string[] mensajeSucio = Encoding.ASCII.GetString(msg2).Split(new string[] { "~$" }, StringSplitOptions.None);
+                            MessageBox.Show(Encoding.ASCII.GetString(msg2));
+                            string mensaje = mensajeSucio[1].TrimEnd().TrimStart();
+                            int codigo = Convert.ToInt32(mensajeSucio[0]);
+
+                            switch (codigo)
+                            {
+                                case 1: //Creado Cuenta
+
+                                    MessageBox.Show(mensaje);
+                                    cambiarInicioRegistro();
+
+                                    break;
+
+                                case 2: //Iniciado Sesion
+
+                                    // Mostramos el mensaje recibido
+
+                               
+                                    // Comparamos correctamente
+                                    MessageBox.Show(mensaje);
+                                    if (Convert.ToInt32(mensaje) == 1)
+                                    {
+                                    
+                                        Invoke((MethodInvoker)delegate
+                                        {
+                                            iniciado = true;
+                                            MessageBox.Show("Se ha iniciado la sesion con exito");
+
+                                            foreach (Control control in this.Controls)
+                                            {
+                                                control.Visible = false;
+                                            }
+                                       
+                                        });
+                                    
+                                        _ = Task.Run(async () =>
+                                            {
+                                                await crearFondoAsync();
+                                            });
+                                    }
+                                    else 
+                                    {
+                                        MessageBox.Show("No se ha podido Iniciar Sesion");
+                                    }
+
+                                        break;
+
+                                case 3: //Pokedex
+
+                                    MessageBox.Show(mensaje);
+                                    Invoke((MethodInvoker)delegate
+                                    {
+                                        List<Pokemon> listaPokemon = new List<Pokemon>();
+
+                                        listaPokemon = Pokemon.ParsearDatos(mensaje, listaPokemon);
+
+                                        if (listaPokemon.Count > 0)
+                                        {
+                                            List<CartaPokemon> cartas = new List<CartaPokemon>();
+
+                                            foreach (Pokemon pokemon in listaPokemon)
+                                            {
+                                                // Crear la carta correctamente y añadirla a la lista
+                                                CartaPokemon carta = new CartaPokemon(
+                                                    pokemon.Nombre,
+                                                    pokemon.Vida,
+                                                    pokemon.Elemento,
+                                                    "images/" + pokemon.Nombre + ".png",
+                                                    new List<(string, int)>
+                                                    {
+                                                (pokemon.Ataque, pokemon.Daño),
+                                                ("Rugido", 10)
+                                                    }
+                                                );
+                                                cartas.Add(carta); // Agregar la carta a la lista
+                                            }
+
+                                            panelCartas.BringToFront();
+                                            combate = true;
+                                            gestorCartas.DibujarCartas(cartas, panelCartas, true);
+                                            panelCartas.Visible = true;
+                                        }
+                                        else
+                                        {
+                                            MessageBox.Show("No tienes pokemons");
+
+                                        }
+                                    });
+
+                                    break;
+
+                                case 4: //Lista de Partidas Donde esta el Jugador
+
+                                    MessageBox.Show(mensaje);
+
+                                    Invoke((MethodInvoker)delegate
+                                    {
+                                        List<Partida> listaPartidas = new List<Partida>();
+                                        listaPartidas = Partida.ParsearRespuesta(mensaje, listaPartidas);
+                                        if (listaPartidas.Count > 0)
+                                        {
+                                            Partida.DibujarPartidas(listaPartidas, panelCargarPartida);
+                                        }
+                                        else
+                                        {
+                                            MessageBox.Show("No tienes partidas");
+                                        }
+                                    });
+
+                                    break;
+                                case 5: //La gente que tiene el pokemon selecionado
+
+                                    MessageBox.Show(mensaje);
+
+                                    break;
+                                case 6: //Lista conectados Combates 
+
+                                    MessageBox.Show(mensaje);
+
+                                    //string mensaje = "/1/Ash/10/5#/2/Misty/5/1#/3/Rock/2/1#";
+                                    Invoke((MethodInvoker)delegate
+                                    {
+
+                                        List<Conectados> listaConectados = new List<Conectados>();
+                                        listaConectados = Conectados.ParsearDatos(mensaje, listaConectados);
+                                        if (listaConectados.Count > 0)
+                                        {
+                                            Conectados.DibujarConectados(listaConectados, panelCargarCombate, this);
+                                        }
+                                        else
+                                        {
+                                            MessageBox.Show("No tienes partidas");
+                                        }
+                                    });
+
+                                    break;
+                                case 7: //Lista Conectados Notificacion
+                                    MessageBox.Show(mensaje);
+                                    break;
+                            }
+                        }
+                        catch(Exception ex)
+                        {
+                            MessageBox.Show("Error al recibir el mensaje del servidor: " + ex.Message);
+                            
+                        }
+                        
+                    }                   
+                }
+            });
+        }
         private void DesconectarServidor()
         {
-            if (serverRun == true && iniciado == true ) //Nos desconectamos
+            if (serverRun == true && iniciado == true) //Nos desconectamos
             {
                 string mensaje = "0/" + user + "/" + contra;
                 // Enviamos al servidor el nombre tecleado
@@ -539,7 +719,7 @@ namespace WindowsFormsApplication1
 
         }
 
-        private void Form1_Form1Closing (object sender, FormClosingEventArgs e)
+        private void Form1_Form1Closing(object sender, FormClosingEventArgs e)
         {
             DesconectarServidor();
         }
@@ -623,13 +803,13 @@ namespace WindowsFormsApplication1
                     server.Send(msg);
 
                     //Recibimos la respuesta del servidor
-                    byte[] msg2 = new byte[80];
-                    server.Receive(msg2);
-                    mensaje = Encoding.ASCII.GetString(msg2).Split(',')[0];
+                    //byte[] msg2 = new byte[80];
+                    //server.Receive(msg2);
+                    //mensaje = Encoding.ASCII.GetString(msg2).Split(',')[0];
 
-                    
-                    MessageBox.Show(mensaje);
-                    cambiarInicioRegistro();
+
+                    //MessageBox.Show(mensaje);
+                    //cambiarInicioRegistro();
 
                 }
                 else
@@ -645,7 +825,7 @@ namespace WindowsFormsApplication1
 
         private void SignIn_Click(object sender, EventArgs e)
         {
-            if (serverRun == true) 
+            if (serverRun == true)
             {
                 if (textUsu.Text.Length != 0 && textContra.Text.Length != 0)
                 {
@@ -656,29 +836,29 @@ namespace WindowsFormsApplication1
                     byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
                     server.Send(msg);
 
-                    //Recibimos la respuesta del servidor
-                    byte[] msg2 = new byte[80];
-                    int bytesRecibidos = server.Receive(msg2); // Número real de bytes recibidos
+                    ////Recibimos la respuesta del servidor
+                    //byte[] msg2 = new byte[80];
+                    //int bytesRecibidos = server.Receive(msg2); // Número real de bytes recibidos
 
-                    // Convertimos solo los bytes útiles y eliminamos espacios extra
-                    string mensajeRecibido = Encoding.ASCII.GetString(msg2, 0, bytesRecibidos).Trim();
+                    //// Convertimos solo los bytes útiles y eliminamos espacios extra
+                    //string mensajeRecibido = Encoding.ASCII.GetString(msg2, 0, bytesRecibidos).Trim();
 
-                    // Mostramos el mensaje recibido
-                    MessageBox.Show(mensajeRecibido);
+                    //// Mostramos el mensaje recibido
+                    //MessageBox.Show(mensajeRecibido);
 
-                    // Comparamos correctamente
-                    if (mensajeRecibido.Equals("Sesion Iniciada exitosamente", StringComparison.OrdinalIgnoreCase))
-                    {
-                        iniciado = true;
-                        
-                        foreach (Control control in this.Controls)
-                        {
-                            control.Visible = false;
-                            
-                        }
-                        crearFondoAsync();
-                        //this.FormBorderStyle = FormBorderStyle.None;
-                    }
+                    //// Comparamos correctamente
+                    //if (mensajeRecibido.Equals("Sesion Iniciada exitosamente", StringComparison.OrdinalIgnoreCase))
+                    //{
+                    //    iniciado = true;
+
+                    //    foreach (Control control in this.Controls)
+                    //    {
+                    //        control.Visible = false;
+
+                    //    }
+                    //    crearFondoAsync();
+                    //    //this.FormBorderStyle = FormBorderStyle.None;
+                    //}
 
                 }
                 else
@@ -699,7 +879,7 @@ namespace WindowsFormsApplication1
 
         private void textContra_Enter(object sender, EventArgs e)
         {
-            contraseñaBox.ForeColor = Color.FromArgb(38,209,255);
+            contraseñaBox.ForeColor = Color.FromArgb(38, 209, 255);
             contraseñaBox.BorderColor = Color.FromArgb(38, 209, 255);
             contraseñaBox.Text = "Contraseña";
             if (textContra.Text == "Contraseña")
@@ -713,15 +893,15 @@ namespace WindowsFormsApplication1
         {
             contraseñaBox.ForeColor = Color.FromArgb(255, 255, 255);
             contraseñaBox.BorderColor = Color.FromArgb(255, 255, 255);
-            
+
             if (textContra.Text.Length == 0)
-            { 
+            {
                 textContra.Text = "Contraseña";
                 contraseñaBox.Text = "";
 
             }
-            
-            
+
+
         }
 
         private void textUsu_Enter(object sender, EventArgs e)
@@ -738,15 +918,15 @@ namespace WindowsFormsApplication1
         private void textUsu_Leave(object sender, EventArgs e)
         {
             usuarioBox.ForeColor = Color.FromArgb(255, 255, 255);
-            usuarioBox.BorderColor = Color.FromArgb(255 ,255, 255);
-           
+            usuarioBox.BorderColor = Color.FromArgb(255, 255, 255);
+
 
             if (textUsu.Text.Length == 0)
             {
                 usuarioBox.Text = "";
                 textUsu.Text = "Usuario";
             }
-            
+
         }
         private void repiteContra_Enter(object sender, EventArgs e)
         {
@@ -808,11 +988,11 @@ namespace WindowsFormsApplication1
 
         private void circuloServidor_Click(object sender, EventArgs e)
         {
-            ChangeCircleColor(Color.Blue);             
-            ConectarServidor(); 
+            ChangeCircleColor(Color.Blue);
+            ConectarServidor();
         }
 
-        private void cambiarInicioRegistro() 
+        private void cambiarInicioRegistro()
         {
             textUsu.Text = "Usuario";
             textContra.Text = "Contraseña";
@@ -849,7 +1029,7 @@ namespace WindowsFormsApplication1
             cambiarInicioRegistro();
 
         }
-         
+
 
         private void SignUp_MouseEnter(object sender, EventArgs e)
         {
@@ -982,10 +1162,10 @@ namespace WindowsFormsApplication1
 
                 if (user != null)
                 {
-                    //string mensaje = "4/" + user;
-                    //// Enviamos al servidor el nombre tecleado
-                    //byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
-                    //server.Send(msg);
+                    string mensaje = "6/" + user;
+                    // Enviamos al servidor el nombre tecleado
+                    byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
+                    server.Send(msg);
 
                     ////Recibimos la respuesta del servidor
                     //byte[] msg2 = new byte[1000];
@@ -994,18 +1174,18 @@ namespace WindowsFormsApplication1
 
                     //MessageBox.Show(mensaje);
 
-                    string mensaje = "/1/Ash/10/5#/2/Misty/5/1#/3/Rock/2/1#";
+                    //string mensaje = "/1/Ash/10/5#/2/Misty/5/1#/3/Rock/2/1#";
 
-                    List<Conectados> listaConectados = new List<Conectados>();
-                    listaConectados = Conectados.ParsearDatos(mensaje, listaConectados);
-                    if (listaConectados.Count > 0)
-                    {
-                        Conectados.DibujarConectados(listaConectados, panelCargarCombate, this);
-                    }
-                    else
-                    {
-                        MessageBox.Show("No tienes partidas");
-                    }
+                    //List<Conectados> listaConectados = new List<Conectados>();
+                    //listaConectados = Conectados.ParsearDatos(mensaje, listaConectados);
+                    //if (listaConectados.Count > 0)
+                    //{
+                    //    Conectados.DibujarConectados(listaConectados, panelCargarCombate, this);
+                    //}
+                    //else
+                    //{
+                    //    MessageBox.Show("No tienes partidas");
+                    //}
                 }
                 else
                 {
@@ -1029,19 +1209,19 @@ namespace WindowsFormsApplication1
             Form1 form = Application.OpenForms.OfType<Form1>().FirstOrDefault();
             form?.server.Send(msg);
 
-            //Recibimos la respuesta del servidor
-            byte[] msg2 = new byte[1000];
-            form?.server.Receive(msg2);
-            mensaje = Encoding.ASCII.GetString(msg2).Split(',')[0];
+            ////Recibimos la respuesta del servidor
+            //byte[] msg2 = new byte[1000];
+            //form?.server.Receive(msg2);
+            //mensaje = Encoding.ASCII.GetString(msg2).Split(',')[0];
 
-            MessageBox.Show(mensaje);
+            //MessageBox.Show(mensaje);
         }
 
 
 
         private void cargarPartida_Click(object sender, EventArgs e)
         {
-            if(boolPanelCargarPartida)
+            if (boolPanelCargarPartida)
             {
                 int PanelSizeX = 500;
                 int PanelSizeY = 300;
@@ -1049,14 +1229,14 @@ namespace WindowsFormsApplication1
                 panelCargarPartida = new PanelDobleBuffer
                 {
                     Size = new Size(PanelSizeX, PanelSizeY), // Tamaño ajustado
-                    Location = new Point(cargarPartidaBox.Left + cargarPartidaBox.Width + 10, cargarPartidaBox.Top + (cargarPartidaBox.Height/2) - (PanelSizeY/2) ),
+                    Location = new Point(cargarPartidaBox.Left + cargarPartidaBox.Width + 10, cargarPartidaBox.Top + (cargarPartidaBox.Height / 2) - (PanelSizeY / 2)),
                     BackColor = Color.Black,
                 };
                 this.Controls.Add(panelCargarPartida);
                 panelCargarPartida.Visible = true;
                 panelCargarPartida.BringToFront();
                 boolPanelCargarPartida = false;
-               
+
 
                 // Configurar el evento Paint para aplicar bordes redondeados y degradado
                 panelCargarPartida.Paint += new PaintEventHandler((object senderPanel, PaintEventArgs ePanel) =>
@@ -1080,12 +1260,12 @@ namespace WindowsFormsApplication1
                         // Configurar el suavizado
                         ePanel.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
-                    // Crear un pincel de degradado: de blanco a un gris muy claro
-                    using (LinearGradientBrush brush = new LinearGradientBrush(
-                        rect,
-                        Color.Black,
-                        Color.FromArgb(22,22,22),
-                        LinearGradientMode.Vertical))
+                        // Crear un pincel de degradado: de blanco a un gris muy claro
+                        using (LinearGradientBrush brush = new LinearGradientBrush(
+                            rect,
+                            Color.Black,
+                            Color.FromArgb(22, 22, 22),
+                            LinearGradientMode.Vertical))
                         {
                             // Rellenar la ruta con el degradado
                             ePanel.Graphics.FillPath(brush, path);
@@ -1097,7 +1277,7 @@ namespace WindowsFormsApplication1
                             ePanel.Graphics.DrawPath(pen, path);
                         }
 
-                        
+
                     }
                 });
 
@@ -1108,23 +1288,23 @@ namespace WindowsFormsApplication1
                     byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
                     server.Send(msg);
 
-                    //Recibimos la respuesta del servidor
-                    byte[] msg2 = new byte[1000];
-                    server.Receive(msg2);
-                    mensaje = Encoding.ASCII.GetString(msg2).Split(',')[0];
+                    ////Recibimos la respuesta del servidor
+                    //byte[] msg2 = new byte[1000];
+                    //server.Receive(msg2);
+                    //mensaje = Encoding.ASCII.GetString(msg2).Split(',')[0];
 
-                    MessageBox.Show(mensaje);
+                    //MessageBox.Show(mensaje);
 
-                    List<Partida> listaPartidas = new List<Partida>();
-                    listaPartidas = Partida.ParsearRespuesta(mensaje, listaPartidas);
-                    if (listaPartidas.Count > 0)
-                    {
-                        Partida.DibujarPartidas(listaPartidas, panelCargarPartida);
-                    }
-                    else
-                    {
-                        MessageBox.Show("No tienes partidas");
-                    }
+                    //List<Partida> listaPartidas = new List<Partida>();
+                    //listaPartidas = Partida.ParsearRespuesta(mensaje, listaPartidas);
+                    //if (listaPartidas.Count > 0)
+                    //{
+                    //    Partida.DibujarPartidas(listaPartidas, panelCargarPartida);
+                    //}
+                    //else
+                    //{
+                    //    MessageBox.Show("No tienes partidas");
+                    //}
                 }
                 else
                 {
@@ -1135,6 +1315,33 @@ namespace WindowsFormsApplication1
             {
                 boolPanelCargarPartida = true;
                 panelCargarPartida.Visible = false;
+            }
+        }
+
+        private void label1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            if (serverRun == true)
+            {
+                string mensaje = "7/";
+                // Enviamos al servidor el nombre tecleado
+                byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
+                server.Send(msg);
+
+                //Recibimos la respuesta del servidor
+                byte[] msg2 = new byte[1000];
+                server.Receive(msg2);
+                mensaje = Encoding.ASCII.GetString(msg2).Split(',')[0];
+
+                MessageBox.Show(mensaje);
+            }
+            else
+            {
+                MessageBox.Show("Sin conexion al servidor");
             }
         }
     }

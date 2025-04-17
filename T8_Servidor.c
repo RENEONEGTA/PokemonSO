@@ -8,86 +8,88 @@
 #include <mysql.h>
 #include <pthread.h>
 
-typedef struct{
-	char nombre[20];
-    int socket;
-}Conectado;
-
-typedef struct{
-	Conectado cnct [100];
-	int num;
-}Listaconectados;
-
-int i = 0;
-int sockets[100];
-int Puerto = 50081; // Puertos disponibles 50081 - 50085
-
-//Anade nuevo conectado
-int Anade (Listaconectados *lista, char nombre[20], int socket){
-	if( lista->num == 100) return -1;
-	else {
-		strcpy(lista->cnct[lista->num].nombre,nombre);
-		lista-> cnct[lista->num].socket = socket;
-		lista->num++;
-		return 0;
-	}
-}
-
-int Elimina (Listaconectados *lista, char nombre[20]){
-	//Retorna 0 si elimina y -1 si el usuario no esta en la lista
-	int pos = Posicion(lista, nombre);
-	if(pos == -1) 
-		return -1;
-	else {
-		int i;
-		for(i=pos; i<lista->num-1; i++){
-			lista->cnct[i] = lista->cnct[i+1];
-			strcpy(lista->cnct[i].nombre,lista->cnct[i+1].nombre);
-			lista->cnct[i].socket = lista->cnct[i+1].socket;
-		}
-		lista->num--;
-		return 0;
-	}
-
-}
-
-int Posicion(Listaconectados *lista, char nombre[20]){
-	//Devuelve socket o -1 si no esta en lista
-	int i=0;
-	int encontrado=0;
-	while((i<lista->num)&& !encontrado){
-		if(strcmp(lista->cnct[i].nombre,nombre)){
-		encontrado = 1; 
-		}
-		if(!encontrado){
-			i++;
-		}
-	}
-	if(encontrado==1){
-		return i;
-	}
-	else
-	return -1;
-}
-
-void Conectados (Listaconectados *lista, char conectados[300]){
-	//Pone en conectados los nombres de todos lo conecntados separados por /. 
-	//Primero proporciona en numero de conectados.
-	sprintf(conectados,"%d",lista->num);
-	int i;
-	for(i=0; i<lista->num; i++){
-		sprintf(conectados,"%s/%s",conectados,lista->cnct[i].nombre);
-	}
-} 
-
 char ubicacion[30];
-
 
 //Esttructura necessaria para acesso excluyente
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+int i = 0;
+int sockets[100];
+int Puerto = 9010; // Puertos disponibles 50081 - 50085
+
+//Anade nuevo conectado
+int Anade(MYSQL *conn, int IdJ, char nombre[20], int socket) {
+   
+
+	printf("Anadiendo jugador: '%s' con id %d y socket %d a la lista de conectados\n", nombre, IdJ, socket);
+    char query[512];
+	sprintf(query,
+			"INSERT INTO Conectados (IdJ, nombre, socket) VALUES (%d, '%s', %d)"
+			"ON DUPLICATE KEY UPDATE socket = VALUES(socket);",
+			IdJ, nombre, socket);
+	
+
+    int result = -1;
+
+	if (mysql_query(conn, query) == 0) {
+		result = 0;  // Exito aunque no se modificara nada
+		printf("Insercion a la lista de conectados exitosa\n");
+	}
+   
+    return result;
+}
+
+
+//Retorna 0 si elimina y -1 si el usuario no esta en la Base de datos de conectados
+int Elimina(MYSQL *conn, char nombre[20]) {
+    pthread_mutex_lock(&mutex);
+
+    char query[256];
+    sprintf(query, "DELETE FROM Conectados WHERE nombre = '%s';", nombre);
+
+    int result = -1;
+    if (mysql_query(conn, query) == 0 && mysql_affected_rows(conn) > 0) {
+        result = 0;  // Eliminació exitosa
+    }
+
+    pthread_mutex_unlock(&mutex);
+    return result;
+}
+
+
+int VerListaConectados(MYSQL *conn, char *resultado) {
+    MYSQL_RES *res;
+    MYSQL_ROW row;
+    char query[256] = "SELECT nombre, socket FROM Conectados";
+    
+    if (mysql_query(conn, query) != 0) {
+        printf("Error en la consulta VerListaConectados: %s\n", mysql_error(conn));
+        return -1;
+    }
+
+    res = mysql_store_result(conn);
+    if (res == NULL) {
+        printf("Error al almacenar resultado: %s\n", mysql_error(conn));
+        return -1;
+    }
+
+    strcpy(resultado, "");  // Inicialitzar la cadena
+
+    while ((row = mysql_fetch_row(res)) != NULL) {
+        // Format: nombre1,socket1/nombre2,socket2/...
+        strcat(resultado, row[0]); // nombre
+        strcat(resultado, ",");
+        strcat(resultado, row[1]); // socket
+        strcat(resultado, "/");
+    }
+
+    mysql_free_result(res);
+    return 0;
+}
+
+
 void *AtenderCliente(void *socket)
 {
-	Listaconectados milista;
+	
 	int socket_conn;
 	int *s;
 	int ret;
@@ -97,7 +99,8 @@ void *AtenderCliente(void *socket)
 	char buff2[1000];
 	
 	
-	strcpy(ubicacion, "shiva2.upc.es");
+	
+	strcpy(ubicacion, "localhost");
 	printf("Socket del cliente: %d\n", socket_conn);
 
 	//Inicio el MYSQL
@@ -115,7 +118,7 @@ void *AtenderCliente(void *socket)
 	}
 	
     // Conectar con el servidor MySQL
-    if (mysql_real_connect(conn, ubicacion, "root", "mysql", "T_JuegoPokemon", 0, NULL, 0) == NULL) 
+    if (mysql_real_connect(conn, ubicacion, "root", "mysql", "T8_JuegoPokemon", 0, NULL, 0) == NULL) 
 	{
         printf("Error al conectar con el servidor MySQL\n");
         mysql_close(conn);
@@ -158,11 +161,25 @@ void *AtenderCliente(void *socket)
             if (p != NULL) {
                 char nombre[50];
                 strcpy(nombre, p);  // Guardar el nombre
-                int eli =Elimina(&milista, nombre);
-				if (eli ==-1)
-					printf("NO se ha podido eliminar a %s de la lista de conectados\n",nombre);
-				if (eli==0)
+                int eli = Elimina(conn, nombre);
+				if (eli ==-1){
+					printf("No se ha podido eliminar a %s de la lista de conectados\n",nombre);
+				}
+				if (eli==0){
 					printf("Usuario %s desconectado\n",nombre);
+				}
+				//notificar a tots els clients
+				char listaConectados[1024];
+				if (VerListaConectados(conn, listaConectados) == 0) {
+					char notificacion[1100];
+					sprintf(notificacion, "100~$%s", listaConectados);
+					
+					pthread_mutex_lock(&mutex); // Protegir l'accés a la llista de sockets
+					for (int j = 0; j < i; j++) {
+						write(sockets[j], notificacion, strlen(notificacion));
+					}
+					pthread_mutex_unlock(&mutex);
+				}
 					
             } else {
                 strcpy(buff2, "Error: Formato de nombre incorrecto");
@@ -171,12 +188,7 @@ void *AtenderCliente(void *socket)
             }
             //Aqui le enviamos toda la lista de conectados a todos los clientes para que la actualizen
 			char notificacion[200];
-			Conectados(&milista, buff2);
-			sprintf(notificacion, "3/%s",buff2);
-			for (int i=0; i< milista.num; i++){
-				printf("La lista de conectados es: %s\n", milista.cnct[i].nombre);
-				write(sockets[j],notificacion,strlen(notificacion));
-			}
+			
 
 		}
 		else if (codigo ==1) //piden registrar un usuario teniendo nombre y constrase�a si no esta ya en la base de datos manda un Ok
@@ -192,7 +204,7 @@ void *AtenderCliente(void *socket)
 			if (p != NULL) {
 				strcpy(nombre, p);  // Guardar el nombre
 			} else {
-				strcpy(buff2, "1/Error: Formato de nombre incorrecto");
+				strcpy(buff2, "1~$Error: Formato de nombre incorrecto");
 				write(socket_conn, buff2, strlen(buff2));
 				break;
 			}
@@ -201,7 +213,7 @@ void *AtenderCliente(void *socket)
 			if (p != NULL) {
 				strcpy(contrasena, p);  // Guardar la contraseña
 			}else {
-				strcpy(buff2, "1/Error: Formato de contrase�a incorrecto");
+				strcpy(buff2, "1~$Error: Formato de contrase�a incorrecto");
 				write(socket_conn, buff2, strlen(buff2));
 				break;
 			}
@@ -221,11 +233,11 @@ void *AtenderCliente(void *socket)
 			// Ejecutar la consulta en MySQL
 			if (mysql_query(conn, query) == 0 && mysql_affected_rows(conn) > 0) {
 				// Si se insertó un usuario, enviar "Ok"
-				strcpy(buff2, "1/El registro ha sido exitoso");
+				strcpy(buff2, "1~$El registro ha sido exitoso");
 				printf("Registro exitoso\n");
 			} else {
 				// Si no se pudo registrar (porque ya existe), enviar error
-				strcpy(buff2, "1/Error: Usuario ya existe");
+				strcpy(buff2, "1~$Error: Usuario ya existe");
 				printf("Error: El usuario ya existe\n");
 			}
 			//Enviamos los resultados al cliente
@@ -245,7 +257,7 @@ void *AtenderCliente(void *socket)
 			if (p != NULL) {
 				strcpy(nombre, p);//Copimaos el usuario
 			} else {
-				strcpy(buff2, "2/Error: Formato de nombre incorrecto");
+				strcpy(buff2, "2~$Error: Formato de nombre incorrecto");
 				write(socket_conn, buff2, strlen(buff2));
 				break;
 			}
@@ -253,63 +265,75 @@ void *AtenderCliente(void *socket)
 			if (p != NULL) {
 				strcpy(contrasena, p); //Copiamos la contasena
 			} else {
-				strcpy(buff2, "2/Error: Formato de contrasena incorrecto");
+				strcpy(buff2, "2~$Error: Formato de contrasena incorrecto");
 				write(socket_conn, buff2, strlen(buff2));
 				break;
 			}
-			
+			int idJugador = -1;  // Valor por defecto si no se encuentra el jugador
 			// Consulta SQL para verificar si existe el usuario con la contraseña correcta
+			printf("Buscando usuario en la base de datos\n");
 			char query[512];
-			sprintf(query, "SELECT COUNT(*) FROM Jugadores WHERE nombre = '%s' AND pasword = '%s';",
+			sprintf(query, "SELECT id FROM Jugadores WHERE nombre = '%s' AND pasword = '%s';",
 					nombre, contrasena);
 			
 			// Ejecutar consulta
 			if (mysql_query(conn, query) == 0) {
 				MYSQL_RES *res = mysql_store_result(conn);
 				MYSQL_ROW row = mysql_fetch_row(res);
+				printf("Haciendo cambios en la lista de conectados\n");
 				
 				if (row && atoi(row[0]) >0) 
 				{
+					if (row && row[0]) {
+						idJugador = atoi(row[0]);  // Convertimos el string del id a entero
+					}
+					printf("Verificacion antes de anadir a la lista de conectados....\n");
 					//Anadimos usuario a la lista de conectados
 					//write(socket_conn, buff2, strlen(buff2));
-                    int ana=Anade(&milista, nombre,socket);
-					if (ana ==-1 || milista.num >= 100)
+                    int ana = Anade(conn, idJugador, nombre, socket_conn);
+					
+					printf("Intentando a�adir a la lista de conectados\n");
+
+					if (ana ==-1)
 					{
 						printf("No se ha podido anadir a %s a la lista de conectados\n",nombre);
-						sprintf(buff2,"No te has podido conectar");
-						terminar ==1;
+						sprintf(buff2,"2~$No te has podido conectar");
+						write(socket_conn, buff2, strlen(buff2));
+						pthread_mutex_unlock(&mutex);
+						
 						break;
 					}
-					if (ana==0)
+					else
 					{
 						printf("Usuario %s en lista de conenctados\n",nombre);
-					}
-					
-					
-					
+						
 
-					strcpy(buff2, "2/Sesion Iniciada exitosamente"); // Usuario encontrado
+						//Aqui le enviamos toda la lista de conectados a todos los clientes para que la actualizen
+						char listaConectados[1024];
+						if (VerListaConectados(conn, listaConectados) == 0) {
+							char notificacion[1100];
+							sprintf(notificacion, "100~$%s", listaConectados);
+							
+							for (int j = 0; j < i; j++) {
+								
+								write(sockets[j], notificacion, strlen(notificacion));
+							}
+						}
+					}
+
+					strcpy(buff2, "2~$1"); // Usuario encontrado
 					printf("%s\n",buff2);
-
-					//Aqui le enviamos toda la lista de conectados a todos los clientes para que la actualizen
-					char notificacion[200];
-					Conectados(&milista, buff2);
-					sprintf(notificacion, "3/%s",buff2);
-					for (int i=0; i< milista.num; i++){
-						printf("La lista de conectados es: %s\n", milista.cnct[i].nombre);
-						write(sockets[j],notificacion,strlen(notificacion));
-					}
                     
 				} 
 				else 
 				{
-					strcpy(buff2, "2/Error: Usuario o contrasena incorrectos");
+					strcpy(buff2, "2~$Error: Usuario o contrasena incorrectos");
 					printf("%s\n",buff2);
 				}
 				
 				mysql_free_result(res);
 			} else {
-				strcpy(buff2, "2/Error: Problema con la base de datos");
+				strcpy(buff2, "2~$Error: Problema con la base de datos");
 				printf("%s",buff2);
 			}
 			
@@ -329,7 +353,7 @@ void *AtenderCliente(void *socket)
 			if (p != NULL) {
 				strcpy(nombrecliente, p);
 			} else {
-				strcpy(buff2, "4/Error: Formato incorrecto");
+				strcpy(buff2, "3~$Error: Formato incorrecto");
 				write(socket_conn, buff2, strlen(buff2));
 				break;
 			}
@@ -346,21 +370,21 @@ void *AtenderCliente(void *socket)
 				MYSQL_ROW row = mysql_fetch_row(res);
 
 				if(row == NULL){
-					printf("El jugador %s no tiene pokomons", nombrecliente);
-					sprintf(buff2, "4/El jugador %s no tiene pokomons", nombrecliente);
+					printf("El jugador %s no tiene pokemons", nombrecliente);
+					sprintf(buff2, "3~$El jugador %s no tiene pokemons", nombrecliente);
 				}else{
-					char listaPokoemos[300];
+					char listaPokemons[2048]="";
 					while(row != NULL){
-						sprintf(listaPokoemos, "%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s#", listaPokoemos, row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]);
+						sprintf(listaPokemons, "%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s#", listaPokemons, row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]);
 						row = mysql_fetch_row(res);
 					}
-					printf("Pokemons: %s",listaPokoemos);
-					sprintf(buff2, "4/%s",listaPokoemos);
+					printf("Pokemons: %s",listaPokemons);
+					sprintf(buff2, "3~$%s",listaPokemons);
 				}
 
 				mysql_free_result(res);
 			} else {
-				strcpy(buff2, "4/Error: Problema con la base de datos");
+				strcpy(buff2, "3~$Error: Problema con la base de datos");
 			}
 
 			//Enviamos el mensaje
@@ -373,12 +397,12 @@ void *AtenderCliente(void *socket)
 			char nombreCliente[50] = "";
 			strcpy(buff2,"");
 			
-			// Extraer el nombre del Pokemon que en�a el cliente
+			// Extraer el nombre del cliente
 			p = strtok(NULL, "/");
 			if (p != NULL) {
 				strcpy (nombreCliente, p);
 			} else {
-				strcpy(buff2, "5/Error: Formato incorrecto");
+				strcpy(buff2, "4~$Error: Formato incorrecto");
 				write(socket_conn, buff2, strlen(buff2));
 				break;
 			}
@@ -394,22 +418,24 @@ void *AtenderCliente(void *socket)
 				MYSQL_ROW row = mysql_fetch_row(res);
 
 				if(row != NULL){
-					char listaPartidas[300];
+					char listaPartidas[2048]="";
 					while(row != NULL){
 						sprintf(listaPartidas,"%s/%s/%s/%s/%s/%s/%s/%s#",listaPartidas, row[0], row[1], row[2], row[3], row[4], row[5], row[6]);
 						row = mysql_fetch_row(res);
 					}
-					sprintf(buff2,"5/%s", listaPartidas);
+					sprintf(buff2,"4~$%s", listaPartidas);
+					printf("El jugador  %s tiene las siguientes partidas: %s", nombreCliente, listaPartidas);
 				}else{
 					printf("El jugador  %s no a participado en ninguna partida", nombreCliente);
-					sprintf(buff2, "5/El jugador %s no a participado en ninguna partida", nombreCliente);
+					sprintf(buff2, "4~$El jugador %s no a participado en ninguna partida", nombreCliente);
 				}
 				mysql_free_result(res);
 			} else {
-				strcpy(buff2, "5/Error: Problema con la base de datos");
+				strcpy(buff2, "4~$Error: Problema con la base de datos");
 			}
 			
 			// Enviar respuesta al cliente
+			printf("Enviamos %s al cliente", buff2);
 			write(socket_conn, buff2, strlen(buff2));
 		}
 		//Formato de la Consulta : 5/nombrePokemon
@@ -426,7 +452,7 @@ void *AtenderCliente(void *socket)
 				strncpy(nombrePokemon, p, sizeof(nombrePokemon) - 1);
 				nombrePokemon[sizeof(nombrePokemon) - 1] = '\0'; // Evitar desbordamientos
 			} else {
-				strcpy(buff2, "6/Error: Formato incorrecto");
+				strcpy(buff2, "5~$Error: Formato incorrecto");
 				write(socket_conn, buff2, strlen(buff2));
 				break;
 			}
@@ -442,7 +468,7 @@ void *AtenderCliente(void *socket)
 				MYSQL_RES *res = mysql_store_result(conn);
 				if (res) {
 					MYSQL_ROW row;
-					strcpy(buff2, "6/")
+					strcpy(buff2, "5~$");
 					while ((row = mysql_fetch_row(res)) != NULL) {
 						strcat(buff2, row[0]);
 						strcat(buff2, "/");
@@ -451,10 +477,10 @@ void *AtenderCliente(void *socket)
 				}
 				// Si no se encontraron jugadores, enviar mensaje adecuado
 				if (strlen(buff2) == 0) {
-					snprintf(buff2, sizeof(buff2), "6/No hay jugadores con el Pokemon %s", nombrePokemon);
+					snprintf(buff2, sizeof(buff2), "5~$No hay jugadores con el Pokemon %s", nombrePokemon);
 				}
 			} else {
-				strcpy(buff2, "6/Error: Problema con la base de datos");
+				strcpy(buff2, "5~$Error: Problema con la base de datos");
 				printf("Error en la consulta SQL: %s\n", mysql_error(conn));
 			}
 			
@@ -463,38 +489,50 @@ void *AtenderCliente(void *socket)
 			
 		}
 		// Formato Consulta: 6/
-		else if (codigo ==6)
-		{	char datosJugadoreseConectados[300];
-			char jugadores[300];
-			Conectados(&milista,jugadores);
-			char *n = strtok(jugadores,"/");
-			char query [512];
-			int i =0;
-			while(i< milista.num  && n != NULL)
-			{
-				sprintf(query,"SELECT* FROM Jugadores WHERE nombre = '%s';",n);
-				if(mysql_query(conn,query) == 0)
-				{
-					MYSQL_RES *res = mysql_store_result(conn);
-					MYSQL_ROW row = mysql_fetch_row(res);
-					if(row!= NULL)
-					{
-						sprintf(datosJugadoreseConectados,"%s/%s/%s/%s/%s/%s/%s/%s#",datosJugadoreseConectados, row[0], row[1], row[2], row[3], row[4], row[5], row[6]);
+		else if (codigo == 6) // Mostrar informació completa dels jugadors connectats
+		{
+			strcpy(buff2, "");
+			char query[512];
+
+			// Consulta SQL per obtenir totes les columnes de Jugadores dels que estan en Conectados
+			sprintf(query,
+				"SELECT Jugadores.* FROM Jugadores "
+				"INNER JOIN Conectados ON Jugadores.nombre = Conectados.nombre;");
+
+			if (mysql_query(conn, query) == 0) {
+				MYSQL_RES *res = mysql_store_result(conn);
+				MYSQL_ROW row;
+
+				if (res != NULL) {
+					strcpy(buff2, "6~$");
+					while ((row = mysql_fetch_row(res)) != NULL) {
+						// Suposem que Jugadores té 7 columnes (ajusta si en té més!)
+						for (int col = 0; col < mysql_num_fields(res); col++) {
+							strcat(buff2, row[col]);
+							strcat(buff2, "/");
+						}
+						strcat(buff2, "#"); // Separador de jugadors
 					}
+					mysql_free_result(res);
+				} else {
+					strcpy(buff2, "6~$Error: No s'han pogut obtenir dades");
 				}
-				n = strtok(NULL, "/");
-				i++;
+			} else {
+				sprintf(buff2, "6~$Error SQL: %s", mysql_error(conn));
 			}
-			sprintf(buff2,"7/%s", datosJugadoreseConectados);
+
+			// Enviar resposta al client
 			write(socket_conn, buff2, strlen(buff2));
 		}
+
+		
 		
 	}
 	//Cerramos la conexion con el servidor
 	close(socket_conn); 
 }
 
-Listaconectados milista;
+
 int main(int argc, char *argv[])
 {
 	strcpy(ubicacion, "localhost");
@@ -540,11 +578,6 @@ int main(int argc, char *argv[])
 		
 
 	//Aqui iniciariamos la listas de conectados
-	
-	milista.num = 0;
-	char connect [300];
-	
-	
 	
 	pthread_t thread;
 	for(;;){

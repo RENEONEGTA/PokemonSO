@@ -19,7 +19,9 @@
 -- Current Database: `T8_JuegoPokemon`
 --
 
-DROP DATABASE IF EXISTS `T8_JuegoPokemon` /*!40100 DEFAULT CHARACTER SET latin1 */;
+DROP DATABASE IF EXISTS `T8_JuegoPokemon`;
+
+CREATE DATABASE `T8_JuegoPokemon`;
 
 USE `T8_JuegoPokemon`;
 
@@ -39,7 +41,7 @@ CREATE TABLE `Jugadores` (
   `derrotas` int(11) DEFAULT NULL,
   `pos` text,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=latin1;
+);
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -68,7 +70,7 @@ CREATE TABLE `Partidas` (
   `jugador4` varchar(20) DEFAULT NULL,
   `ganador` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=latin1;
+);
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -99,7 +101,7 @@ CREATE TABLE `Pokedex` (
   `fase` text,
   `descripcion` text,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=latin1;
+);
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -127,7 +129,7 @@ CREATE TABLE `Relacio` (
   KEY `IdP` (`IdP`),
   CONSTRAINT `Relacio_ibfk_1` FOREIGN KEY (`IdJ`) REFERENCES `Jugadores` (`id`) ON DELETE CASCADE,
   CONSTRAINT `Relacio_ibfk_2` FOREIGN KEY (`IdP`) REFERENCES `Pokedex` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+);
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -141,12 +143,15 @@ INSERT INTO `Relacio` VALUES (1,1,7),(2,2,5),(3,3,9);
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
-/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
-/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
-/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+DROP TABLE IF EXISTS `Conectados`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `Conectados` (
+  `IdJ` int(11) NOT NULL,
+  `nombre` varchar(20) NOT NULL,
+  `socket` int(11) DEFAULT NULL,
+  PRIMARY KEY (`IdJ`),
+  CONSTRAINT `Conectados_ibfk_1` FOREIGN KEY (`IdJ`) REFERENCES `Jugadores` (`id`) ON DELETE CASCADE
+);
 
--- Dump completed on 2025-03-29 13:21:54
+

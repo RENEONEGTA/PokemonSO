@@ -81,15 +81,15 @@ public class Pokemon
         switch (id)
         {
             case 1:
-                return "Fuego";
+                return "fuego";
             case 2:
-                return "Planta";
+                return "planta";
             case 3:
-                return "Agua";
+                return "agua";
             case 4:
-                return "Rayo";
+                return "rayo";
             default:
-                return "Desconocido";
+                return "desconocido";
         }
     }
 
