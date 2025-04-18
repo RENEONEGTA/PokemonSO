@@ -98,6 +98,7 @@ namespace WindowsFormsApplication1
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            
             ////Inicio Sesion
             //Usuario.Visible = false;
             //textUsu.Visible = false;
