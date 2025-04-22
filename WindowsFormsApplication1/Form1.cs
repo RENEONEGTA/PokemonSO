@@ -48,7 +48,9 @@ namespace WindowsFormsApplication1
         string directorioBase = Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.FullName).FullName;
         string user;
         string contra;
-        bool iniciado = false;
+        bool iniciado = false;    
+        List<Conectados> listaConectadosGlobal = new List<Conectados>();
+
 
         public Form1()
         {
@@ -234,8 +236,11 @@ namespace WindowsFormsApplication1
 
         private void MostrarVideoYElementos()
         {
+            
+            //this.FormBorderStyle = FormBorderStyle.None; // Oculta los bordes y la barra de título
+            //this.WindowState = FormWindowState.Maximized; // Maximiza para ocupar toda la pantalla
+            
             // Obtén la ruta del directorio bin/debug
-
             string videoPath = Path.Combine(directorioBase, "Resources", "videos", "FondoPokemon.mp4");
             fondoPokemon.Visible = true;
             fondoPokemon.uiMode = "none"; // Ocultar controles de reproducción
@@ -291,6 +296,10 @@ namespace WindowsFormsApplication1
             combatirBox.Location = new Point(32, 256);
             salirJuegoBox.Visible = true;
             salirJuegoBox.Location = new Point(32, 320);
+
+            
+            
+
 
             PictureBox pokedexBox = new PictureBox
             {
@@ -549,7 +558,7 @@ namespace WindowsFormsApplication1
                         {
 
                             string[] mensajeSucio = Encoding.ASCII.GetString(msg2).Split(new string[] { "~$" }, StringSplitOptions.None);
-                            MessageBox.Show(Encoding.ASCII.GetString(msg2));
+                            //MessageBox.Show(Encoding.ASCII.GetString(msg2));
                             string mensaje = mensajeSucio[1].TrimEnd().TrimStart();
                             int codigo = Convert.ToInt32(mensajeSucio[0]);
 
@@ -668,15 +677,15 @@ namespace WindowsFormsApplication1
 
                                     MessageBox.Show(mensaje);
 
-                                    //string mensaje = "/1/Ash/10/5#/2/Misty/5/1#/3/Rock/2/1#";
+                                    
                                     Invoke((MethodInvoker)delegate
                                     {
 
-                                        List<Conectados> listaConectados = new List<Conectados>();
-                                        listaConectados = Conectados.ParsearDatos(mensaje, listaConectados);
-                                        if (listaConectados.Count > 0)
+                                        
+                                        //listaConectadosGlobal = Conectados.ParsearDatos(mensaje, listaConectadosGlobal);
+                                        if (listaConectadosGlobal.Count > 0)
                                         {
-                                            Conectados.DibujarConectados(listaConectados, panelCargarCombate, this);
+                                            Conectados.DibujarConectados(listaConectadosGlobal, panelCargarCombate, this, user, server);
                                         }
                                         else
                                         {
@@ -685,8 +694,45 @@ namespace WindowsFormsApplication1
                                     });
 
                                     break;
-                                case 7: //Lista Conectados Notificacion
-                                    MessageBox.Show(mensaje);
+                                case 100: //Lista Conectados Notificacion
+                                          //MessageBox.Show(mensaje);
+                                    Invoke((MethodInvoker)delegate
+                                    {
+
+
+                                        listaConectadosGlobal = Conectados.ParsearDatos(mensaje, listaConectadosGlobal);
+                                        if (listaConectadosGlobal.Count > 0)
+                                        {
+                                            Conectados.DibujarConectados(listaConectadosGlobal, panelCargarCombate, this, user, server);
+                                        }
+                                        
+                                    });
+                                    break;
+
+                                case 102: //Invitacion Combate
+                                    
+
+                                    int idInvitador;
+                                    if (int.TryParse(mensaje, out idInvitador))
+                                    {
+                                        // Buscar al jugador en la lista global
+                                        Conectados jugadorInvitador = listaConectadosGlobal
+                                            .FirstOrDefault(c => c.Id == idInvitador);
+
+                                        if (jugadorInvitador != null)
+                                        {
+                                            Conectados.RecibirInvitacion(jugadorInvitador, this, server);
+                                        }
+                                        else
+                                        {
+                                            MessageBox.Show("El jugador que te ha invitado no está en tu lista de conectados.");
+                                        }
+                                    }
+                                    else
+                                    {
+                                        MessageBox.Show("Error al interpretar el ID del jugador invitador.");
+                                    }
+
                                     break;
                             }
                         }
@@ -711,7 +757,7 @@ namespace WindowsFormsApplication1
             }
             else if (serverRun == true)
             {
-                string mensaje = "0/";
+                string mensaje = "0/" + user + "/" + contra;
                 // Enviamos al servidor el nombre 0
                 byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
                 server.Send(msg);

@@ -62,7 +62,9 @@
     </Compile>
     <Compile Include="ButtonAnimator.cs" />
     <Compile Include="Combate.cs" />
-    <Compile Include="Conectados.cs" />
+    <Compile Include="Conectados.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Partida.cs" />
     <Compile Include="Pokemon.cs" />
     <Compile Include="RombeButton.cs">
