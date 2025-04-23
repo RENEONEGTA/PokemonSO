@@ -75,6 +75,7 @@ public class Conectados
         int x = 10;
         conectados.CollectionChanged += (sender, e) =>
         {
+            panelConectados.Controls.Clear();
             foreach (var conectado in conectados)
             {
                 if (conectado.Nombre != null && conectado.Nombre != nombre)

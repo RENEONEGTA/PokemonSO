@@ -26,7 +26,7 @@ namespace WindowsFormsApplication1
     public partial class Form1 : Form
     {
         Socket server;
-        private int puertoServidor = 9010; // Puerto del servidor
+        private int puertoServidor = 9020; // Puerto del servidor
         private Timer parpadeoTimer = new Timer();
         private bool serverRun = false;
         private bool colorAzul = true;
@@ -585,7 +585,7 @@ namespace WindowsFormsApplication1
 
 
                                             // Comparamos correctamente
-                                            MessageBox.Show(mensaje);
+                                            //MessageBox.Show(mensaje);
                                             if (Convert.ToInt32(mensaje) == 1)
                                             {
 
@@ -703,7 +703,7 @@ namespace WindowsFormsApplication1
 
                                             break;
                                         case 100: //Lista Conectados Notificacion
-                                            MessageBox.Show(mensaje);
+                                            //MessageBox.Show(mensaje);
                                             Invoke((MethodInvoker)delegate
                                             {
                                                 listaConectadosGlobal.Clear();
