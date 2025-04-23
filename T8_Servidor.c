@@ -59,7 +59,7 @@ int Elimina(MYSQL *conn, char nombre[20]) {
 int VerListaConectados(MYSQL *conn, char *resultado) {
     MYSQL_RES *res;
     MYSQL_ROW row;
-    char query[256] = "SELECT nombre, socket FROM Conectados";
+    char query[256] = "SELECT Jugadores.* FROM Conectados, Jugadores WHERE Jugadores.id = Conectados.IdJ";
     
     if (mysql_query(conn, query) != 0) {
         printf("Error en la consulta VerListaConectados: %s\n", mysql_error(conn));
@@ -76,10 +76,20 @@ int VerListaConectados(MYSQL *conn, char *resultado) {
 
     while ((row = mysql_fetch_row(res)) != NULL) {
         // Format: nombre1,socket1/nombre2,socket2/...
-        strcat(resultado, row[0]); // nombre
-        strcat(resultado, ",");
-        strcat(resultado, row[1]); // socket
+        strcat(resultado, row[0]); // id
         strcat(resultado, "/");
+        strcat(resultado, row[1]); // nombre
+		strcat(resultado, "/");
+		strcat(resultado, row[2]); // password
+		strcat(resultado, "/");
+		strcat(resultado, row[3]); // numPokemons
+		strcat(resultado, "/");
+		strcat(resultado, row[4]); // Victorias
+		strcat(resultado, "/");
+		strcat(resultado, row[5]); // Derrotas
+		strcat(resultado, "/");
+		strcat(resultado, row[6]); // Posicion
+        strcat(resultado, "#");
     }
 
     mysql_free_result(res);
@@ -312,7 +322,7 @@ void *AtenderCliente(void *socket)
 						char listaConectados[1024];
 						if (VerListaConectados(conn, listaConectados) == 0) {
 							char notificacion[1100];
-							sprintf(notificacion, "100~$%s", listaConectados);
+							sprintf(notificacion, "100~$%s\n", listaConectados);
 							
 							for (int j = 0; j < i; j++) {
 								
@@ -321,7 +331,7 @@ void *AtenderCliente(void *socket)
 						}
 					}
 
-					strcpy(buff2, "2~$1"); // Usuario encontrado
+					strcpy(buff2, "2~$1\n"); // Usuario encontrado
 					printf("%s\n",buff2);
                     
 				} 
@@ -551,7 +561,26 @@ int main(int argc, char *argv[])
 		printf("Error al crear la conexion: %u %S\n", mysql_errno(conn), mysql_error(conn));
 		exit(1);
 	}
-
+	// Conectar con el servidor MySQL
+	if (mysql_real_connect(conn, ubicacion, "root", "mysql", "T8_JuegoPokemon", 0, NULL, 0) == NULL) 
+	{
+		printf("Error al conectar con el servidor MySQL\n");
+		mysql_close(conn);
+		
+	}
+	else 
+	{
+		printf("Se ha conectado a la base de datos con exito\n");
+	}
+	
+	char query[512] = "DELETE FROM Conectados";
+	if (mysql_query(conn, query) == 0) {
+		printf("La tabla de conectados se ha limpiado correctamente\n");
+	}
+	else{
+		printf("La tabla de conectados no se ha limpiado correctamente %s \n", mysql_error(conn));
+	}
+	
 	int sock_conn, sock_listen, ret;
 	struct sockaddr_in serv_adr;
 
