@@ -51,7 +51,11 @@ namespace WindowsFormsApplication1
         string user;
         string contra;
         bool iniciado = false;    
-        ObservableCollection<Conectados> listaConectadosGlobal = new ObservableCollection<Conectados>();
+        List<Conectados> listaConectadosGlobal = new List<Conectados>();
+        RichTextBox historialMensajes = new RichTextBox();
+        System.Windows.Forms.TextBox textBoxMensaje = new System.Windows.Forms.TextBox();
+        RoundButton enviarMensaje = new RoundButton();
+        PanelDobleBuffer panelChat = new PanelDobleBuffer();
 
 
         public Form1()
@@ -122,7 +126,6 @@ namespace WindowsFormsApplication1
             ////Consultas 
             //groupBox1.Visible = false;
             ChangeCircleColor(Color.Blue);
-            
             ConectarServidor();
             AtenderServidor();
         }
@@ -223,6 +226,7 @@ namespace WindowsFormsApplication1
                 Invoke((MethodInvoker)delegate
                 {
                     MostrarVideoYElementos();
+                    
                 });
             }
             catch (Exception ex)
@@ -236,6 +240,68 @@ namespace WindowsFormsApplication1
             }
         }
 
+        private void crearPanelCombate() {
+
+            
+                int PanelSizeX = 500;
+                int PanelSizeY = 300;
+
+                panelCargarCombate = new PanelDobleBuffer
+                {
+                    Size = new Size(PanelSizeX, PanelSizeY), // Tamaño ajustado
+                    Location = new Point(combatirBox.Left + combatirBox.Width + 10, combatirBox.Top + (combatirBox.Height / 2) - (PanelSizeY / 2)),
+                    BackColor = Color.Black,
+                };
+                this.Controls.Add(panelCargarCombate);
+                panelCargarCombate.Visible = false;
+                panelCargarCombate.BringToFront();
+                
+
+
+                // Configurar el evento Paint para aplicar bordes redondeados y degradado
+                panelCargarCombate.Paint += new PaintEventHandler((object senderPanel, PaintEventArgs ePanel) =>
+                {
+                    PanelDobleBuffer panel = (PanelDobleBuffer)senderPanel;
+                    int radio = 20; // Radio para las esquinas redondeadas
+                    Rectangle rect = new Rectangle(0, 0, panel.Width, panel.Height);
+
+                    // Crear la ruta con esquinas redondeadas
+                    using (GraphicsPath path = new GraphicsPath())
+                    {
+                        path.AddArc(rect.X, rect.Y, radio, radio, 180, 90);
+                        path.AddArc(rect.Right - radio, rect.Y, radio, radio, 270, 90);
+                        path.AddArc(rect.Right - radio, rect.Bottom - radio, radio, radio, 0, 90);
+                        path.AddArc(rect.X, rect.Bottom - radio, radio, radio, 90, 90);
+                        path.CloseFigure();
+
+                        // Asigna la región redondeada al panel
+                        panelCargarCombate.Region = new Region(path);
+
+                        // Configurar el suavizado
+                        ePanel.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+                        // Crear un pincel de degradado: de blanco a un gris muy claro
+                        using (LinearGradientBrush brush = new LinearGradientBrush(
+                            rect,
+                            Color.Black,
+                            Color.FromArgb(22, 22, 22),
+                            LinearGradientMode.Vertical))
+                        {
+                            // Rellenar la ruta con el degradado
+                            ePanel.Graphics.FillPath(brush, path);
+                        }
+
+                        // Dibujar un borde:
+                        using (Pen pen = new Pen(Color.FromArgb(38, 209, 255), 4))
+                        {
+                            ePanel.Graphics.DrawPath(pen, path);
+                        }
+
+
+                    }
+                });
+
+                }
         private void MostrarVideoYElementos()
         {
             
@@ -299,8 +365,10 @@ namespace WindowsFormsApplication1
             salirJuegoBox.Visible = true;
             salirJuegoBox.Location = new Point(32, 320);
 
-            
-            
+            crearPanelCombate();
+            crearChat();
+
+
 
 
             PictureBox pokedexBox = new PictureBox
@@ -535,6 +603,7 @@ namespace WindowsFormsApplication1
                     {
                         ChangeCircleColor(Color.Red);
                         parpadeoTimer.Stop(); // Detener el parpadeo
+                        MessageBox.Show("Error de conexión con el servidor: " + ex.Message);
                         serverRun = false;
                         Task.CompletedTask.Wait();
 
@@ -585,7 +654,7 @@ namespace WindowsFormsApplication1
 
 
                                             // Comparamos correctamente
-                                            MessageBox.Show(mensaje);
+                                            //MessageBox.Show(mensaje);
                                             if (Convert.ToInt32(mensaje) == 1)
                                             {
 
@@ -686,29 +755,43 @@ namespace WindowsFormsApplication1
                                             //MessageBox.Show(mensaje);
 
 
-                                            Invoke((MethodInvoker)delegate
-                                            {
+                                            //Invoke((MethodInvoker)delegate
+                                            //{
 
 
-                                                //listaConectadosGlobal = Conectados.ParsearDatos(mensaje, listaConectadosGlobal);
-                                                if (listaConectadosGlobal.Count > 0)
-                                                {
-                                                    Conectados.DibujarConectados(listaConectadosGlobal, panelCargarCombate, this, user, server);
-                                                }
-                                                else
-                                                {
-                                                    MessageBox.Show("No tienes partidas");
-                                                }
-                                            });
+                                            //    //listaConectadosGlobal = Conectados.ParsearDatos(mensaje, listaConectadosGlobal);
+                                            //    if (listaConectadosGlobal.Count > 0)
+                                            //    {
+                                            //        Conectados.DibujarConectados(listaConectadosGlobal, panelCargarCombate, this, user, server);
+                                            //    }
+                                            //    else
+                                            //    {
+                                            //        MessageBox.Show("No tienes partidas");
+                                            //    }
+                                            //});
 
                                             break;
                                         case 100: //Lista Conectados Notificacion
-                                            MessageBox.Show(mensaje);
+                                            //MessageBox.Show(mensaje);
                                             Invoke((MethodInvoker)delegate
                                             {
                                                 listaConectadosGlobal.Clear();
+                                                
                                                 listaConectadosGlobal = Conectados.ParsearDatos(mensaje, listaConectadosGlobal);
+                                                if(boolPanelCargarCombate==false)
+                                                {
+                                                    Conectados.DibujarConectados(listaConectadosGlobal, panelCargarCombate, this, user, server);
+                                                }
 
+                                            });
+                                            break;
+
+                                        case 101: //Recivimos Notificacion del Chat
+                                           
+                                            Invoke((MethodInvoker)delegate
+                                            {
+                                                HistorialMensajes(mensaje.ToString());
+                                               
                                             });
                                             break;
 
@@ -1157,92 +1240,14 @@ namespace WindowsFormsApplication1
         private void combatir_MouseClick(object sender, MouseEventArgs e)
         {
 
-            if (boolPanelCargarCombate)
+            if (boolPanelCargarCombate==true)
             {
-                int PanelSizeX = 500;
-                int PanelSizeY = 300;
-
-                panelCargarCombate = new PanelDobleBuffer
-                {
-                    Size = new Size(PanelSizeX, PanelSizeY), // Tamaño ajustado
-                    Location = new Point(combatirBox.Left + combatirBox.Width + 10, combatirBox.Top + (combatirBox.Height / 2) - (PanelSizeY / 2)),
-                    BackColor = Color.Black,
-                };
-                this.Controls.Add(panelCargarCombate);
-                panelCargarCombate.Visible = true;
-                panelCargarCombate.BringToFront();
-                boolPanelCargarCombate = false;
-
-
-                // Configurar el evento Paint para aplicar bordes redondeados y degradado
-                panelCargarCombate.Paint += new PaintEventHandler((object senderPanel, PaintEventArgs ePanel) =>
-                {
-                    PanelDobleBuffer panel = (PanelDobleBuffer)senderPanel;
-                    int radio = 20; // Radio para las esquinas redondeadas
-                    Rectangle rect = new Rectangle(0, 0, panel.Width, panel.Height);
-
-                    // Crear la ruta con esquinas redondeadas
-                    using (GraphicsPath path = new GraphicsPath())
-                    {
-                        path.AddArc(rect.X, rect.Y, radio, radio, 180, 90);
-                        path.AddArc(rect.Right - radio, rect.Y, radio, radio, 270, 90);
-                        path.AddArc(rect.Right - radio, rect.Bottom - radio, radio, radio, 0, 90);
-                        path.AddArc(rect.X, rect.Bottom - radio, radio, radio, 90, 90);
-                        path.CloseFigure();
-
-                        // Asigna la región redondeada al panel
-                        panelCargarCombate.Region = new Region(path);
-
-                        // Configurar el suavizado
-                        ePanel.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-
-                        // Crear un pincel de degradado: de blanco a un gris muy claro
-                        using (LinearGradientBrush brush = new LinearGradientBrush(
-                            rect,
-                            Color.Black,
-                            Color.FromArgb(22, 22, 22),
-                            LinearGradientMode.Vertical))
-                        {
-                            // Rellenar la ruta con el degradado
-                            ePanel.Graphics.FillPath(brush, path);
-                        }
-
-                        // Dibujar un borde:
-                        using (Pen pen = new Pen(Color.FromArgb(38, 209, 255), 4))
-                        {
-                            ePanel.Graphics.DrawPath(pen, path);
-                        }
-
-
-                    }
-                });
 
                 if (user != null)
                 {
-                    string mensaje = "6/" + user;
-                    // Enviamos al servidor el nombre tecleado
-                    byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
-                    server.Send(msg);
-
-                    ////Recibimos la respuesta del servidor
-                    //byte[] msg2 = new byte[1000];
-                    //server.Receive(msg2);
-                    //mensaje = Encoding.ASCII.GetString(msg2).Split(',')[0];
-
-                    //MessageBox.Show(mensaje);
-
-                    //string mensaje = "/1/Ash/10/5#/2/Misty/5/1#/3/Rock/2/1#";
-
-                    //List<Conectados> listaConectados = new List<Conectados>();
-                    //listaConectados = Conectados.ParsearDatos(mensaje, listaConectados);
-                    //if (listaConectados.Count > 0)
-                    //{
-                    //    Conectados.DibujarConectados(listaConectados, panelCargarCombate, this);
-                    //}
-                    //else
-                    //{
-                    //    MessageBox.Show("No tienes partidas");
-                    //}
+                    panelCargarCombate.Visible = true;
+                    boolPanelCargarCombate = false;
+                    Conectados.DibujarConectados(listaConectadosGlobal, panelCargarCombate, this, user, server);
                 }
                 else
                 {
@@ -1400,6 +1405,125 @@ namespace WindowsFormsApplication1
             {
                 MessageBox.Show("Sin conexion al servidor");
             }
+        }
+
+        private void crearChat()
+        {
+            int padding = 20;
+            int buttonSize = 50;
+            int textBoxWidth = 300;
+            int textBoxHeight = 50;
+            int historyHeight = 300;
+
+            // Botón de enviar (redondeado con clase personalizada RoundButton)
+            enviarMensaje = new RoundButton
+            {
+                Size = new Size(buttonSize, buttonSize),
+                Location = new Point(this.Width - padding - buttonSize, this.Height - padding - buttonSize),
+                Image = Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "enviar.png")),
+                BackColor = Color.FromArgb(88, 88, 88)
+            };
+
+            // TextBox de mensaje con borde redondeado usando Panel
+            var panelTextBox = new Panel
+            {
+                Size = new Size(textBoxWidth, textBoxHeight),
+                Location = new Point(enviarMensaje.Left - textBoxWidth - 10, enviarMensaje.Top),
+                BackColor = Color.FromArgb(66, 66, 66),
+                Padding = new Padding(5)
+            };
+
+            textBoxMensaje = new System.Windows.Forms.TextBox
+            {
+                BorderStyle = BorderStyle.None,
+                BackColor = Color.FromArgb(66, 66, 66),
+                ForeColor = Color.White,
+                Multiline = true,
+                MaxLength = 100,
+                Dock = DockStyle.Fill
+            };
+
+            panelTextBox.Controls.Add(textBoxMensaje);
+            redondearPanel(panelTextBox, 10); // Método para redondear
+
+            // RichTextBox historial (envuelto también en panel redondeado)
+            panelChat = new PanelDobleBuffer
+            {
+                Size = new Size(textBoxWidth, historyHeight),
+                Location = new Point(panelTextBox.Left, panelTextBox.Top - historyHeight - 20),
+                BackColor = Color.FromArgb(44, 44, 44),
+                Padding = new Padding(5)
+            };
+
+            historialMensajes = new RichTextBox
+            {
+                Size = new Size(panelChat.Width - 10, panelChat.Height - 10),
+                Location = new Point(5, 5),
+                BorderStyle = BorderStyle.None,
+                BackColor = Color.FromArgb(44, 44, 44),
+                ForeColor = Color.White,
+                ReadOnly = true,
+                Dock = DockStyle.Fill,
+                WordWrap = true,
+                ScrollBars = RichTextBoxScrollBars.Vertical
+            };
+
+            panelChat.Controls.Add(historialMensajes);
+            redondearPanel(panelChat, 10);
+
+            // Agregar controles
+            this.Controls.Add(panelChat);
+            this.Controls.Add(panelTextBox);
+            this.Controls.Add(enviarMensaje);
+
+            // Evento de enviar mensaje
+            enviarMensaje.Click += enviarMensaje_Click;
+
+            historialMensajes.Visible = true;
+            enviarMensaje.Visible = true;
+            textBoxMensaje.Visible = true;
+
+            panelChat.BringToFront();
+            enviarMensaje.BringToFront();
+            panelTextBox.BringToFront();
+            historialMensajes.ReadOnly = true;
+            historialMensajes.HideSelection = false; // Permite seleccionar el texto en el RichTextBox
+            historialMensajes.ScrollBars = RichTextBoxScrollBars.Vertical; // Agrega una barra de desplazamiento vertical
+            historialMensajes.WordWrap = true; // Permite el ajuste de línea
+
+            // Mostrar mensaje de prueba
+            MessageBox.Show("Chat creado");
+        }
+
+        private void redondearPanel(Panel panel, int radio)
+        {
+            System.Drawing.Drawing2D.GraphicsPath path = new System.Drawing.Drawing2D.GraphicsPath();
+            path.AddArc(0, 0, radio, radio, 180, 90);
+            path.AddArc(panel.Width - radio, 0, radio, radio, 270, 90);
+            path.AddArc(panel.Width - radio, panel.Height - radio, radio, radio, 0, 90);
+            path.AddArc(0, panel.Height - radio, radio, radio, 90, 90);
+            path.CloseAllFigures();
+            panel.Region = new Region(path);
+        }
+
+
+        //Metodos para el xat
+        private void enviarMensaje_Click(object sender, EventArgs e)
+        {
+            //Puede ser que textUsu cuando se estconde ya no se puede aceder a su contenido
+            string mensaje = $"7/{textUsu.Text}/{textBoxMensaje.Text}";
+            byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
+            server.Send(msg);
+            textBoxMensaje.Clear(); // Limpiar el TextBox después de enviar el mensaje
+        }
+        void HistorialMensajes(string nuevoMensaje)
+        {
+            string timeStamp = DateTime.Now.ToString("HH:mm:ss");
+            string entrada = $"[{timeStamp}] {nuevoMensaje}{Environment.NewLine}";
+            historialMensajes.AppendText(entrada);
+            historialMensajes.SelectionStart = historialMensajes.Text.Length;
+            historialMensajes.ScrollToCaret();
+            panelChat.Update();
         }
     }
 }
