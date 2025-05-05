@@ -26,7 +26,7 @@ namespace WindowsFormsApplication1
     public partial class Form1 : Form
     {
         Socket server;
-        private int puertoServidor = 9010; // Puerto del servidor
+        private int puertoServidor = 50081; // Puerto del servidor
         private Timer parpadeoTimer = new Timer();
         private bool serverRun = false;
         private bool colorAzul = true;
@@ -50,7 +50,9 @@ namespace WindowsFormsApplication1
         string directorioBase = Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.FullName).FullName;
         string user;
         string contra;
-        bool iniciado = false;    
+        bool iniciado = false;   
+        bool JugadorNuevo = false;
+        public string NuevoPokemon;
         List<Conectados> listaConectadosGlobal = new List<Conectados>();
         RichTextBox historialMensajes = new RichTextBox();
         System.Windows.Forms.TextBox textBoxMensaje = new System.Windows.Forms.TextBox();
@@ -383,6 +385,13 @@ namespace WindowsFormsApplication1
             pokedexBox.BringToFront();
             pokedexBox.Visible = true;
             pokedexBox.Click += pokedexBox_Click;
+
+            if(JugadorNuevo == true)
+            {
+                PrimerPokemon pokemon = new PrimerPokemon();
+                pokemon.Show();
+                JugadorNuevo = false;
+            }
         }
 
         // Evento para desplazar los controles dentro del panel
@@ -941,6 +950,7 @@ namespace WindowsFormsApplication1
                     // Enviamos al servidor el nombre tecleado
                     byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
                     server.Send(msg);
+                    JugadorNuevo = true;
 
                     //Recibimos la respuesta del servidor
                     //byte[] msg2 = new byte[80];
@@ -1525,5 +1535,14 @@ namespace WindowsFormsApplication1
             historialMensajes.ScrollToCaret();
             panelChat.Update();
         }
+
+        void AgregarPokemon(string pokemon, string jugador)
+        {
+            //Enviamos que pokemon queremos agregar y a quien 
+            string mensaje = $"8/"  + pokemon + "/" + jugador;
+            byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
+            server.Send(msg);
+        }
     }
 }
+

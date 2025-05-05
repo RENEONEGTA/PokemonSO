@@ -92,7 +92,7 @@
             this.IP.Size = new System.Drawing.Size(194, 19);
             this.IP.TabIndex = 2;
             this.IP.TabStop = false;
-            this.IP.Text = "192.168.56.102";
+            this.IP.Text = "10.4.119.5";
             // 
             // textContraR
             // 
@@ -554,11 +554,8 @@
             // Form1
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
-       
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(22)))), ((int)(((byte)(22)))), ((int)(((byte)(22)))));
-            
             this.ClientSize = new System.Drawing.Size(1522, 809);
-
             this.Controls.Add(this.progressBar);
             this.Controls.Add(this.salirJuegoBox);
             this.Controls.Add(this.combatirBox);
@@ -582,12 +579,9 @@
             this.Controls.Add(this.registroBox);
             this.DoubleBuffered = true;
             this.Font = new System.Drawing.Font("Microsoft New Tai Lue", 8.142858F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            
             this.Margin = new System.Windows.Forms.Padding(6);
             this.Name = "Form1";
-            
             this.Text = "Form1";
-            
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_Form1Closing);
             this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
