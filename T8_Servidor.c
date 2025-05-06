@@ -302,7 +302,7 @@ void *AtenderCliente(void *socket)
 					//write(socket_conn, buff2, strlen(buff2));
                     int ana = Anade(conn, idJugador, nombre, socket_conn);
 					
-					printf("Intentando a�adir a la lista de conectados\n");
+					printf("Intentando a�adir a la lista de conectados\n");
 
 					if (ana ==-1)
 					{
@@ -319,9 +319,9 @@ void *AtenderCliente(void *socket)
 						
 
 						//Aqui le enviamos toda la lista de conectados a todos los clientes para que la actualizen
-						char listaConectados[1024];
+						char listaConectados[1024] = "";
 						if (VerListaConectados(conn, listaConectados) == 0) {
-							char notificacion[1100];
+							char notificacion[1100] = "";
 							sprintf(notificacion, "100~$%s\n", listaConectados);
 							
 							for (int j = 0; j < i; j++) {
@@ -534,11 +534,102 @@ void *AtenderCliente(void *socket)
 			// Enviar resposta al client
 			write(socket_conn, buff2, strlen(buff2));
 		}
+		//Formato de la Consulta: 7/Nombre Usuario/Texto a enviar
+		else if (codigo == 7)
+		{
+			strcpy(buff2, "");
+			char Notificacion [1820];
+			char nombreCliente [20];
+			char textoEnviar[1800];
+			
+			p = strtok(NULL, "/");
+			if(p != NULL)
+			{
+				strcpy(nombreCliente, p);
+			}
+			else
+			{
+				strcpy(buff2, "7~$Error: Formato incorrecto");
+				write(socket_conn, buff2, strlen(buff2));
+				break;
+			}
+			
+			p = strtok(NULL, "/");
+			if(p != NULL)
+			{
+				strcpy(textoEnviar, p);
+			}
+			else
+			{
+				strcpy(buff2, "7~$Error: Di algo!!!!");
+				write(socket_conn, buff2, strlen(buff2));
+				break;
+			}
+			
+			sprintf(Notificacion, "101~$%s: %s\n", nombreCliente, textoEnviar);
+			
+			for (int j=0; j<i; j++)
+			{
+				printf("socket: %d", sockets[j]);
+				write(sockets[j], Notificacion, strlen(Notificacion));
+				
+			}
+		}
 
-		
-		
+		else if(codigo == 8)
+		{
+			strcpy(buff2, "");
+			char pokemon [1820];
+			int id = 0;
+
+			p = strtok(NULL, "/");
+			if(p != NULL)
+			{
+				strcpy(pokemon, p);
+			}
+			else
+			{
+				strcpy(buff2, "8~$Error: Pokemon no encontrado");
+				write(socket_conn, buff2, strlen(buff2));
+				break;
+			}
+			
+			p = strtok(NULL, "/");
+			if(p != NULL)
+			{
+				strcpy(nombre, p);
+			}
+			else
+			{
+				strcpy(buff2, "8~$Error: Jugador desconocido");
+				write(socket_conn, buff2, strlen(buff2));
+				break;
+			}
+
+				
+				snprintf(query, "INSERT INTO Relacio (IdJ, IdP, Nivell)" 
+						"SELECT * FROM (SELECT id FROM Jugadores WHERE nombre = %s AS idJ,"
+						"id FROM Pokedex WHERE nombrePokemon = %s AS idP, 1 AS Nivell )", nombre, pokemon);
+
+
+				//"INSERT INTO Jugadores (nombre, pasword, numeroPokemons, victorias, derrotas, pos) "
+				//	"SELECT * FROM (SELECT '%s' AS nombre, '%s' AS pasword, 0 AS numeroPokemons, "
+				//	"0 AS victorias, 0 AS derrotas, '' AS pos) AS tmp "
+				//	"WHERE NOT EXISTS (SELECT 1 FROM Jugadores WHERE nombre = '%s') LIMIT 1;"
+
+				// Actualizar número de Pokémon del jugador
+				snprintf(query, sizeof(query),
+						 "UPDATE Jugadores SET numeroPokemons = numeroPokemons + 1 WHERE nombre = %s;", nombre);
+				mysql_query(conn, query);
+
+
+			}
+			
+		}
+						
 	}
 	//Cerramos la conexion con el servidor
+	
 	close(socket_conn); 
 }
 

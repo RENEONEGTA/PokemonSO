@@ -32,7 +32,7 @@ public class Conectados
     int panelConectadoTop = 0;
     // Guarda los formularios de invitación por ID del jugador que invita
     Dictionary<int, Form> formulariosInvitacionAbiertos = new Dictionary<int, Form>();
-    public static ObservableCollection<Conectados> ParsearDatos(string datos, ObservableCollection<Conectados> lista)
+    public static List<Conectados> ParsearDatos(string datos, List<Conectados> lista)
     {
         string[] registros = datos.Split(new char[] { '#' }, StringSplitOptions.RemoveEmptyEntries);
 
@@ -69,160 +69,161 @@ public class Conectados
         return lista;
     }
 
-    public void DibujarConectados(ObservableCollection<Conectados> conectados, PanelDobleBuffer panelConectados, Form ventana, string nombre, Socket server)
+    public void DibujarConectados(List<Conectados> conectados, PanelDobleBuffer panelConectados, Form ventana, string nombre, Socket server)
     {
         int y = 10;
         int x = 10;
-        conectados.CollectionChanged += (sender, e) =>
+
+        // Limpiar el panel antes de dibujar
+        panelConectados.Controls.Clear();
+
+        foreach (var conectado in conectados)
         {
-            panelConectados.Controls.Clear();
-            foreach (var conectado in conectados)
+            if (conectado.Nombre != null && conectado.Nombre != nombre)
             {
-                if (conectado.Nombre != null && conectado.Nombre != nombre)
+                PanelDobleBuffer panelConectado = new PanelDobleBuffer
                 {
-                    PanelDobleBuffer panelConectado = new PanelDobleBuffer
-                    {
-                        Size = new Size(150, 170),
-                        Location = new Point(x, y),
-                        BorderStyle = BorderStyle.FixedSingle,
-                        BackColor = Color.LightBlue
-                    };
-                    // Configurar el evento Paint para aplicar bordes redondeados y degradado
-                    panelConectado.Paint += new PaintEventHandler((object senderPanel, PaintEventArgs ePanel) =>
-                    {
-                        PanelDobleBuffer panel = (PanelDobleBuffer)senderPanel;
-                        int radio = 20; // Radio para las esquinas redondeadas
-                        Rectangle rect = new Rectangle(0, 0, panel.Width, panel.Height);
+                    Size = new Size(150, 170),
+                    Location = new Point(x, y),
+                    BorderStyle = BorderStyle.FixedSingle,
+                    BackColor = Color.LightBlue
+                };
+                // Configurar el evento Paint para aplicar bordes redondeados y degradado
+                panelConectado.Paint += new PaintEventHandler((object senderPanel, PaintEventArgs ePanel) =>
+                {
+                    PanelDobleBuffer panel = (PanelDobleBuffer)senderPanel;
+                    int radio = 20; // Radio para las esquinas redondeadas
+                    Rectangle rect = new Rectangle(0, 0, panel.Width, panel.Height);
 
-                        // Crear la ruta con esquinas redondeadas
-                        using (GraphicsPath path = new GraphicsPath())
+                    // Crear la ruta con esquinas redondeadas
+                    using (GraphicsPath path = new GraphicsPath())
+                    {
+                        path.AddArc(rect.X, rect.Y, radio, radio, 180, 90);
+                        path.AddArc(rect.Right - radio, rect.Y, radio, radio, 270, 90);
+                        path.AddArc(rect.Right - radio, rect.Bottom - radio, radio, radio, 0, 90);
+                        path.AddArc(rect.X, rect.Bottom - radio, radio, radio, 90, 90);
+                        path.CloseFigure();
+
+                        // Asigna la región redondeada al panel
+                        panelConectado.Region = new Region(path);
+
+                        // Configurar el suavizado
+                        ePanel.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+                        // Crear un pincel de degradado: de blanco a un gris muy claro
+                        using (LinearGradientBrush brush = new LinearGradientBrush(
+                            rect,
+                            Color.FromArgb(33, 33, 33),
+                            Color.FromArgb(44, 44, 44),
+                            LinearGradientMode.Vertical))
                         {
-                            path.AddArc(rect.X, rect.Y, radio, radio, 180, 90);
-                            path.AddArc(rect.Right - radio, rect.Y, radio, radio, 270, 90);
-                            path.AddArc(rect.Right - radio, rect.Bottom - radio, radio, radio, 0, 90);
-                            path.AddArc(rect.X, rect.Bottom - radio, radio, radio, 90, 90);
-                            path.CloseFigure();
-
-                            // Asigna la región redondeada al panel
-                            panelConectado.Region = new Region(path);
-
-                            // Configurar el suavizado
-                            ePanel.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-
-                            // Crear un pincel de degradado: de blanco a un gris muy claro
-                            using (LinearGradientBrush brush = new LinearGradientBrush(
-                                rect,
-                                Color.FromArgb(33, 33, 33),
-                                Color.FromArgb(44, 44, 44),
-                                LinearGradientMode.Vertical))
-                            {
-                                // Rellenar la ruta con el degradado
-                                ePanel.Graphics.FillPath(brush, path);
-                            }
+                            // Rellenar la ruta con el degradado
+                            ePanel.Graphics.FillPath(brush, path);
                         }
-                    });
-
-                    Label lblNombre = new Label
-                    {
-                        Text = "Nombre: " + conectado.Nombre,
-                        Location = new Point(10, 10),
-                        ForeColor = Color.White,
-                        BackColor = Color.Transparent,
-                        AutoSize = true
-                    };
-
-                    string imparPath = Path.Combine(directorioBase, "Resources", "images", "personaje_chico.png");
-                    string parPath = Path.Combine(directorioBase, "Resources", "images", "personaje_chica.png");
-                    string imagePath = (conectado.Id % 2 == 0) ? parPath : imparPath;
-
-                    PanelDobleBuffer panelFondo = new PanelDobleBuffer
-                    {
-                        Size = new Size(130, 90),
-                        Location = new Point(10, 30),
-                        BorderStyle = BorderStyle.Fixed3D,
-                        BackgroundImage = Image.FromFile(imagePath),
-                        BackgroundImageLayout = ImageLayout.Zoom
-                    };
-
-                    Label lblVictorias = new Label
-                    {
-                        Text = "Victorias: " + string.Join(", ", conectado.Victorias),
-                        Location = new Point(10, 130),
-                        ForeColor = Color.White,
-                        BackColor = Color.Transparent,
-                        AutoSize = true
-                    };
-                    Label lblDerrotas = new Label
-                    {
-                        Text = "Derrotas: " + string.Join(", ", conectado.Derrotas),
-                        Location = new Point(10, 150),
-                        ForeColor = Color.White,
-                        BackColor = Color.Transparent,
-                        AutoSize = true
-                    };
-
-
-
-                    panelConectado.Controls.Add(lblNombre);
-                    panelConectado.Controls.Add(panelFondo);
-                    panelConectado.Controls.Add(lblVictorias);
-                    panelConectado.Controls.Add(lblDerrotas);
-
-                    panelConectados.Controls.Add(panelConectado);
-
-
-                    // Mover la posición para la siguiente carta
-                    x += 160;
-                    if (x > panelConectados.Width - 160) // Si no cabe en la fila, bajar
-                    {
-                        x = 10;
-                        y += 190;
                     }
+                });
 
-                    panelConectado.Click += (esender, e1) =>
+                Label lblNombre = new Label
+                {
+                    Text = "Nombre: " + conectado.Nombre,
+                    Location = new Point(10, 10),
+                    ForeColor = Color.White,
+                    BackColor = Color.Transparent,
+                    AutoSize = true
+                };
+
+                string imparPath = Path.Combine(directorioBase, "Resources", "images", "personaje_chico.png");
+                string parPath = Path.Combine(directorioBase, "Resources", "images", "personaje_chica.png");
+                string imagePath = (conectado.Id % 2 == 0) ? parPath : imparPath;
+
+                PanelDobleBuffer panelFondo = new PanelDobleBuffer
+                {
+                    Size = new Size(130, 90),
+                    Location = new Point(10, 30),
+                    BorderStyle = BorderStyle.Fixed3D,
+                    BackgroundImage = Image.FromFile(imagePath),
+                    BackgroundImageLayout = ImageLayout.Zoom
+                };
+
+                Label lblVictorias = new Label
+                {
+                    Text = "Victorias: " + string.Join(", ", conectado.Victorias),
+                    Location = new Point(10, 130),
+                    ForeColor = Color.White,
+                    BackColor = Color.Transparent,
+                    AutoSize = true
+                };
+                Label lblDerrotas = new Label
+                {
+                    Text = "Derrotas: " + string.Join(", ", conectado.Derrotas),
+                    Location = new Point(10, 150),
+                    ForeColor = Color.White,
+                    BackColor = Color.Transparent,
+                    AutoSize = true
+                };
+
+
+
+                panelConectado.Controls.Add(lblNombre);
+                panelConectado.Controls.Add(panelFondo);
+                panelConectado.Controls.Add(lblVictorias);
+                panelConectado.Controls.Add(lblDerrotas);
+
+                panelConectados.Controls.Add(panelConectado);
+
+
+                // Mover la posición para la siguiente carta
+                x += 160;
+                if (x > panelConectados.Width - 160) // Si no cabe en la fila, bajar
+                {
+                    x = 10;
+                    y += 190;
+                }
+
+                panelConectado.Click += (esender, e1) =>
+                {
+
+
+                    NuevoFormulario nuevoForm = new NuevoFormulario();
+                    nuevoForm.StartPosition = FormStartPosition.Manual;
+                    nuevoForm.Location = new Point(ventana.Location.X + 50, ventana.Location.Y + 50);
+
+                    Label mensaje = new Label();
+
+                    mensaje.Text = "Esperando a que " + conectado.Nombre + " acepte el combate";
+                    mensaje.Location = new Point((nuevoForm.Width - mensaje.Width) / 2, nuevoForm.Height / 2);
+                    mensaje.AutoSize = true;
+
+                    nuevoForm.Controls.Add(mensaje);
+
+
+
+                    // Crear el botón de cancelar
+                    Button botonCancelar = new Button();
+                    botonCancelar.Text = "Cancelar";
+                    botonCancelar.Location = new Point((nuevoForm.Width - botonCancelar.Width) / 2, mensaje.Top + mensaje.Height + 10);
+                    botonCancelar.AutoSize = true;
+                    botonCancelar.Click += (s, args) =>
                     {
 
-
-                        NuevoFormulario nuevoForm = new NuevoFormulario();
-                        nuevoForm.StartPosition = FormStartPosition.Manual;
-                        nuevoForm.Location = new Point(ventana.Location.X + 50, ventana.Location.Y + 50);
-
-                        Label mensaje = new Label();
-
-                        mensaje.Text = "Esperando a que " + conectado.Nombre + " acepte el combate";
-                        mensaje.Location = new Point((nuevoForm.Width - mensaje.Width) / 2, nuevoForm.Height / 2);
-                        mensaje.AutoSize = true;
-
-                        nuevoForm.Controls.Add(mensaje);
-
-
-
-                        // Crear el botón de cancelar
-                        Button botonCancelar = new Button();
-                        botonCancelar.Text = "Cancelar";
-                        botonCancelar.Location = new Point((nuevoForm.Width - botonCancelar.Width) / 2, mensaje.Top + mensaje.Height + 10);
-                        botonCancelar.AutoSize = true;
-                        botonCancelar.Click += (s, args) =>
-                        {
-
-                            MessageBox.Show("Combate cancelado con " + conectado.Nombre);
-                            //nuevoForm.Close();
-                        };
-                        nuevoForm.Controls.Add(botonCancelar);
-
-                        string invitacion = "7/" + conectado.Id;
-                        // Enviamos al servidor el nombre tecleado
-                        byte[] msg = System.Text.Encoding.ASCII.GetBytes(invitacion);
-                        server.Send(msg);
-
-
-                        nuevoForm.Show();
-
-                        //Combate.pantallaCombate(nuevoForm, conectado);
+                        MessageBox.Show("Combate cancelado con " + conectado.Nombre);
+                        //nuevoForm.Close();
                     };
-                }
+                    nuevoForm.Controls.Add(botonCancelar);
+
+                    string invitacion = "7/" + conectado.Id;
+                    // Enviamos al servidor el nombre tecleado
+                    byte[] msg = System.Text.Encoding.ASCII.GetBytes(invitacion);
+                    server.Send(msg);
+
+
+                    nuevoForm.Show();
+
+                    //Combate.pantallaCombate(nuevoForm, conectado);
+                };
             }
-        };
+        }
+        
         }
 
     public void RecibirInvitacion(Conectados conectado, Form ventana, Socket server)
