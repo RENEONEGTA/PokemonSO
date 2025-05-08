@@ -14,7 +14,7 @@ char ubicacion[30];
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 int i = 0;
 int sockets[100];
-int Puerto = 9010; // Puertos disponibles 50081 - 50085
+int Puerto = 9020; // Puertos disponibles 50081 - 50085
 
 //Anade nuevo conectado
 int Anade(MYSQL *conn, int IdJ, char nombre[20], int socket) {
@@ -580,6 +580,8 @@ void *AtenderCliente(void *socket)
 		{
 			strcpy(buff2, "");
 			char pokemon [1820];
+			char nombre[20];
+			char query[512];
 			int id = 0;
 
 			p = strtok(NULL, "/");
@@ -606,27 +608,33 @@ void *AtenderCliente(void *socket)
 				break;
 			}
 
-				
-				snprintf(query, "INSERT INTO Relacio (IdJ, IdP, Nivell)" 
-						"SELECT * FROM (SELECT id FROM Jugadores WHERE nombre = %s AS idJ,"
-						"id FROM Pokedex WHERE nombrePokemon = %s AS idP, 1 AS Nivell )", nombre, pokemon);
-
-
-				//"INSERT INTO Jugadores (nombre, pasword, numeroPokemons, victorias, derrotas, pos) "
-				//	"SELECT * FROM (SELECT '%s' AS nombre, '%s' AS pasword, 0 AS numeroPokemons, "
-				//	"0 AS victorias, 0 AS derrotas, '' AS pos) AS tmp "
-				//	"WHERE NOT EXISTS (SELECT 1 FROM Jugadores WHERE nombre = '%s') LIMIT 1;"
-
-				// Actualizar número de Pokémon del jugador
-				snprintf(query, sizeof(query),
-						 "UPDATE Jugadores SET numeroPokemons = numeroPokemons + 1 WHERE nombre = %s;", nombre);
-				mysql_query(conn, query);
-
-
+			snprintf(query, sizeof(query),
+					 "INSERT INTO Relacio (IdJ, IdP, Nivell) "
+					 "SELECT j.id, p.id, 1 FROM Jugadores j, Pokedex p "
+					 "WHERE j.nombre = '%s' AND p.nombrePokemon = '%s';",
+					nombre, pokemon);
+			
+			// Ejecutar la consulta INSERT
+			if (mysql_query(conn, query) != 0) {
+				fprintf(stderr, "Error al insertar la relacion: %s\n", mysql_error(conn));
+				strcpy(buff2, "8-$Error al insertar la relacion entre jugador y Pokemon");
+				write(socket_conn, buff2, strlen(buff2));
+				return;
 			}
 			
-		}
-						
+			// Crear segunda consulta: UPDATE Jugadores
+			snprintf(query, sizeof(query),
+					 "UPDATE Jugadores SET numeroPokemons = numeroPokemons + 1 "
+					 "WHERE nombre = '%s';", nombre);
+			
+			// Ejecutar la consulta UPDATE
+			if (mysql_query(conn, query) != 0) {
+				fprintf(stderr, "Error al actualizar numero de Pokemon: %s\n", mysql_error(conn));
+				strcpy(buff2, "8-$Error al actualizar el numero de Pokemon");
+				write(socket_conn, buff2, strlen(buff2));
+				return;
+			}
+		}					
 	}
 	//Cerramos la conexion con el servidor
 	

@@ -280,8 +280,9 @@ namespace WindowsFormsApplication1
                         ("Rugido", 10)
                     }
             );
+            bool escogerPokemon = false;
             cartas.Add(carta); // Agregar la carta a la lista
-            gestorCartas.DibujarCartas(cartas, panelCarta, false);
+            gestorCartas.DibujarCartas(cartas, panelCarta, false, escogerPokemon );
             panelCarta.BringToFront();
 
 

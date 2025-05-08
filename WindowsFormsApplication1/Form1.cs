@@ -18,6 +18,7 @@ using System.Diagnostics.Contracts;
 using System.Reflection.Emit;
 using System.Net.NetworkInformation;
 using System.Collections.ObjectModel;
+using System.Runtime.CompilerServices;
 
 namespace WindowsFormsApplication1
 {
@@ -26,7 +27,7 @@ namespace WindowsFormsApplication1
     public partial class Form1 : Form
     {
         Socket server;
-        private int puertoServidor = 9050; // Puerto del servidor
+        private int puertoServidor = 9020; // Puerto del servidor
         private Timer parpadeoTimer = new Timer();
         private bool serverRun = false;
         private bool colorAzul = true;
@@ -38,6 +39,7 @@ namespace WindowsFormsApplication1
         private Combate Combate = new Combate();
         private bool combate = false;
         private PanelDobleBuffer panelCartas;
+        private PanelDobleBuffer panelElegirPokemon;
         private PanelDobleBuffer panelCargarPartida;
         private PanelDobleBuffer panelCargarCombate;
         private bool boolPanelCargarPartida = true;
@@ -60,7 +62,8 @@ namespace WindowsFormsApplication1
         PanelDobleBuffer panelChat = new PanelDobleBuffer();
         RoundButton Charmander = new RoundButton();
         RoundButton Squirtel = new RoundButton();   
-        RoundButton Bulbasaur = new RoundButton();  
+        RoundButton Bulbasaur = new RoundButton();
+        bool escogerPokemon = false;
 
         Mapa mapa;
         Jugador jugador;
@@ -692,14 +695,7 @@ namespace WindowsFormsApplication1
                                             //MessageBox.Show(mensaje);
                                             if (Convert.ToInt32(mensaje) == 1)
                                             {
-                                                if(JugadorNuevo== true)
-                                                {
-                                                    PrimerPokemon();
-                                                }
-                                                else
-                                                {
-                                                    Inicio();
-                                                }
+                                                Inicio();
                                             }
                                             else
                                             {
@@ -740,13 +736,13 @@ namespace WindowsFormsApplication1
 
                                                     panelCartas.BringToFront();
                                                     combate = true;
-                                                    gestorCartas.DibujarCartas(cartas, panelCartas, true);
+                                                    gestorCartas.DibujarCartas(cartas, panelCartas, true, escogerPokemon);
                                                     panelCartas.Visible = true;
                                                 }
                                                 else
                                                 {
                                                     MessageBox.Show("No tienes pokemons");
-
+                                                    PrimerPokemon();
                                                 }
                                             });
 
@@ -1288,7 +1284,7 @@ namespace WindowsFormsApplication1
 
         }
 
-        public static void ManejarClickCarta(CartaPokemon carta)
+        public static void MostrarInformacionCarta(CartaPokemon carta)
         {
             string mensaje = "5/" + carta.Nombre;
             // Enviamos al servidor el nombre tecleado
@@ -1532,6 +1528,17 @@ namespace WindowsFormsApplication1
             panel.Region = new Region(path);
         }
 
+        private void redondearPanelDobleBuffer(PanelDobleBuffer panel, int radio)
+        {
+            System.Drawing.Drawing2D.GraphicsPath path = new System.Drawing.Drawing2D.GraphicsPath();
+            path.AddArc(0, 0, radio, radio, 180, 90);
+            path.AddArc(panel.Width - radio, 0, radio, radio, 270, 90);
+            path.AddArc(panel.Width - radio, panel.Height - radio, radio, radio, 0, 90);
+            path.AddArc(0, panel.Height - radio, radio, radio, 90, 90);
+            path.CloseAllFigures();
+            panel.Region = new Region(path);
+        }
+
 
         //Metodos para el xat
         private void enviarMensaje_Click(object sender, EventArgs e)
@@ -1553,60 +1560,59 @@ namespace WindowsFormsApplication1
             panelChat.Update();
         }
 
-        private void AgregarPokemon(string pokemon, string jugador)
-        {
+        public static void AgregarPokemon(CartaPokemon cartaPokemon)
+        {   
+            // Cambiar 'server' a 'Form1.server' y hacerlo accesible
+            Form1 form = Application.OpenForms.OfType<Form1>().FirstOrDefault();
+
             //Enviamos que pokemon queremos agregar y a quien 
-            string mensaje = $"8/" + pokemon + "/" + jugador;
+            string mensaje = $"8/" + cartaPokemon.Nombre + "/" + form?.user;
             byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
-            server.Send(msg);
+            
+            form?.server.Send(msg);
+            form?.Controls.Remove(form?.panelElegirPokemon);
+            form?.panelElegirPokemon.Dispose();
+
         }
 
         private void PrimerPokemon()
         {
             int buttonSize = 150;
+            escogerPokemon = true;
+            int ancho = 770;
+            int alto = 410;
 
-            Charmander = new RoundButton
+            panelElegirPokemon = new PanelDobleBuffer
             {
-                Size = new Size(buttonSize, buttonSize),
-                Location = new Point(20,29),
-                Image = Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "Charmander.png")),
-                BackColor = Color.FromArgb(88, 88, 88)
+                Size = new Size(ancho, alto),
+                Location = new Point(this.Width / 2 - (ancho/2), this.Height / 2 - (alto/2)),
+                BackColor = Color.FromArgb(44, 44, 44),
+                Padding = new Padding(5)
             };
+            redondearPanelDobleBuffer(panelElegirPokemon, 20); // Método para redondear
+            this.Controls.Add(panelElegirPokemon);
+            panelElegirPokemon.BringToFront();
+            panelElegirPokemon.Visible = true;
 
-            Squirtel = new RoundButton
+            List<CartaPokemon> pokemonsIniciales = new List<CartaPokemon>();
+            pokemonsIniciales.Add(new CartaPokemon("Charmander", 100, "Fuego", "images/Charmander.png", new List<(string, int)> { ("Llamarada", 20) }));
+            pokemonsIniciales.Add(new CartaPokemon("Squirtle", 100, "Agua", "images/Squirtle.png", new List<(string, int)> { ("Chorro de Agua", 20) }));
+            pokemonsIniciales.Add(new CartaPokemon("Bulbasaur", 100, "Planta", "images/Bulbasaur.png", new List<(string, int)> { ("Hoja Afilada", 20) }));
+
+            gestorCartas.DibujarCartas(pokemonsIniciales, panelElegirPokemon, false, escogerPokemon);
+
+            System.Windows.Forms.Label labelElegirPokemon = new System.Windows.Forms.Label
             {
-                Size = new Size(buttonSize, buttonSize),
-                Location = new Point(20,29),
-                Image = Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "Squirtle.png")),
-                BackColor = Color.FromArgb(88, 88, 88)
+                Text = "Elige tu Pokemon Inicial",
+                ForeColor = Color.FromArgb(255, 255, 255),
+                Location = new Point(panelElegirPokemon.Width / 2 - 100, panelElegirPokemon.Height - 10),
+                AutoSize = true,
+                Font = new Font("Arial", 16, FontStyle.Bold)
             };
+            panelElegirPokemon.Controls.Add(labelElegirPokemon);
+            labelElegirPokemon.Location = new Point(panelElegirPokemon.Width / 2 - labelElegirPokemon.Width / 2, panelElegirPokemon.Height - labelElegirPokemon.Height - 10);
 
-            Bulbasaur = new RoundButton
-            {
-                Size = new Size(buttonSize, buttonSize),
-                Location = new Point(20,29),
-                Image = Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "Bulbasaur.png")),
-                BackColor = Color.FromArgb(88, 88, 88)
-            };
 
-        }
-
-        private void CharmanderClick(object sender, EventArgs e)
-        {
-            AgregarPokemon(user,"Charmander");
-            Inicio();
-        }
-
-        private void BulbasaurClick(object sender, EventArgs e)
-        {
-            AgregarPokemon(user, "Bulbasaur");
-            Inicio(); 
-        }
-
-        private void SquirtelClick(object sender, EventArgs e)
-        {
-            AgregarPokemon(user, "Squirtel");
-            Inicio();
         }
 
         private void nuevaPartida_Click(object sender, EventArgs e)

@@ -46,7 +46,7 @@ namespace WindowsFormsApplication1
     public class GestorCratas
     {
         string directorioBase = Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.FullName).FullName;
-        public void DibujarCartas(List<CartaPokemon> cartas, PanelDobleBuffer panelCartas, bool botones)
+        public void DibujarCartas(List<CartaPokemon> cartas, PanelDobleBuffer panelCartas, bool botones, bool escogerPokemon)
         {
 
             
@@ -273,9 +273,74 @@ namespace WindowsFormsApplication1
                     y += 360;
                 }
 
-                panelCarta.Click += (sender, e) => {
-                    Form1.ManejarClickCarta(carta);
-                };
+
+                // Asignar eventos de clic 
+                AsignarEventoClick(panelCarta);
+
+                void AsignarEventoClick(Control contenedor)
+                {
+                    contenedor.Click += CartaClick;
+
+                    foreach (Control hijo in contenedor.Controls)
+                    {
+                        AsignarEventoClick(hijo); // Aplica recursivamente
+                    }
+                }
+
+                void CartaClick(object sender, EventArgs e)
+                {
+                    if (escogerPokemon)
+                    {
+                        Form1.AgregarPokemon(carta);
+
+                    }
+                    else
+                    {
+                        Form1.MostrarInformacionCarta(carta);
+                    }
+                }
+
+
+
+                // Asignar eventos de hover para cambiar el color del borde
+                AsignarEventosHover(panelCarta);
+
+                void AsignarEventosHover(Control contenedor)
+                {
+                    contenedor.MouseEnter += ActivarHover;
+                    contenedor.MouseLeave += DesactivarHover;
+                    
+
+                    foreach (Control hijo in contenedor.Controls)
+                    {
+                        AsignarEventosHover(hijo); // Recursividad para ir por hijos, nietos, etc.
+                    }
+                }
+
+
+                void ActivarHover(object sender, EventArgs e)
+                {
+                    // Cambiar borde según el tipo
+                    switch (carta.Elemento.ToLower())
+                    {
+                        case "fuego": colorBorde = Color.DarkRed; break;
+                        case "agua": colorBorde = Color.DarkBlue; break;
+                        case "planta": colorBorde = Color.DarkGreen; break;
+                        case "rayo": colorBorde = Color.Yellow; break;
+                        case "tierra": colorBorde = Color.SaddleBrown; break;
+                        case "hielo": colorBorde = Color.Cyan; break;
+                        default: colorBorde = Color.Gray; break;
+                    }
+
+                    panelCarta.Invalidate();
+                }
+
+                void DesactivarHover(object sender, EventArgs e)
+                {
+                    colorBorde = Color.LightGray;
+                    panelCarta.Invalidate();
+                }
+
 
             }
 
@@ -391,6 +456,7 @@ namespace WindowsFormsApplication1
             }
 
         }
+
 
         // Función para crear un rectángulo con esquinas redondeadas
         private GraphicsPath CrearRectanguloRedondeado(Rectangle rect, int radio)
