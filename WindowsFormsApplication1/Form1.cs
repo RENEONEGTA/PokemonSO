@@ -26,7 +26,7 @@ namespace WindowsFormsApplication1
     public partial class Form1 : Form
     {
         Socket server;
-        private int puertoServidor = 9020; // Puerto del servidor
+        private int puertoServidor = 9050; // Puerto del servidor
         private Timer parpadeoTimer = new Timer();
         private bool serverRun = false;
         private bool colorAzul = true;
@@ -58,6 +58,9 @@ namespace WindowsFormsApplication1
         System.Windows.Forms.TextBox textBoxMensaje = new System.Windows.Forms.TextBox();
         RoundButton enviarMensaje = new RoundButton();
         PanelDobleBuffer panelChat = new PanelDobleBuffer();
+        RoundButton Charmander = new RoundButton();
+        RoundButton Squirtel = new RoundButton();   
+        RoundButton Bulbasaur = new RoundButton();  
 
         Mapa mapa;
         Jugador jugador;
@@ -393,9 +396,7 @@ namespace WindowsFormsApplication1
 
             if (JugadorNuevo == true)
             {
-                PrimerPokemon pokemon = new PrimerPokemon();
-                pokemon.Show();
-                JugadorNuevo = false;
+                
             }
         }
 
@@ -627,6 +628,26 @@ namespace WindowsFormsApplication1
 
             });
         }
+
+        private void Inicio()
+        {
+            Invoke((MethodInvoker)delegate
+            {
+                iniciado = true;
+                MessageBox.Show("Se ha iniciado la sesion con exito");
+
+                foreach (Control control in this.Controls)
+                {
+                    control.Visible = false;
+                }
+
+            });
+
+            _ = Task.Run(async () =>
+            {             
+                await crearFondoAsync(); 
+            });
+        }
         private async void AtenderServidor()
         {
             await Task.Run(() =>
@@ -671,23 +692,14 @@ namespace WindowsFormsApplication1
                                             //MessageBox.Show(mensaje);
                                             if (Convert.ToInt32(mensaje) == 1)
                                             {
-
-                                                Invoke((MethodInvoker)delegate
+                                                if(JugadorNuevo== true)
                                                 {
-                                                    iniciado = true;
-                                                    MessageBox.Show("Se ha iniciado la sesion con exito");
-
-                                                    foreach (Control control in this.Controls)
-                                                    {
-                                                        control.Visible = false;
-                                                    }
-
-                                                });
-
-                                                _ = Task.Run(async () =>
-                                                    {
-                                                        await crearFondoAsync();
-                                                    });
+                                                    PrimerPokemon();
+                                                }
+                                                else
+                                                {
+                                                    Inicio();
+                                                }
                                             }
                                             else
                                             {
@@ -869,8 +881,6 @@ namespace WindowsFormsApplication1
                 byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
                 server.Send(msg);
             }
-
-
         }
 
         private void Form1_Form1Closing(object sender, FormClosingEventArgs e)
@@ -889,7 +899,7 @@ namespace WindowsFormsApplication1
 
         private void button2_Click(object sender, EventArgs e)
         {
-            if (Longitud.Checked) //Consulta Primera partida que he echo
+            if (Longitud.Checked) //Consulta Primera partida que he hecho
             {
                 string mensaje = "3/" + textUsu.Text;
                 // Enviamos al servidor el nombre tecleado
@@ -1532,6 +1542,7 @@ namespace WindowsFormsApplication1
             server.Send(msg);
             textBoxMensaje.Clear(); // Limpiar el TextBox después de enviar el mensaje
         }
+
         void HistorialMensajes(string nuevoMensaje)
         {
             string timeStamp = DateTime.Now.ToString("HH:mm:ss");
@@ -1542,12 +1553,60 @@ namespace WindowsFormsApplication1
             panelChat.Update();
         }
 
-        void AgregarPokemon(string pokemon, string jugador)
+        private void AgregarPokemon(string pokemon, string jugador)
         {
             //Enviamos que pokemon queremos agregar y a quien 
             string mensaje = $"8/" + pokemon + "/" + jugador;
             byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
             server.Send(msg);
+        }
+
+        private void PrimerPokemon()
+        {
+            int buttonSize = 150;
+
+            Charmander = new RoundButton
+            {
+                Size = new Size(buttonSize, buttonSize),
+                Location = new Point(20,29),
+                Image = Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "Charmander.png")),
+                BackColor = Color.FromArgb(88, 88, 88)
+            };
+
+            Squirtel = new RoundButton
+            {
+                Size = new Size(buttonSize, buttonSize),
+                Location = new Point(20,29),
+                Image = Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "Squirtle.png")),
+                BackColor = Color.FromArgb(88, 88, 88)
+            };
+
+            Bulbasaur = new RoundButton
+            {
+                Size = new Size(buttonSize, buttonSize),
+                Location = new Point(20,29),
+                Image = Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "Bulbasaur.png")),
+                BackColor = Color.FromArgb(88, 88, 88)
+            };
+
+        }
+
+        private void CharmanderClick(object sender, EventArgs e)
+        {
+            AgregarPokemon(user,"Charmander");
+            Inicio();
+        }
+
+        private void BulbasaurClick(object sender, EventArgs e)
+        {
+            AgregarPokemon(user, "Bulbasaur");
+            Inicio(); 
+        }
+
+        private void SquirtelClick(object sender, EventArgs e)
+        {
+            AgregarPokemon(user, "Squirtel");
+            Inicio();
         }
 
         private void nuevaPartida_Click(object sender, EventArgs e)
