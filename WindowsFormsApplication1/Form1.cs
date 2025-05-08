@@ -26,7 +26,7 @@ namespace WindowsFormsApplication1
     public partial class Form1 : Form
     {
         Socket server;
-        private int puertoServidor = 50081; // Puerto del servidor
+        private int puertoServidor = 9020; // Puerto del servidor
         private Timer parpadeoTimer = new Timer();
         private bool serverRun = false;
         private bool colorAzul = true;
@@ -50,7 +50,7 @@ namespace WindowsFormsApplication1
         string directorioBase = Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.FullName).FullName;
         string user;
         string contra;
-        bool iniciado = false;   
+        bool iniciado = false;
         bool JugadorNuevo = false;
         public string NuevoPokemon;
         List<Conectados> listaConectadosGlobal = new List<Conectados>();
@@ -58,6 +58,10 @@ namespace WindowsFormsApplication1
         System.Windows.Forms.TextBox textBoxMensaje = new System.Windows.Forms.TextBox();
         RoundButton enviarMensaje = new RoundButton();
         PanelDobleBuffer panelChat = new PanelDobleBuffer();
+
+        Mapa mapa;
+        Jugador jugador;
+        PanelDobleBuffer panelMapa;
 
 
         public Form1()
@@ -108,7 +112,7 @@ namespace WindowsFormsApplication1
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            
+
             ////Inicio Sesion
             //Usuario.Visible = false;
             //textUsu.Visible = false;
@@ -166,7 +170,7 @@ namespace WindowsFormsApplication1
 
             // Mostrar la barra de progreso en la UI
             Invoke((MethodInvoker)delegate
-            { 
+            {
                 progressBar.Visible = true;
                 progressBar.Size = new Size(this.ClientSize.Width / 2, 30);
                 progressBar.Location = new Point(this.ClientSize.Width / 2 - progressBar.Width / 2, this.ClientSize.Height - 60);
@@ -228,7 +232,7 @@ namespace WindowsFormsApplication1
                 Invoke((MethodInvoker)delegate
                 {
                     MostrarVideoYElementos();
-                    
+
                 });
             }
             catch (Exception ex)
@@ -242,74 +246,75 @@ namespace WindowsFormsApplication1
             }
         }
 
-        private void crearPanelCombate() {
+        private void crearPanelCombate()
+        {
 
-            
-                int PanelSizeX = 500;
-                int PanelSizeY = 300;
 
-                panelCargarCombate = new PanelDobleBuffer
+            int PanelSizeX = 500;
+            int PanelSizeY = 300;
+
+            panelCargarCombate = new PanelDobleBuffer
+            {
+                Size = new Size(PanelSizeX, PanelSizeY), // Tamaño ajustado
+                Location = new Point(combatirBox.Left + combatirBox.Width + 10, combatirBox.Top + (combatirBox.Height / 2) - (PanelSizeY / 2)),
+                BackColor = Color.Black,
+            };
+            this.Controls.Add(panelCargarCombate);
+            panelCargarCombate.Visible = false;
+            panelCargarCombate.BringToFront();
+
+
+
+            // Configurar el evento Paint para aplicar bordes redondeados y degradado
+            panelCargarCombate.Paint += new PaintEventHandler((object senderPanel, PaintEventArgs ePanel) =>
+            {
+                PanelDobleBuffer panel = (PanelDobleBuffer)senderPanel;
+                int radio = 20; // Radio para las esquinas redondeadas
+                Rectangle rect = new Rectangle(0, 0, panel.Width, panel.Height);
+
+                // Crear la ruta con esquinas redondeadas
+                using (GraphicsPath path = new GraphicsPath())
                 {
-                    Size = new Size(PanelSizeX, PanelSizeY), // Tamaño ajustado
-                    Location = new Point(combatirBox.Left + combatirBox.Width + 10, combatirBox.Top + (combatirBox.Height / 2) - (PanelSizeY / 2)),
-                    BackColor = Color.Black,
-                };
-                this.Controls.Add(panelCargarCombate);
-                panelCargarCombate.Visible = false;
-                panelCargarCombate.BringToFront();
-                
+                    path.AddArc(rect.X, rect.Y, radio, radio, 180, 90);
+                    path.AddArc(rect.Right - radio, rect.Y, radio, radio, 270, 90);
+                    path.AddArc(rect.Right - radio, rect.Bottom - radio, radio, radio, 0, 90);
+                    path.AddArc(rect.X, rect.Bottom - radio, radio, radio, 90, 90);
+                    path.CloseFigure();
 
+                    // Asigna la región redondeada al panel
+                    panelCargarCombate.Region = new Region(path);
 
-                // Configurar el evento Paint para aplicar bordes redondeados y degradado
-                panelCargarCombate.Paint += new PaintEventHandler((object senderPanel, PaintEventArgs ePanel) =>
-                {
-                    PanelDobleBuffer panel = (PanelDobleBuffer)senderPanel;
-                    int radio = 20; // Radio para las esquinas redondeadas
-                    Rectangle rect = new Rectangle(0, 0, panel.Width, panel.Height);
+                    // Configurar el suavizado
+                    ePanel.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
-                    // Crear la ruta con esquinas redondeadas
-                    using (GraphicsPath path = new GraphicsPath())
+                    // Crear un pincel de degradado: de blanco a un gris muy claro
+                    using (LinearGradientBrush brush = new LinearGradientBrush(
+                        rect,
+                        Color.Black,
+                        Color.FromArgb(22, 22, 22),
+                        LinearGradientMode.Vertical))
                     {
-                        path.AddArc(rect.X, rect.Y, radio, radio, 180, 90);
-                        path.AddArc(rect.Right - radio, rect.Y, radio, radio, 270, 90);
-                        path.AddArc(rect.Right - radio, rect.Bottom - radio, radio, radio, 0, 90);
-                        path.AddArc(rect.X, rect.Bottom - radio, radio, radio, 90, 90);
-                        path.CloseFigure();
-
-                        // Asigna la región redondeada al panel
-                        panelCargarCombate.Region = new Region(path);
-
-                        // Configurar el suavizado
-                        ePanel.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-
-                        // Crear un pincel de degradado: de blanco a un gris muy claro
-                        using (LinearGradientBrush brush = new LinearGradientBrush(
-                            rect,
-                            Color.Black,
-                            Color.FromArgb(22, 22, 22),
-                            LinearGradientMode.Vertical))
-                        {
-                            // Rellenar la ruta con el degradado
-                            ePanel.Graphics.FillPath(brush, path);
-                        }
-
-                        // Dibujar un borde:
-                        using (Pen pen = new Pen(Color.FromArgb(38, 209, 255), 4))
-                        {
-                            ePanel.Graphics.DrawPath(pen, path);
-                        }
-
-
+                        // Rellenar la ruta con el degradado
+                        ePanel.Graphics.FillPath(brush, path);
                     }
-                });
+
+                    // Dibujar un borde:
+                    using (Pen pen = new Pen(Color.FromArgb(38, 209, 255), 4))
+                    {
+                        ePanel.Graphics.DrawPath(pen, path);
+                    }
+
 
                 }
+            });
+
+        }
         private void MostrarVideoYElementos()
         {
-            
+
             //this.FormBorderStyle = FormBorderStyle.None; // Oculta los bordes y la barra de título
             //this.WindowState = FormWindowState.Maximized; // Maximiza para ocupar toda la pantalla
-            
+
             // Obtén la ruta del directorio bin/debug
             string videoPath = Path.Combine(directorioBase, "Resources", "videos", "FondoPokemon.mp4");
             fondoPokemon.Visible = true;
@@ -386,7 +391,7 @@ namespace WindowsFormsApplication1
             pokedexBox.Visible = true;
             pokedexBox.Click += pokedexBox_Click;
 
-            if(JugadorNuevo == true)
+            if (JugadorNuevo == true)
             {
                 PrimerPokemon pokemon = new PrimerPokemon();
                 pokemon.Show();
@@ -785,9 +790,9 @@ namespace WindowsFormsApplication1
                                             Invoke((MethodInvoker)delegate
                                             {
                                                 listaConectadosGlobal.Clear();
-                                                
+
                                                 listaConectadosGlobal = Conectados.ParsearDatos(mensaje, listaConectadosGlobal);
-                                                if(boolPanelCargarCombate==false)
+                                                if (boolPanelCargarCombate == false)
                                                 {
                                                     Conectados.DibujarConectados(listaConectadosGlobal, panelCargarCombate, this, user, server);
                                                 }
@@ -796,11 +801,11 @@ namespace WindowsFormsApplication1
                                             break;
 
                                         case 101: //Recivimos Notificacion del Chat
-                                           
+
                                             Invoke((MethodInvoker)delegate
                                             {
                                                 HistorialMensajes(mensaje.ToString());
-                                               
+
                                             });
                                             break;
 
@@ -838,13 +843,13 @@ namespace WindowsFormsApplication1
                                 }
                             }
                         }
-                        catch(Exception ex)
+                        catch (Exception ex)
                         {
                             MessageBox.Show("Error al recibir el mensaje del servidor: " + ex.Message);
-                            
+
                         }
-                        
-                    }                   
+
+                    }
                 }
             });
         }
@@ -875,7 +880,8 @@ namespace WindowsFormsApplication1
 
         private void ParpadeoTimer_Tick(object sender, EventArgs e)
         {
-            Invoke((MethodInvoker)delegate {
+            Invoke((MethodInvoker)delegate
+            {
                 ChangeCircleColor(colorAzul ? Color.Blue : Color.Green);
                 colorAzul = !colorAzul;
             });
@@ -1250,7 +1256,7 @@ namespace WindowsFormsApplication1
         private void combatir_MouseClick(object sender, MouseEventArgs e)
         {
 
-            if (boolPanelCargarCombate==true)
+            if (boolPanelCargarCombate == true)
             {
 
                 if (user != null)
@@ -1539,9 +1545,15 @@ namespace WindowsFormsApplication1
         void AgregarPokemon(string pokemon, string jugador)
         {
             //Enviamos que pokemon queremos agregar y a quien 
-            string mensaje = $"8/"  + pokemon + "/" + jugador;
+            string mensaje = $"8/" + pokemon + "/" + jugador;
             byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
             server.Send(msg);
+        }
+
+        private void nuevaPartida_Click(object sender, EventArgs e)
+        {      
+            FormJuego juego = new FormJuego();
+            juego.Show();
         }
     }
 }
