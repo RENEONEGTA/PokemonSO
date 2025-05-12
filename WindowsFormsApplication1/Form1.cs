@@ -54,6 +54,7 @@ namespace WindowsFormsApplication1
         string contra;
         bool iniciado = false;
         bool JugadorNuevo = false;
+        bool Pokedex =true;
         public string NuevoPokemon;
         List<Conectados> listaConectadosGlobal = new List<Conectados>();
         RichTextBox historialMensajes = new RichTextBox();
@@ -1245,6 +1246,8 @@ namespace WindowsFormsApplication1
                 PrimerPokemon();
                 JugadorNuevo = false;
             }
+            else
+            {
                 if (boolPanelCargarCombate == true)
                 {
 
@@ -1264,6 +1267,7 @@ namespace WindowsFormsApplication1
                     boolPanelCargarCombate = true;
                     panelCargarCombate.Visible = false;
                 }
+            }
                  
         }
 
@@ -1284,8 +1288,6 @@ namespace WindowsFormsApplication1
             //MessageBox.Show(mensaje);
         }
 
-
-
         private void cargarPartida_Click(object sender, EventArgs e)
         {
             if (JugadorNuevo == true)
@@ -1294,101 +1296,103 @@ namespace WindowsFormsApplication1
                 PrimerPokemon();
                 JugadorNuevo = false;
             }
-
-            if (boolPanelCargarPartida)
+            else
             {
-                int PanelSizeX = 500;
-                int PanelSizeY = 300;
-
-                panelCargarPartida = new PanelDobleBuffer
+                if (boolPanelCargarPartida)
                 {
-                    Size = new Size(PanelSizeX, PanelSizeY), // Tamaño ajustado
-                    Location = new Point(cargarPartidaBox.Left + cargarPartidaBox.Width + 10, cargarPartidaBox.Top + (cargarPartidaBox.Height / 2) - (PanelSizeY / 2)),
-                    BackColor = Color.Black,
-                };
-                this.Controls.Add(panelCargarPartida);
-                panelCargarPartida.Visible = true;
-                panelCargarPartida.BringToFront();
-                boolPanelCargarPartida = false;
+                    int PanelSizeX = 500;
+                    int PanelSizeY = 300;
 
-
-                // Configurar el evento Paint para aplicar bordes redondeados y degradado
-                panelCargarPartida.Paint += new PaintEventHandler((object senderPanel, PaintEventArgs ePanel) =>
-                {
-                    PanelDobleBuffer panel = (PanelDobleBuffer)senderPanel;
-                    int radio = 20; // Radio para las esquinas redondeadas
-                    Rectangle rect = new Rectangle(0, 0, panel.Width, panel.Height);
-
-                    // Crear la ruta con esquinas redondeadas
-                    using (GraphicsPath path = new GraphicsPath())
+                    panelCargarPartida = new PanelDobleBuffer
                     {
-                        path.AddArc(rect.X, rect.Y, radio, radio, 180, 90);
-                        path.AddArc(rect.Right - radio, rect.Y, radio, radio, 270, 90);
-                        path.AddArc(rect.Right - radio, rect.Bottom - radio, radio, radio, 0, 90);
-                        path.AddArc(rect.X, rect.Bottom - radio, radio, radio, 90, 90);
-                        path.CloseFigure();
+                        Size = new Size(PanelSizeX, PanelSizeY), // Tamaño ajustado
+                        Location = new Point(cargarPartidaBox.Left + cargarPartidaBox.Width + 10, cargarPartidaBox.Top + (cargarPartidaBox.Height / 2) - (PanelSizeY / 2)),
+                        BackColor = Color.Black,
+                    };
+                    this.Controls.Add(panelCargarPartida);
+                    panelCargarPartida.Visible = true;
+                    panelCargarPartida.BringToFront();
+                    boolPanelCargarPartida = false;
 
-                        // Asigna la región redondeada al panel
-                        panelCargarPartida.Region = new Region(path);
 
-                        // Configurar el suavizado
-                        ePanel.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    // Configurar el evento Paint para aplicar bordes redondeados y degradado
+                    panelCargarPartida.Paint += new PaintEventHandler((object senderPanel, PaintEventArgs ePanel) =>
+                    {
+                        PanelDobleBuffer panel = (PanelDobleBuffer)senderPanel;
+                        int radio = 20; // Radio para las esquinas redondeadas
+                        Rectangle rect = new Rectangle(0, 0, panel.Width, panel.Height);
 
-                        // Crear un pincel de degradado: de blanco a un gris muy claro
-                        using (LinearGradientBrush brush = new LinearGradientBrush(
-                            rect,
-                            Color.Black,
-                            Color.FromArgb(22, 22, 22),
-                            LinearGradientMode.Vertical))
+                        // Crear la ruta con esquinas redondeadas
+                        using (GraphicsPath path = new GraphicsPath())
                         {
-                            // Rellenar la ruta con el degradado
-                            ePanel.Graphics.FillPath(brush, path);
+                            path.AddArc(rect.X, rect.Y, radio, radio, 180, 90);
+                            path.AddArc(rect.Right - radio, rect.Y, radio, radio, 270, 90);
+                            path.AddArc(rect.Right - radio, rect.Bottom - radio, radio, radio, 0, 90);
+                            path.AddArc(rect.X, rect.Bottom - radio, radio, radio, 90, 90);
+                            path.CloseFigure();
+
+                            // Asigna la región redondeada al panel
+                            panelCargarPartida.Region = new Region(path);
+
+                            // Configurar el suavizado
+                            ePanel.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+                            // Crear un pincel de degradado: de blanco a un gris muy claro
+                            using (LinearGradientBrush brush = new LinearGradientBrush(
+                                rect,
+                                Color.Black,
+                                Color.FromArgb(22, 22, 22),
+                                LinearGradientMode.Vertical))
+                            {
+                                // Rellenar la ruta con el degradado
+                                ePanel.Graphics.FillPath(brush, path);
+                            }
+
+                            // Dibujar un borde:
+                            using (Pen pen = new Pen(Color.FromArgb(38, 209, 255), 4))
+                            {
+                                ePanel.Graphics.DrawPath(pen, path);
+                            }
+
+
                         }
+                    });
 
-                        // Dibujar un borde:
-                        using (Pen pen = new Pen(Color.FromArgb(38, 209, 255), 4))
-                        {
-                            ePanel.Graphics.DrawPath(pen, path);
-                        }
+                    if (user != null)
+                    {
+                        string mensaje = "4/" + user;
+                        // Enviamos al servidor el nombre tecleado
+                        byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
+                        server.Send(msg);
 
+                        ////Recibimos la respuesta del servidor
+                        //byte[] msg2 = new byte[1000];
+                        //server.Receive(msg2);
+                        //mensaje = Encoding.ASCII.GetString(msg2).Split(',')[0];
 
+                        //MessageBox.Show(mensaje);
+
+                        //List<Partida> listaPartidas = new List<Partida>();
+                        //listaPartidas = Partida.ParsearRespuesta(mensaje, listaPartidas);
+                        //if (listaPartidas.Count > 0)
+                        //{
+                        //    Partida.DibujarPartidas(listaPartidas, panelCargarPartida);
+                        //}
+                        //else
+                        //{
+                        //    MessageBox.Show("No tienes partidas");
+                        //}
                     }
-                });
-
-                if (user != null)
-                {
-                    string mensaje = "4/" + user;
-                    // Enviamos al servidor el nombre tecleado
-                    byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
-                    server.Send(msg);
-
-                    ////Recibimos la respuesta del servidor
-                    //byte[] msg2 = new byte[1000];
-                    //server.Receive(msg2);
-                    //mensaje = Encoding.ASCII.GetString(msg2).Split(',')[0];
-
-                    //MessageBox.Show(mensaje);
-
-                    //List<Partida> listaPartidas = new List<Partida>();
-                    //listaPartidas = Partida.ParsearRespuesta(mensaje, listaPartidas);
-                    //if (listaPartidas.Count > 0)
-                    //{
-                    //    Partida.DibujarPartidas(listaPartidas, panelCargarPartida);
-                    //}
-                    //else
-                    //{
-                    //    MessageBox.Show("No tienes partidas");
-                    //}
+                    else
+                    {
+                        MessageBox.Show("Ha habido un error al buscar las partidas del jugador " + user);
+                    }
                 }
                 else
                 {
-                    MessageBox.Show("Ha habido un error al buscar las partidas del jugador " + user);
+                    boolPanelCargarPartida = true;
+                    panelCargarPartida.Visible = false;
                 }
-            }
-            else
-            {
-                boolPanelCargarPartida = true;
-                panelCargarPartida.Visible = false;
             }
         }
 
@@ -1557,7 +1561,6 @@ namespace WindowsFormsApplication1
             form?.server.Send(msg);
             form?.Controls.Remove(form?.panelElegirPokemon);
             form?.panelElegirPokemon.Dispose();
-
         }
 
         private void PrimerPokemon()
@@ -1595,22 +1598,40 @@ namespace WindowsFormsApplication1
             };
             panelElegirPokemon.Controls.Add(labelElegirPokemon);
             labelElegirPokemon.Location = new Point(panelElegirPokemon.Width / 2 - labelElegirPokemon.Width / 2, panelElegirPokemon.Height - labelElegirPokemon.Height - 10);
-
-
         }
 
         private void nuevaPartida_Click(object sender, EventArgs e)
-        {      
-            if(JugadorNuevo == true)
+        {
+            if (JugadorNuevo == true)
             {
                 MessageBox.Show("No tienes pokemons");
                 PrimerPokemon();
                 JugadorNuevo = false;
             }
-            FormJuego juego = new FormJuego();
-            juego.Show();
+            else
+            {
+                FormJuego juego = new FormJuego();
+                juego.Show();
+            }
+        }
+        
+        private void Atacar(Pokemon pokemon)
+        {
+            //Enviamos el ataque utilizado
+            string mensaje = $"9/" + Convert.ToString(pokemon.Daño);
+            byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
+            server.Send(msg);
         }
 
+        private int RecibirAtaque()
+        {
+            string mensaje;
+            byte[] msg2 = new byte[1000];
+            server.Receive(msg2);
+            mensaje = Encoding.ASCII.GetString(msg2);
+            int dano = Convert.ToInt32(mensaje);
+            return dano;
+        }
     }
 }
 
