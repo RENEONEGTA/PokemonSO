@@ -317,7 +317,6 @@ namespace WindowsFormsApplication1
         }
         private void MostrarVideoYElementos()
         {
-
             //this.FormBorderStyle = FormBorderStyle.None; // Oculta los bordes y la barra de título
             //this.WindowState = FormWindowState.Maximized; // Maximiza para ocupar toda la pantalla
 
@@ -396,11 +395,6 @@ namespace WindowsFormsApplication1
             pokedexBox.BringToFront();
             pokedexBox.Visible = true;
             pokedexBox.Click += pokedexBox_Click;
-
-            if (JugadorNuevo == true)
-            {
-                
-            }
         }
 
         // Evento para desplazar los controles dentro del panel
@@ -651,6 +645,7 @@ namespace WindowsFormsApplication1
                 await crearFondoAsync(); 
             });
         }
+
         private async void AtenderServidor()
         {
             await Task.Run(() =>
@@ -908,7 +903,7 @@ namespace WindowsFormsApplication1
                 mensaje = Encoding.ASCII.GetString(msg2).Split(',')[0];
                 MessageBox.Show("La Primera partida que hize fue" + mensaje);
             }
-            else if (consultaPokedex.Checked) //Consulta que pokemon tiene mayo vida.
+            else if (consultaPokedex.Checked) //Consulta que pokemon tiene mayor vida.
             {
                 string mensaje = "4/" + textUsu.Text;
                 // Enviamos al servidor el nombre tecleado
@@ -944,11 +939,6 @@ namespace WindowsFormsApplication1
             this.BackColor = Color.Gray;
             server.Shutdown(SocketShutdown.Both);
             server.Close();
-
-        }
-
-        private void groupBox1_Enter(object sender, EventArgs e)
-        {
 
         }
 
@@ -1034,11 +1024,6 @@ namespace WindowsFormsApplication1
 
         }
 
-        private void textUsu_TextChanged(object sender, EventArgs e)
-        {
-
-        }
-
         private void textContra_Enter(object sender, EventArgs e)
         {
             contraseñaBox.ForeColor = Color.FromArgb(38, 209, 255);
@@ -1060,10 +1045,7 @@ namespace WindowsFormsApplication1
             {
                 textContra.Text = "Contraseña";
                 contraseñaBox.Text = "";
-
             }
-
-
         }
 
         private void textUsu_Enter(object sender, EventArgs e)
@@ -1181,17 +1163,13 @@ namespace WindowsFormsApplication1
                 repiteContraBox.Visible = false;
                 registro = false;
                 aunNoCuenta.Text = "¿Aún no tienes cuenta?";
-
             }
-
         }
 
         private void aunNoCuenta_Click(object sender, EventArgs e)
         {
             cambiarInicioRegistro();
-
         }
-
 
         private void SignUp_MouseEnter(object sender, EventArgs e)
         {
@@ -1261,27 +1239,32 @@ namespace WindowsFormsApplication1
 
         private void combatir_MouseClick(object sender, MouseEventArgs e)
         {
-
-            if (boolPanelCargarCombate == true)
+            if (JugadorNuevo == true)
             {
-
-                if (user != null)
+                MessageBox.Show("No tienes pokemons");
+                PrimerPokemon();
+                JugadorNuevo = false;
+            }
+                if (boolPanelCargarCombate == true)
                 {
-                    panelCargarCombate.Visible = true;
-                    boolPanelCargarCombate = false;
-                    Conectados.DibujarConectados(listaConectadosGlobal, panelCargarCombate, this, user, server);
+
+                    if (user != null)
+                    {
+                        panelCargarCombate.Visible = true;
+                        boolPanelCargarCombate = false;
+                        Conectados.DibujarConectados(listaConectadosGlobal, panelCargarCombate, this, user, server);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Ha habido un error al buscar las partidas del jugador " + user);
+                    }
                 }
                 else
                 {
-                    MessageBox.Show("Ha habido un error al buscar las partidas del jugador " + user);
+                    boolPanelCargarCombate = true;
+                    panelCargarCombate.Visible = false;
                 }
-            }
-            else
-            {
-                boolPanelCargarCombate = true;
-                panelCargarCombate.Visible = false;
-            }
-
+                 
         }
 
         public static void MostrarInformacionCarta(CartaPokemon carta)
@@ -1305,6 +1288,13 @@ namespace WindowsFormsApplication1
 
         private void cargarPartida_Click(object sender, EventArgs e)
         {
+            if (JugadorNuevo == true)
+            {
+                MessageBox.Show("No tienes pokemons");
+                PrimerPokemon();
+                JugadorNuevo = false;
+            }
+
             if (boolPanelCargarPartida)
             {
                 int PanelSizeX = 500;
@@ -1400,11 +1390,6 @@ namespace WindowsFormsApplication1
                 boolPanelCargarPartida = true;
                 panelCargarPartida.Visible = false;
             }
-        }
-
-        private void label1_Click(object sender, EventArgs e)
-        {
-
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -1577,7 +1562,6 @@ namespace WindowsFormsApplication1
 
         private void PrimerPokemon()
         {
-            int buttonSize = 150;
             escogerPokemon = true;
             int ancho = 770;
             int alto = 410;
@@ -1617,9 +1601,16 @@ namespace WindowsFormsApplication1
 
         private void nuevaPartida_Click(object sender, EventArgs e)
         {      
+            if(JugadorNuevo == true)
+            {
+                MessageBox.Show("No tienes pokemons");
+                PrimerPokemon();
+                JugadorNuevo = false;
+            }
             FormJuego juego = new FormJuego();
             juego.Show();
         }
+
     }
 }
 
