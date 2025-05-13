@@ -76,6 +76,13 @@ namespace WindowsFormsApplication1
             InitializeComponent();
             parpadeoTimer.Interval = 500; // Parpadeo cada 500 ms
             parpadeoTimer.Tick += ParpadeoTimer_Tick;
+
+            //this.FormBorderStyle = FormBorderStyle.None; // Quitar la barra de título y botones
+            //this.WindowState = FormWindowState.Maximized; // Maximizar el formulario
+            //this.ControlBox = false; //Quitar los controles 
+            //this.StartPosition = FormStartPosition.CenterScreen; //Centrar el formulario
+            //this.ShowInTaskbar = false; // Esconder la taskbar
+            //this.FormBorderStyle = FormBorderStyle.None; //Quitar el borderstyle
         }
 
         // Actualiza el progreso de la barra
@@ -255,8 +262,6 @@ namespace WindowsFormsApplication1
 
         private void crearPanelCombate()
         {
-
-
             int PanelSizeX = 500;
             int PanelSizeY = 300;
 
@@ -269,7 +274,6 @@ namespace WindowsFormsApplication1
             this.Controls.Add(panelCargarCombate);
             panelCargarCombate.Visible = false;
             panelCargarCombate.BringToFront();
-
 
 
             // Configurar el evento Paint para aplicar bordes redondeados y degradado
@@ -310,12 +314,10 @@ namespace WindowsFormsApplication1
                     {
                         ePanel.Graphics.DrawPath(pen, path);
                     }
-
-
                 }
             });
-
         }
+
         private void MostrarVideoYElementos()
         {
             //this.FormBorderStyle = FormBorderStyle.None; // Oculta los bordes y la barra de título
@@ -377,12 +379,10 @@ namespace WindowsFormsApplication1
             combatirBox.Location = new Point(32, 256);
             salirJuegoBox.Visible = true;
             salirJuegoBox.Location = new Point(32, 320);
+            Cerrar.Visible = false;
 
             crearPanelCombate();
             crearChat();
-
-
-
 
             PictureBox pokedexBox = new PictureBox
             {
@@ -430,7 +430,6 @@ namespace WindowsFormsApplication1
                     ctrl.Top -= desplazamiento;
                 }
             }
-
             panelCartas.ResumeLayout();
             panelCartas.Update(); // Forzar la redibujación del panel
         }
@@ -1631,6 +1630,11 @@ namespace WindowsFormsApplication1
             mensaje = Encoding.ASCII.GetString(msg2);
             int dano = Convert.ToInt32(mensaje);
             return dano;
+        }
+
+        private void Cerrar_Click_1(object sender, EventArgs e)
+        {
+            Application.Exit();
         }
     }
 }

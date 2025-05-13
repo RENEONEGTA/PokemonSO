@@ -36,8 +36,6 @@
             this.UsuarioRegistrarse = new System.Windows.Forms.Label();
             this.textConRR = new System.Windows.Forms.TextBox();
             this.RepetirContraseña = new System.Windows.Forms.Label();
-            this.pictureBox1 = new System.Windows.Forms.PictureBox();
-            this.circuloServidor = new System.Windows.Forms.PictureBox();
             this.aunNoCuenta = new System.Windows.Forms.Label();
             this.fondoPokemon = new AxWMPLib.AxWindowsMediaPlayer();
             this.progressBar = new System.Windows.Forms.ProgressBar();
@@ -64,8 +62,9 @@
             this.textContra = new System.Windows.Forms.TextBox();
             this.registroBox = new CustomGroupBox();
             this.SignUp = new System.Windows.Forms.Button();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.circuloServidor)).BeginInit();
+            this.circuloServidor = new System.Windows.Forms.PictureBox();
+            this.pictureBox1 = new System.Windows.Forms.PictureBox();
+            this.Cerrar = new System.Windows.Forms.PictureBox();
             ((System.ComponentModel.ISupportInitialize)(this.fondoPokemon)).BeginInit();
             this.groupBox1.SuspendLayout();
             this.salirJuegoBox.SuspendLayout();
@@ -77,6 +76,9 @@
             this.usuarioBox.SuspendLayout();
             this.contraseñaBox.SuspendLayout();
             this.registroBox.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.circuloServidor)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.Cerrar)).BeginInit();
             this.SuspendLayout();
             // 
             // IP
@@ -147,29 +149,6 @@
             this.RepetirContraseña.Size = new System.Drawing.Size(79, 38);
             this.RepetirContraseña.TabIndex = 17;
             this.RepetirContraseña.Text = "Repite la \r\nContraseña";
-            // 
-            // pictureBox1
-            // 
-            this.pictureBox1.Image = global::WindowsFormsApplication1.Properties.Resources.PokemonSO1;
-            this.pictureBox1.Location = new System.Drawing.Point(717, 129);
-            this.pictureBox1.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
-            this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(761, 542);
-            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.pictureBox1.TabIndex = 19;
-            this.pictureBox1.TabStop = false;
-            // 
-            // circuloServidor
-            // 
-            this.circuloServidor.Location = new System.Drawing.Point(255, 732);
-            this.circuloServidor.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
-            this.circuloServidor.Name = "circuloServidor";
-            this.circuloServidor.Size = new System.Drawing.Size(73, 55);
-            this.circuloServidor.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.circuloServidor.TabIndex = 23;
-            this.circuloServidor.TabStop = false;
-            this.circuloServidor.Click += new System.EventHandler(this.circuloServidor_Click);
-            this.circuloServidor.Paint += new System.Windows.Forms.PaintEventHandler(this.circuloServidor_Paint);
             // 
             // aunNoCuenta
             // 
@@ -549,11 +528,46 @@
             this.SignUp.MouseEnter += new System.EventHandler(this.SignUp_MouseEnter);
             this.SignUp.MouseLeave += new System.EventHandler(this.SignUp_MouseLeave);
             // 
+            // circuloServidor
+            // 
+            this.circuloServidor.Location = new System.Drawing.Point(255, 732);
+            this.circuloServidor.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
+            this.circuloServidor.Name = "circuloServidor";
+            this.circuloServidor.Size = new System.Drawing.Size(73, 55);
+            this.circuloServidor.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.circuloServidor.TabIndex = 23;
+            this.circuloServidor.TabStop = false;
+            this.circuloServidor.Click += new System.EventHandler(this.circuloServidor_Click);
+            this.circuloServidor.Paint += new System.Windows.Forms.PaintEventHandler(this.circuloServidor_Paint);
+            // 
+            // pictureBox1
+            // 
+            this.pictureBox1.Image = global::WindowsFormsApplication1.Properties.Resources.PokemonSO1;
+            this.pictureBox1.Location = new System.Drawing.Point(717, 129);
+            this.pictureBox1.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
+            this.pictureBox1.Name = "pictureBox1";
+            this.pictureBox1.Size = new System.Drawing.Size(761, 542);
+            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.pictureBox1.TabIndex = 19;
+            this.pictureBox1.TabStop = false;
+            // 
+            // Cerrar
+            // 
+            this.Cerrar.Image = global::WindowsFormsApplication1.Properties.Resources.cerrar;
+            this.Cerrar.Location = new System.Drawing.Point(1423, 37);
+            this.Cerrar.Name = "Cerrar";
+            this.Cerrar.Size = new System.Drawing.Size(55, 51);
+            this.Cerrar.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.Cerrar.TabIndex = 31;
+            this.Cerrar.TabStop = false;
+            this.Cerrar.Click += new System.EventHandler(this.Cerrar_Click_1);
+            // 
             // Form1
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(22)))), ((int)(((byte)(22)))), ((int)(((byte)(22)))));
             this.ClientSize = new System.Drawing.Size(1522, 801);
+            this.Controls.Add(this.Cerrar);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.progressBar);
             this.Controls.Add(this.salirJuegoBox);
@@ -578,13 +592,14 @@
             this.Controls.Add(this.registroBox);
             this.DoubleBuffered = true;
             this.Font = new System.Drawing.Font("Microsoft New Tai Lue", 8.142858F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Margin = new System.Windows.Forms.Padding(6);
             this.Name = "Form1";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Form1";
+            this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_Form1Closing);
             this.Load += new System.EventHandler(this.Form1_Load);
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.circuloServidor)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.fondoPokemon)).EndInit();
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
@@ -600,6 +615,9 @@
             this.contraseñaBox.ResumeLayout(false);
             this.contraseñaBox.PerformLayout();
             this.registroBox.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.circuloServidor)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.Cerrar)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -641,6 +659,7 @@
         private CustomGroupBox salirJuegoBox;
         private System.Windows.Forms.Button salirJuego;
         private System.Windows.Forms.ProgressBar progressBar;
+        private System.Windows.Forms.PictureBox Cerrar;
     }
 }
 

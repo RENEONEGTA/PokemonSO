@@ -44,6 +44,13 @@ namespace WindowsFormsApplication1
             gameLoop.Interval = 33;
             gameLoop.Tick += GameLoop_Tick;
             gameLoop.Start();
+
+            //this.FormBorderStyle = FormBorderStyle.None; // Quitar la barra de título y botones
+            //this.WindowState = FormWindowState.Maximized; // Maximizar el formulario
+            //this.ControlBox = false; //Quitar los controles 
+            //this.StartPosition = FormStartPosition.CenterScreen; //Centrar el formulario
+            //this.ShowInTaskbar = false; // Esconder la taskbar
+            //this.FormBorderStyle = FormBorderStyle.None; //Quitar el borderstyle
         }
 
         private void FormJuego_KeyDown(object sender, KeyEventArgs e)
