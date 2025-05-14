@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,6 +16,7 @@ namespace WindowsFormsApplication1
         Timer gameLoop = new Timer();
         Mapa mapa;
         Jugador jugador;
+        string directorioBase = Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.FullName).FullName;
 
         bool up, down, left, right;
         float camX = 0, camY = 0;
@@ -23,6 +25,7 @@ namespace WindowsFormsApplication1
         int vistaAlto = 4;
 
         PanelDobleBuffer panelMapa = new PanelDobleBuffer();
+        
         
 
         public FormJuego()
@@ -45,6 +48,19 @@ namespace WindowsFormsApplication1
             gameLoop.Tick += GameLoop_Tick;
             gameLoop.Start();
 
+            //PictureBox salir = new PictureBox
+            //{
+            //    Size = new Size(40, 40), // Ajusta el tamaño según sea necesario
+            //    Location = new Point(1450, 45),
+            //    SizeMode = PictureBoxSizeMode.StretchImage // Opcional: para ajustar la imagen al tamaño del control
+            //};
+            //string salir_image = Path.Combine(directorioBase, "Resources", "cerrar.png");
+            //salir.Image = Image.FromFile(salir_image);
+            //this.Controls.Add(salir);
+            //salir.BringToFront();
+            //salir.Visible = true;
+            //salir.Click += salir_Click;
+
             //this.FormBorderStyle = FormBorderStyle.None; // Quitar la barra de título y botones
             //this.WindowState = FormWindowState.Maximized; // Maximizar el formulario
             //this.ControlBox = false; //Quitar los controles 
@@ -52,6 +68,18 @@ namespace WindowsFormsApplication1
             //this.ShowInTaskbar = false; // Esconder la taskbar
             //this.FormBorderStyle = FormBorderStyle.None; //Quitar el borderstyle
         }
+
+        private void salir_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
+        private void FormJuego_FormJuegoClosing(object sender, FormClosingEventArgs e)
+        {
+            MessageBox.Show("Juego cerrado incorrectamente");
+        }
+
+
 
         private void FormJuego_KeyDown(object sender, KeyEventArgs e)
         {
