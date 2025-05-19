@@ -65,6 +65,7 @@
             this.circuloServidor = new System.Windows.Forms.PictureBox();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.Cerrar = new System.Windows.Forms.PictureBox();
+            this.AbrirSobre = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.fondoPokemon)).BeginInit();
             this.groupBox1.SuspendLayout();
             this.salirJuegoBox.SuspendLayout();
@@ -562,11 +563,22 @@
             this.Cerrar.TabStop = false;
             this.Cerrar.Click += new System.EventHandler(this.Cerrar_Click_1);
             // 
+            // AbrirSobre
+            // 
+            this.AbrirSobre.Location = new System.Drawing.Point(952, 60);
+            this.AbrirSobre.Name = "AbrirSobre";
+            this.AbrirSobre.Size = new System.Drawing.Size(158, 46);
+            this.AbrirSobre.TabIndex = 32;
+            this.AbrirSobre.Text = "Abrir Sobre";
+            this.AbrirSobre.UseVisualStyleBackColor = true;
+            this.AbrirSobre.Click += new System.EventHandler(this.AbrirSobre_Click);
+            // 
             // Form1
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(22)))), ((int)(((byte)(22)))), ((int)(((byte)(22)))));
             this.ClientSize = new System.Drawing.Size(1522, 801);
+            this.Controls.Add(this.AbrirSobre);
             this.Controls.Add(this.Cerrar);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.progressBar);
@@ -660,6 +672,7 @@
         private System.Windows.Forms.Button salirJuego;
         private System.Windows.Forms.ProgressBar progressBar;
         private System.Windows.Forms.PictureBox Cerrar;
+        private System.Windows.Forms.Button AbrirSobre;
     }
 }
 

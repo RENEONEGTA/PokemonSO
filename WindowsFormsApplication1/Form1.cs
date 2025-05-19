@@ -83,6 +83,7 @@ namespace WindowsFormsApplication1
             //this.StartPosition = FormStartPosition.CenterScreen; //Centrar el formulario
             //this.ShowInTaskbar = false; // Esconder la taskbar
             //this.FormBorderStyle = FormBorderStyle.None; //Quitar el borderstyle
+            AbrirSobre.Visible = false;
         }
 
         // Actualiza el progreso de la barra
@@ -380,6 +381,7 @@ namespace WindowsFormsApplication1
             salirJuegoBox.Visible = true;
             salirJuegoBox.Location = new Point(32, 320);
             Cerrar.Visible = false;
+            AbrirSobre.Visible = true;
 
             crearPanelCombate();
             crearChat();
@@ -788,6 +790,16 @@ namespace WindowsFormsApplication1
                                             //});
 
                                             break;
+                                        case 7:
+                                            break;
+                                        case 8:
+                                            break;
+                                        case 9:
+                                            break;
+                                        case 10: //Abrir Sobre
+                                            MessageBox.Show(mensaje);
+                                            break;
+
                                         case 100: //Lista Conectados Notificacion
                                             //MessageBox.Show(mensaje);
                                             Invoke((MethodInvoker)delegate
@@ -1635,6 +1647,14 @@ namespace WindowsFormsApplication1
         private void Cerrar_Click_1(object sender, EventArgs e)
         {
             Application.Exit();
+        }
+
+        //Metodo para Abrir un Sobre de Pokemons
+        private void AbrirSobre_Click(object sender, EventArgs e)
+        {
+            string mensaje = $"10/";
+            byte[] msg2 = System.Text.Encoding.ASCII.GetBytes(mensaje);
+            server.Send(msg2);
         }
     }
 }
