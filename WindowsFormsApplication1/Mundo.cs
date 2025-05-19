@@ -17,11 +17,12 @@ namespace WindowsFormsApplication1
         public int[,] tiles;
         public int ancho => tiles.GetLength(1);
         public int alto => tiles.GetLength(0);
+        
         private static Dictionary<int, Image> imagenesTiles;
         private Bitmap preRenderedMap; // Mapa pre-renderizado
         string directorioBase = Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.FullName).FullName;
 
-        public Mapa()
+        public Mapa(int tileSize)
         {
             
             
@@ -75,17 +76,17 @@ namespace WindowsFormsApplication1
 
             if (imagenesTiles == null)
             {
-                CargarTexturas();
+                CargarTexturas(tileSize);
             }
 
-            PreRenderMapa();
+            PreRenderMapa(tileSize);
 
         }
 
-        private void CargarTexturas()
+        private void CargarTexturas(int tileSize)
         {
             imagenesTiles = new Dictionary<int, Image>();
-            int tileSize = 256; // Tamaño fijo del tile
+            
 
             // Cargar y redimensionar imágenes
             imagenesTiles[0] = ResizeImage(Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "mapa", "suelo.png")), tileSize);
@@ -107,9 +108,9 @@ namespace WindowsFormsApplication1
             return resized;
         }
 
-        private void PreRenderMapa()
+        private void PreRenderMapa(int tileSize)
         {
-            int tileSize = 256;
+            
             preRenderedMap = new Bitmap(ancho * tileSize, alto * tileSize);
             using (Graphics g = Graphics.FromImage(preRenderedMap))
             {
@@ -204,6 +205,11 @@ namespace WindowsFormsApplication1
             float pantallaX = x - camX - (tamano / 2); // Centrar en X
             float pantallaY = y - camY - (tamano / 2); // Centrar en Y
             g.FillEllipse(Brushes.Red, pantallaX, pantallaY, tamano, tamano);
+        }
+        public void DibujarEnMinimapa(Graphics g, int x, int y, int size)
+        {
+            
+            g.FillEllipse(Brushes.Red, x - size/2, y - size/2, size, size);
         }
     }
 

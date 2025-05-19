@@ -15,18 +15,27 @@ namespace WindowsFormsApplication1
     {
         Timer gameLoop = new Timer();
         Mapa mapa;
+        Mapa minimapa;
         Jugador jugador;
         string directorioBase = Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.FullName).FullName;
 
         bool up, down, left, right;
         float camX = 0, camY = 0;
         int tileSize = 256;
+        int miniTileSize = 16;
         int vistaAncho = 5;
         int vistaAlto = 4;
 
+
+        int minimapaAncho = 256;
+        int minimapaAlto = 256;
+       
+
+
         PanelDobleBuffer panelMapa = new PanelDobleBuffer();
-        
-        
+        PanelDobleBuffer panelMinimapa = new PanelDobleBuffer();
+
+
 
         public FormJuego()
         {
@@ -36,14 +45,26 @@ namespace WindowsFormsApplication1
             panelMapa.Dock = DockStyle.Fill;
             panelMapa.Paint += PanelMapa_Paint;
             this.Controls.Add(panelMapa);
+            
+            panelMinimapa.Width = minimapaAncho;
+            panelMinimapa.Height = minimapaAlto;
+            panelMinimapa.Location = new Point(this.Width - panelMinimapa.Width-50, this.Height - panelMinimapa.Height - 50);
+            panelMinimapa.Paint += PanelMinimapa_Paint;
+            this.Controls.Add(panelMinimapa);
+            panelMinimapa.BringToFront();
+
+            
+            
 
             this.KeyDown += FormJuego_KeyDown;
             this.KeyUp += FormJuego_KeyUp;
             this.DoubleBuffered = true;
 
-            mapa = new Mapa();
+            mapa = new Mapa(tileSize);
+            miniTileSize = minimapaAlto / mapa.alto;
+            minimapa = new Mapa(miniTileSize);
             jugador = new Jugador(256, 256); // posición inicial en pixeles
-
+            
             gameLoop.Interval = 33;
             gameLoop.Tick += GameLoop_Tick;
             gameLoop.Start();
@@ -108,7 +129,8 @@ namespace WindowsFormsApplication1
             jugador.Mover(dx, dy, mapa);
             ActualizarCamara();
             panelMapa.Invalidate();
-           
+            panelMinimapa.Invalidate();
+
         }
 
         private void ActualizarCamara()
@@ -126,6 +148,31 @@ namespace WindowsFormsApplication1
             mapa.Dibujar(e.Graphics, camX, camY, tileSize, vistaAncho, vistaAlto);
             jugador.Dibujar(e.Graphics, camX, camY, tileSize);
         }
+        private void PanelMinimapa_Paint(object sender, PaintEventArgs e)
+        {
+            Graphics g = e.Graphics;
+
+            // Dibujar todo el mapa a escala
+            minimapa.Dibujar(g, 0, 0, miniTileSize, minimapaAncho, minimapaAlto);
+            
+
+            // Dibujar jugador en el minimapa (escala directa)
+            int jugadorMiniX = (int)(jugador.x / tileSize * miniTileSize); // Conversión explícita de float a int
+            int jugadorMiniY = (int)(jugador.y / tileSize * miniTileSize); // Conversión explícita de float a int
+            jugador.DibujarEnMinimapa(g, jugadorMiniX, jugadorMiniY, miniTileSize);
+
+            // Dibujar rectángulo de vista del mapa grande en el minimapa
+            int vistaMiniX = (int)(camX / tileSize * miniTileSize); // Conversión explícita de float a int
+            int vistaMiniY = (int)(camY / tileSize * miniTileSize); // Conversión explícita de float a int
+            int vistaMiniAncho = vistaAncho * miniTileSize;
+            int vistaMiniAlto = vistaAlto * miniTileSize;
+
+            using (Pen pen = new Pen(Color.Red, 2))
+            {
+                g.DrawRectangle(pen, vistaMiniX, vistaMiniY, vistaMiniAncho, vistaMiniAlto);
+            }
+        }
+
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
