@@ -83,6 +83,7 @@ namespace WindowsFormsApplication1
             //this.StartPosition = FormStartPosition.CenterScreen; //Centrar el formulario
             //this.ShowInTaskbar = false; // Esconder la taskbar
             //this.FormBorderStyle = FormBorderStyle.None; //Quitar el borderstyle
+            AbrirSobre.Visible = false;
         }
 
         // Actualiza el progreso de la barra
@@ -380,6 +381,7 @@ namespace WindowsFormsApplication1
             salirJuegoBox.Visible = true;
             salirJuegoBox.Location = new Point(32, 320);
             Cerrar.Visible = false;
+            AbrirSobre.Visible = true;
 
             crearPanelCombate();
             crearChat();
