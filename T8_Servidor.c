@@ -634,7 +634,43 @@ void *AtenderCliente(void *socket)
 				write(socket_conn, buff2, strlen(buff2));
 				return;
 			}
-		}					
+		}
+		else if(codigo == 9){
+			
+		}
+		else if(codigo == 10) // Enviar 3 pokémons aleatoris de la Pokedex
+		{
+			strcpy(buff2, "");
+
+			char query[512];
+			sprintf(query, "SELECT * FROM Pokedex ORDER BY RAND() LIMIT 3;");
+
+			if (mysql_query(conn, query) == 0) {
+				MYSQL_RES *res = mysql_store_result(conn);
+				MYSQL_ROW row;
+
+				if (res != NULL) {
+					strcpy(buff2, "10~$");
+					while ((row = mysql_fetch_row(res)) != NULL) {
+						// Format: id/nombre/ataque/hp/elemento/debilidad/fortaleza/fase/descripcion#
+						for (int i = 0; i < mysql_num_fields(res); i++) {
+							strcat(buff2, row[i]);
+							strcat(buff2, "/");
+						}
+						strcat(buff2, "#");
+					}
+					mysql_free_result(res);
+				} else {
+					strcpy(buff2, "11~$Error: No s'han pogut obtenir pokémons");
+				}
+			} else {
+				sprintf(buff2, "11~$Error SQL: %s", mysql_error(conn));
+			}
+
+			write(socket_conn, buff2, strlen(buff2));
+		}
+
+		
 	}
 	//Cerramos la conexion con el servidor
 	

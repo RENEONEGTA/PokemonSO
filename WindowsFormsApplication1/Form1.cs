@@ -788,6 +788,16 @@ namespace WindowsFormsApplication1
                                             //});
 
                                             break;
+                                        case 7:
+                                            break;
+                                        case 8:
+                                            break;
+                                        case 9:
+                                            break;
+                                        case 10: //Abrir Sobre
+                                            MessageBox.Show(mensaje);
+                                            break;
+
                                         case 100: //Lista Conectados Notificacion
                                             //MessageBox.Show(mensaje);
                                             Invoke((MethodInvoker)delegate
@@ -1635,6 +1645,14 @@ namespace WindowsFormsApplication1
         private void Cerrar_Click_1(object sender, EventArgs e)
         {
             Application.Exit();
+        }
+
+        //Metodo para Abrir un Sobre de Pokemons
+        private void AbrirSobre_Click(object sender, EventArgs e)
+        {
+            string mensaje = $"10/";
+            byte[] msg2 = System.Text.Encoding.ASCII.GetBytes(mensaje);
+            server.Send(msg2);
         }
     }
 }
