@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 
 namespace WindowsFormsApplication1
 {
@@ -34,13 +35,23 @@ namespace WindowsFormsApplication1
 
         PanelDobleBuffer panelMapa = new PanelDobleBuffer();
         PanelDobleBuffer panelMinimapa = new PanelDobleBuffer();
-
+        PictureBox invitar = new PictureBox();
 
 
         public FormJuego()
         {
             this.Text = "Mapa con cámara";
             this.ClientSize = new Size(vistaAncho * tileSize, vistaAlto * tileSize);
+            invitar.Size = new Size(48, 48);
+            invitar.Location = new Point(this.Width - invitar.Width-20, 10);
+            invitar.Image = Image.FromFile(directorioBase + "/Resources/menuIcono.png");
+            invitar.SizeMode = PictureBoxSizeMode.Zoom;
+            invitar.BackColor = Color.Transparent;
+            invitar.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+
+
+            this.Controls.Add(invitar);
+            invitar.BringToFront();
 
             panelMapa.Dock = DockStyle.Fill;
             panelMapa.Paint += PanelMapa_Paint;
@@ -68,6 +79,9 @@ namespace WindowsFormsApplication1
             gameLoop.Interval = 33;
             gameLoop.Tick += GameLoop_Tick;
             gameLoop.Start();
+
+            
+            
 
             //PictureBox salir = new PictureBox
             //{

@@ -76,6 +76,7 @@ namespace WindowsFormsApplication1
             InitializeComponent();
             parpadeoTimer.Interval = 500; // Parpadeo cada 500 ms
             parpadeoTimer.Tick += ParpadeoTimer_Tick;
+            
 
             //this.FormBorderStyle = FormBorderStyle.None; // Quitar la barra de título y botones
             //this.WindowState = FormWindowState.Maximized; // Maximizar el formulario
@@ -146,10 +147,24 @@ namespace WindowsFormsApplication1
 
             ////Consultas 
             //groupBox1.Visible = false;
+            this.WindowState = FormWindowState.Maximized;
             ChangeCircleColor(Color.Blue);
             ConectarServidor();
             AtenderServidor();
+
+            // Ejecutar la función después de que el formulario se muestre
+            this.BeginInvoke((MethodInvoker)delegate {
+                EscalarControles(); // o Refresh general
+            });
         }
+        private void EscalarControles()
+        {
+            aunNoCuenta.Location = new Point(iniciarSesionBox.Left + (iniciarSesionBox.Width-aunNoCuenta.Width)/2, iniciarSesionBox.Bottom + 30);
+            this.Invalidate();
+            this.Update();
+            this.Refresh();
+        }
+
 
         private async Task crearFondoAsync()
         {
@@ -900,59 +915,7 @@ namespace WindowsFormsApplication1
             });
         }
 
-        private void button2_Click(object sender, EventArgs e)
-        {
-            if (Longitud.Checked) //Consulta Primera partida que he hecho
-            {
-                string mensaje = "3/" + textUsu.Text;
-                // Enviamos al servidor el nombre tecleado
-                byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
-                server.Send(msg);
-
-                //Recibimos la respuesta del servidor
-                byte[] msg2 = new byte[80];
-                server.Receive(msg2);
-                mensaje = Encoding.ASCII.GetString(msg2).Split(',')[0];
-                MessageBox.Show("La Primera partida que hize fue" + mensaje);
-            }
-            else if (consultaPokedex.Checked) //Consulta que pokemon tiene mayor vida.
-            {
-                string mensaje = "4/" + textUsu.Text;
-                // Enviamos al servidor el nombre tecleado
-                byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
-                server.Send(msg);
-
-                //Recibimos la respuesta del servidor
-                byte[] msg2 = new byte[80];
-                server.Receive(msg2);
-                mensaje = Encoding.ASCII.GetString(msg2).Split(',')[0];
-
-                MessageBox.Show("El pokemon con mas vida es el " + mensaje);
-
-            }
-            else if (Bonito.Checked) //Consulta Cuantos pokemos tengo.
-            {
-                string mensaje = "5/" + textUsu.Text;
-                // Enviamos al servidor el nombre tecleado
-                byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
-                server.Send(msg);
-
-                //Recibimos la respuesta del servidor
-                byte[] msg2 = new byte[80];
-                server.Receive(msg2);
-                mensaje = Encoding.ASCII.GetString(msg2).Split(',')[0];
-                MessageBox.Show("Tengo " + mensaje + " pokemons");
-            }
-            else
-                MessageBox.Show("Seleciona la estadistica que quieras consultar");
-
-            // Se terminó el servicio. 
-            // Nos desconectamos
-            this.BackColor = Color.Gray;
-            server.Shutdown(SocketShutdown.Both);
-            server.Close();
-
-        }
+         
 
         private void SignUp_Click(object sender, EventArgs e)
         {
@@ -1655,6 +1618,11 @@ namespace WindowsFormsApplication1
             string mensaje = $"10/";
             byte[] msg2 = System.Text.Encoding.ASCII.GetBytes(mensaje);
             server.Send(msg2);
+        }
+
+        private void Form1_Resize(object sender, EventArgs e)
+        {
+            EscalarControles();
         }
     }
 }
