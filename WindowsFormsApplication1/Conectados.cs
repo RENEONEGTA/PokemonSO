@@ -9,6 +9,7 @@ using System.Diagnostics.Contracts;
 using System.Net.Sockets;
 using System.Linq;
 using System.Collections.ObjectModel;
+using System.Text;
 
 public class NuevoFormulario : Form
 {
@@ -337,7 +338,7 @@ public class Conectados
 
                 panelConectado.Click += (sender, e1) =>
                 {
-                    string invitacion = "7/" + conectado.Id;
+                    string invitacion = "9/" + conectado.Id;
                     byte[] msg = System.Text.Encoding.ASCII.GetBytes(invitacion);
                     server.Send(msg);
 
@@ -430,7 +431,7 @@ public class Conectados
 
         botonAceptar.Click += (s, args) =>
         {
-            // Aquí puedes agregar la lógica para aceptar el combate
+            
             MessageBox.Show("Combate aceptado con " + conectado.Nombre);
             nuevoForm.Close();
         };
@@ -456,6 +457,102 @@ public class Conectados
 
 
         nuevoForm.Show();
+
+    }
+
+    public void RecibirInvitacionMundo(Conectados jugadorInvitador, Form formulario, Socket server)
+    {
+        // Crear panel principal de la invitación
+        Panel panelInvitacion = new Panel();
+        panelInvitacion.Size = new Size(300, 80);
+        panelInvitacion.BackColor = Color.FromArgb(100, 100, 100);
+        panelInvitacion.BorderStyle = BorderStyle.None;
+
+        // Posicion
+        panelInvitacion.Location = new Point(20, 20); 
+        redondearPanel(panelInvitacion, 10);
+
+
+        // Imagen del usuario a la izquierda
+
+        string imparPath = Path.Combine(directorioBase, "Resources", "images", "personaje_chico.png");
+        string parPath = Path.Combine(directorioBase, "Resources", "images", "personaje_chica.png");
+        string imagePath = (jugadorInvitador.Id % 2 == 0) ? parPath : imparPath;
+
+        PanelDobleBuffer avatar = new PanelDobleBuffer
+        {
+            Size = new Size(60, 60),
+            Location = new Point(10, 10),
+            BorderStyle = BorderStyle.Fixed3D,
+            BackgroundImage = Image.FromFile(imagePath),
+            BackgroundImageLayout = ImageLayout.Zoom
+        };
+
+        redondearPanel(avatar, 10);
+
+        // Label con el nombre del jugador
+        Label nombre = new Label();
+        nombre.Text = jugadorInvitador.Nombre;
+        nombre.Font = new Font("Segoe UI", 10, FontStyle.Bold);
+        nombre.Location = new Point(80, 10);
+        nombre.AutoSize = true;
+
+        // Label con descripción
+        Label descripcion = new Label();
+        descripcion.Text = "te ha invitado a combatir";
+        descripcion.Font = new Font("Segoe UI", 9);
+        descripcion.ForeColor = Color.DarkGray;
+        descripcion.Location = new Point(80, 30);
+        descripcion.AutoSize = true;
+
+        // Botón aceptar
+        PictureBox btnAceptar = new PictureBox();
+        btnAceptar.Size = new Size(24, 24);
+        btnAceptar.Location = new Point(220, 50);
+        btnAceptar.SizeMode = PictureBoxSizeMode.Zoom;
+        btnAceptar.Cursor = Cursors.Hand;
+        string aceptarPath = Path.Combine(directorioBase, "Resources", "images", "aceptar.png");
+        btnAceptar.Image = Image.FromFile(aceptarPath);
+
+        // Botón rechazar
+        PictureBox btnRechazar = new PictureBox();
+        btnRechazar.Size = new Size(24, 24);
+        btnRechazar.Location = new Point(250, 50);
+        btnRechazar.SizeMode = PictureBoxSizeMode.Zoom;
+        btnRechazar.Cursor = Cursors.Hand;
+        string cancelarPath = Path.Combine(directorioBase, "Resources", "images", "cancelar.png");
+        btnRechazar.Image = Image.FromFile(cancelarPath);
+
+        // Acción de aceptar
+        btnAceptar.Click += (s, e) =>
+        {
+            string mensajeAceptar = "91/" + jugadorInvitador.Id;
+            byte[] datos = Encoding.ASCII.GetBytes(mensajeAceptar);
+            server.Send(datos);
+
+            formulario.Controls.Remove(panelInvitacion);
+        };
+
+        // Acción de rechazar
+        btnRechazar.Click += (s, e) =>
+        {
+            string mensajeRechazar = "92/" + jugadorInvitador.Id;
+            byte[] datos = Encoding.ASCII.GetBytes(mensajeRechazar);
+            server.Send(datos);
+
+            formulario.Controls.Remove(panelInvitacion);
+        };
+
+        // Agregar controles al panel
+        panelInvitacion.Controls.Add(avatar);
+        panelInvitacion.Controls.Add(nombre);
+        panelInvitacion.Controls.Add(descripcion);
+        panelInvitacion.Controls.Add(btnAceptar);
+        panelInvitacion.Controls.Add(btnRechazar);
+
+        // Mostrar el panel en el formulario
+        formulario.Controls.Add(panelInvitacion);
+        panelInvitacion.BringToFront();
 
     }
 }

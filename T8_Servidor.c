@@ -101,6 +101,8 @@ void *AtenderCliente(void *socket)
 {
 	
 	int socket_conn;
+	char user[80];
+	int userId;
 	int *s;
 	int ret;
 	s =(int *) socket;
@@ -213,6 +215,7 @@ void *AtenderCliente(void *socket)
 			p = strtok(NULL, "/");  // Obtenemos el usuario
 			if (p != NULL) {
 				strcpy(nombre, p);  // Guardar el nombre
+				strcpy(user,p);
 			} else {
 				strcpy(buff2, "1~$Error: Formato de nombre incorrecto");
 				write(socket_conn, buff2, strlen(buff2));
@@ -266,6 +269,7 @@ void *AtenderCliente(void *socket)
 			p = strtok(NULL, "/");
 			if (p != NULL) {
 				strcpy(nombre, p);//Copimaos el usuario
+				strcpy(user,p);
 			} else {
 				strcpy(buff2, "2~$Error: Formato de nombre incorrecto");
 				write(socket_conn, buff2, strlen(buff2));
@@ -296,6 +300,7 @@ void *AtenderCliente(void *socket)
 				{
 					if (row && row[0]) {
 						idJugador = atoi(row[0]);  // Convertimos el string del id a entero
+						userId = idJugador;
 					}
 					printf("Verificacion antes de anadir a la lista de conectados....\n");
 					//Anadimos usuario a la lista de conectados
@@ -576,7 +581,7 @@ void *AtenderCliente(void *socket)
 			}
 		}
 
-		else if(codigo == 8)
+		else if(codigo == 8)//Seleccionar pokemon inicial
 		{
 			strcpy(buff2, "");
 			char pokemon [1820];
@@ -635,7 +640,54 @@ void *AtenderCliente(void *socket)
 				return;
 			}
 		}
-		else if(codigo == 9){
+		else if(codigo == 9) // 9/IdJugadorParaInvitar
+		{	
+			char consulta[256];
+			char id[80];
+			int idJugadorObjetivo;
+			char mensaje[100];
+			
+			p = strtok(NULL, "/");
+			if(p != NULL)
+			{
+				strcpy(id, p);
+			}
+			idJugadorObjetivo = atoi(id);
+		
+			sprintf(consulta, "SELECT socket FROM Conectados WHERE idJ = %d", idJugadorObjetivo);
+			// Ejecutar consulta
+			if (mysql_query(conn, consulta)) {
+				fprintf(stderr, "Error al consultar el socket: %s\n", mysql_error(conn));
+				return;
+			}
+			// Obtener resultado
+			MYSQL_RES *resultado = mysql_store_result(conn);
+			if (!resultado) {
+				fprintf(stderr, "Error al obtener el resultado: %s\n", mysql_error(conn));
+				return;
+			}
+			MYSQL_ROW fila = mysql_fetch_row(resultado);
+			if (!fila) {
+				printf("Jugador con ID %d no encontrado o no conectado.\n", idJugadorObjetivo);
+				mysql_free_result(resultado);
+				return;
+			}
+			int socketJugador = atoi(fila[0]);
+			mysql_free_result(resultado);
+			
+			// Enviar mensaje de invitacion
+			if (socketJugador < 0) {
+				printf("Socket invalido para jugador con ID %d\n", idJugadorObjetivo);
+				return;
+			}
+			sprintf(mensaje, "102~$%d/%s/%d",userId, user, socket_conn);
+			
+			int bytes = write(socketJugador, mensaje, strlen(mensaje));
+			if (bytes < 0) {
+				perror("Error al enviar la invitacion");
+			} else {
+				printf("Invitacion enviada al jugador ID %d (socket %d)\n", idJugadorObjetivo, socketJugador);
+			}
 			
 		}
 		else if(codigo == 10) // Enviar 3 pokémons aleatoris de la Pokedex

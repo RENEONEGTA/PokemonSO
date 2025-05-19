@@ -844,31 +844,38 @@ namespace WindowsFormsApplication1
                                         case 102: //Invitacion Combate
 
 
-                                            int idInvitador;
-                                            if (int.TryParse(mensaje, out idInvitador))
+                                            string[] invitarPartes = mensaje.Split('/');
+
+                                            if (invitarPartes.Length >= 3 &&
+                                                int.TryParse(invitarPartes[0], out int idInvitador) &&
+                                                int.TryParse(invitarPartes[2], out int socketInvitador))
                                             {
+                                                string nombreInvitador = invitarPartes[1];
+
                                                 // Buscar al jugador en la lista global
                                                 Conectados jugadorInvitador = listaConectadosGlobal
                                                     .FirstOrDefault(c => c.Id == idInvitador);
 
                                                 Invoke((MethodInvoker)delegate
                                                 {
-                                                    if (jugadorInvitador != null)
+                                                    if (jugadorInvitador == null)
                                                     {
-                                                        Conectados.RecibirInvitacion(jugadorInvitador, this, server);
+                                                        // Si no está, lo creamos manualmente con los datos recibidos
+                                                        jugadorInvitador = new Conectados
+                                                        {
+                                                            Id = idInvitador,
+                                                            Nombre = nombreInvitador
+                                                        };
                                                     }
-                                                    else
-                                                    {
-                                                        MessageBox.Show("El jugador que te ha invitado no está en tu lista de conectados.");
-                                                    }
+
+                                                    Conectados.RecibirInvitacionMundo(jugadorInvitador, this, server);
                                                 });
-
-
                                             }
                                             else
                                             {
-                                                MessageBox.Show("Error al interpretar el ID del jugador invitador.");
+                                                MessageBox.Show("Error al interpretar la invitación: formato incorrecto.");
                                             }
+
 
                                             break;
                                     }
