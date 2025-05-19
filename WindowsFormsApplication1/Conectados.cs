@@ -110,7 +110,7 @@ public class Conectados
                         // Configurar el suavizado
                         ePanel.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
-                        // Crear un pincel de degradado: de blanco a un gris muy claro
+                        // Crear un pincel de degradado: 
                         using (LinearGradientBrush brush = new LinearGradientBrush(
                             rect,
                             Color.FromArgb(33, 33, 33),
@@ -224,7 +224,176 @@ public class Conectados
             }
         }
         
+    }
+
+    public void DibujarConectadosEnLista(List<Conectados> conectados, PanelDobleBuffer panelConectados, Form ventana, string nombre, Socket server, int ancho, int alto)
+    {
+        int y = 2;
+        int x = 2;
+
+        // Limpiar el panel antes de dibujar
+        panelConectados.Controls.Clear();
+
+        foreach (var conectado in conectados)
+        {
+            if (conectado.Nombre != null && conectado.Nombre != nombre)
+            {
+                PanelDobleBuffer panelConectado = new PanelDobleBuffer
+                {
+                    Size = new Size(ancho-x-x, 50),
+                    Location = new Point(x, y),
+                    BorderStyle = BorderStyle.FixedSingle,
+                    BackColor = Color.LightBlue
+                };
+                // Configurar el evento Paint para aplicar bordes redondeados y degradado
+                panelConectado.Paint += new PaintEventHandler((object senderPanel, PaintEventArgs ePanel) =>
+                {
+                    PanelDobleBuffer panel = (PanelDobleBuffer)senderPanel;
+                    int radio = 10; // Radio para las esquinas redondeadas
+                    Rectangle rect = new Rectangle(0, 0, panel.Width, panel.Height);
+
+                    // Crear la ruta con esquinas redondeadas
+                    using (GraphicsPath path = new GraphicsPath())
+                    {
+                        path.AddArc(rect.X, rect.Y, radio, radio, 180, 90);
+                        path.AddArc(rect.Right - radio, rect.Y, radio, radio, 270, 90);
+                        path.AddArc(rect.Right - radio, rect.Bottom - radio, radio, radio, 0, 90);
+                        path.AddArc(rect.X, rect.Bottom - radio, radio, radio, 90, 90);
+                        path.CloseFigure();
+
+                        // Asigna la región redondeada al panel
+                        panelConectado.Region = new Region(path);
+
+                        // Configurar el suavizado
+                        ePanel.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+                        // Crear un pincel de degradado
+                        using (LinearGradientBrush brush = new LinearGradientBrush(
+                            rect,
+                            Color.FromArgb(33, 33, 33),
+                            Color.FromArgb(44, 44, 44),
+                            LinearGradientMode.Vertical))
+                        {
+                            // Rellenar la ruta con el degradado
+                            ePanel.Graphics.FillPath(brush, path);
+                        }
+                    }
+                });
+
+                Label lblNombre = new Label
+                {
+                    Text = conectado.Nombre,
+                    Location = new Point(50, 5),
+                    ForeColor = Color.White,
+                    BackColor = Color.Transparent,
+                    AutoSize = true
+                };
+
+                string imparPath = Path.Combine(directorioBase, "Resources", "images", "personaje_chico.png");
+                string parPath = Path.Combine(directorioBase, "Resources", "images", "personaje_chica.png");
+                string imagePath = (conectado.Id % 2 == 0) ? parPath : imparPath;
+
+                PanelDobleBuffer panelFondo = new PanelDobleBuffer
+                {
+                    Size = new Size(40, 40),
+                    Location = new Point(5, 5),
+                    BorderStyle = BorderStyle.Fixed3D,
+                    BackgroundImage = Image.FromFile(imagePath),
+                    BackgroundImageLayout = ImageLayout.Zoom
+                };
+                
+                redondearPanel(panelFondo, 10);
+
+                Label lblVictorias = new Label
+                {
+                    Text = "Victorias: " + string.Join(", ", conectado.Victorias),
+                    Location = new Point(50, 20),
+                    ForeColor = Color.White,
+                    BackColor = Color.Transparent,
+                    AutoSize = true
+                };
+                Label lblDerrotas = new Label
+                {
+                    Text = "Derrotas: " + string.Join(", ", conectado.Derrotas),
+                    Location = new Point(50, 35),
+                    ForeColor = Color.White,
+                    BackColor = Color.Transparent,
+                    AutoSize = true
+                };
+
+
+
+                panelConectado.Controls.Add(lblNombre);
+                panelConectado.Controls.Add(panelFondo);
+                panelConectado.Controls.Add(lblVictorias);
+                panelConectado.Controls.Add(lblDerrotas);
+
+                panelConectados.Controls.Add(panelConectado);
+
+
+                // Mover la posición para la siguiente carta
+                y += 52;
+
+
+                panelConectado.Click += (sender, e1) =>
+                {
+                    string invitacion = "7/" + conectado.Id;
+                    byte[] msg = System.Text.Encoding.ASCII.GetBytes(invitacion);
+                    server.Send(msg);
+
+                    // Creamos el label de invitación
+                    Label labelInvitacion = new Label();
+                    labelInvitacion.Text = "¡Invitado!";
+                    labelInvitacion.ForeColor = Color.LimeGreen;
+                    labelInvitacion.BackColor = Color.Transparent;
+                    labelInvitacion.Font = new Font("Arial", 10, FontStyle.Bold);
+                    labelInvitacion.AutoSize = true;
+                    labelInvitacion.Location = new Point(
+                        (panelConectado.Width - labelInvitacion.PreferredWidth) / 2,
+                        (panelConectado.Height - labelInvitacion.PreferredHeight) / 2
+                    );
+                    labelInvitacion.BringToFront();
+                    panelConectado.Enabled = false;
+                    // Añadir el label al panel
+                    panelConectado.Controls.Add(labelInvitacion);
+                    lblDerrotas.Visible = false;
+                    lblVictorias.Visible = false;
+                    lblNombre.Visible = false;  
+
+                    // Crear un temporizador para eliminar el mensaje a los 10 segundos
+                    Timer temporizador = new Timer();
+                    temporizador.Interval = 10000; // 10 segundos
+                    temporizador.Tick += (s, args) =>
+                    {
+                        if (panelConectado.Controls.Contains(labelInvitacion))
+                            panelConectado.Controls.Remove(labelInvitacion);
+                        panelConectado.Enabled = true;
+                        lblDerrotas.Visible = true;
+                        lblVictorias.Visible = true;
+                        lblNombre.Visible = true;
+                        labelInvitacion.Dispose();
+                        temporizador.Stop();
+                        temporizador.Dispose();
+                    };
+                    temporizador.Start();
+                };
+
+            }
         }
+
+    }
+    
+    private void redondearPanel(Panel panel, int radio)
+    {
+        System.Drawing.Drawing2D.GraphicsPath path = new System.Drawing.Drawing2D.GraphicsPath();
+        path.AddArc(0, 0, radio, radio, 180, 90);
+        path.AddArc(panel.Width - radio, 0, radio, radio, 270, 90);
+        path.AddArc(panel.Width - radio, panel.Height - radio, radio, radio, 0, 90);
+        path.AddArc(0, panel.Height - radio, radio, radio, 90, 90);
+        path.CloseAllFigures();
+        panel.Region = new Region(path);
+    }
+
 
     public void RecibirInvitacion(Conectados conectado, Form ventana, Socket server)
     {

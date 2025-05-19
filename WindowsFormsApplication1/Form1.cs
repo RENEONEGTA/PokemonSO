@@ -65,6 +65,8 @@ namespace WindowsFormsApplication1
         RoundButton Squirtel = new RoundButton();   
         RoundButton Bulbasaur = new RoundButton();
         bool escogerPokemon = false;
+        public delegate void ConectadosActualizadosHandler(List<Conectados> conectados);
+        public event ConectadosActualizadosHandler ConectadosActualizados;
 
         Mapa mapa;
         Jugador jugador;
@@ -826,7 +828,7 @@ namespace WindowsFormsApplication1
                                                 {
                                                     Conectados.DibujarConectados(listaConectadosGlobal, panelCargarCombate, this, user, server);
                                                 }
-
+                                                ConectadosActualizados?.Invoke(listaConectadosGlobal);
                                             });
                                             break;
 
@@ -1584,11 +1586,18 @@ namespace WindowsFormsApplication1
             }
             else
             {
-                FormJuego juego = new FormJuego();
+                FormJuego juego = new FormJuego(user, server);
+                // Enlazar al evento utilizando una instancia del formulario  
+                this.ConectadosActualizados += juego.ActualizarListaConectados;
+                // Enviarle la lista actual si ya tiene datos
+                if (listaConectadosGlobal.Count > 0)
+                {
+                    juego.ActualizarListaConectados(listaConectadosGlobal);
+                }
                 juego.Show();
             }
         }
-        
+           
         private void Atacar(Pokemon pokemon)
         {
             //Enviamos el ataque utilizado

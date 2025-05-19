@@ -5,6 +5,7 @@ using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -15,6 +16,10 @@ namespace WindowsFormsApplication1
     public partial class FormJuego : Form
     {
         Timer gameLoop = new Timer();
+        Conectados conectados = new Conectados();
+        List<Conectados> listaConectados = new List<Conectados>();
+        string user;
+        Socket server;
         Mapa mapa;
         Mapa minimapa;
         Jugador jugador;
@@ -23,44 +28,67 @@ namespace WindowsFormsApplication1
         bool up, down, left, right;
         float camX = 0, camY = 0;
         int tileSize = 256;
-        int miniTileSize = 16;
+        int miniTileSize = 6;
         int vistaAncho = 5;
         int vistaAlto = 4;
-
-
-        int minimapaAncho = 256;
-        int minimapaAlto = 256;
-       
-
 
         PanelDobleBuffer panelMapa = new PanelDobleBuffer();
         PanelDobleBuffer panelMinimapa = new PanelDobleBuffer();
         PictureBox invitar = new PictureBox();
+        PanelDobleBuffer panelInvitar = new PanelDobleBuffer();
+        PanelDobleBuffer panelAmigos = new PanelDobleBuffer();   
 
 
-        public FormJuego()
+        public FormJuego(string user, Socket server)
         {
             this.Text = "Mapa con cámara";
             this.ClientSize = new Size(vistaAncho * tileSize, vistaAlto * tileSize);
+            this.FormBorderStyle = FormBorderStyle.FixedSingle;
+            this.MaximizeBox = true;               
+            this.MinimizeBox = true;                            
+
+            this.Resize += new EventHandler(FormJuego_Resize);
+            this.user = user;
+            this.server = server;
+            
+
+
+            panelInvitar.Size = new Size(48, 48);
+            panelInvitar.Location = new Point(this.ClientSize.Width - panelInvitar.Width-10, 10);
+            panelInvitar.BackColor = Color.FromArgb(22,22,22);
+            panelInvitar.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            redondearPanel(panelInvitar, 10);
+
+
             invitar.Size = new Size(48, 48);
-            invitar.Location = new Point(this.Width - invitar.Width-20, 10);
-            invitar.Image = Image.FromFile(directorioBase + "/Resources/menuIcono.png");
+            invitar.Image = Image.FromFile(directorioBase + "/Resources/images/menuIcono.png");
             invitar.SizeMode = PictureBoxSizeMode.Zoom;
             invitar.BackColor = Color.Transparent;
-            invitar.Anchor = AnchorStyles.Top | AnchorStyles.Right;
 
-
-            this.Controls.Add(invitar);
-            invitar.BringToFront();
-
+            panelInvitar.Controls.Add(invitar);
+            panelInvitar.BringToFront();
+            this.Controls.Add(panelInvitar);
+            AsignarEventoClick(panelInvitar);
             panelMapa.Dock = DockStyle.Fill;
             panelMapa.Paint += PanelMapa_Paint;
             this.Controls.Add(panelMapa);
+
+            mapa = new Mapa(tileSize);
             
-            panelMinimapa.Width = minimapaAncho;
-            panelMinimapa.Height = minimapaAlto;
-            panelMinimapa.Location = new Point(this.Width - panelMinimapa.Width-50, this.Height - panelMinimapa.Height - 50);
+            minimapa = new Mapa(miniTileSize);
+            jugador = new Jugador(256, 256); // posición inicial en pixeles
+
+            // Ajusta el tamaño del panel al contenido real
+            panelMinimapa.Width = mapa.ancho * miniTileSize;
+            panelMinimapa.Height = mapa.alto * miniTileSize;
+
+            panelMinimapa.BackColor = Color.FromArgb(22, 22, 22);
+            panelMinimapa.Location = new Point(this.ClientSize.Width - panelMinimapa.Width-10, this.ClientSize.Height - panelMinimapa.Height - 10);
+            panelMinimapa.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             panelMinimapa.Paint += PanelMinimapa_Paint;
+            
+
+            redondearPanel(panelMinimapa, 10);  
             this.Controls.Add(panelMinimapa);
             panelMinimapa.BringToFront();
 
@@ -71,17 +99,24 @@ namespace WindowsFormsApplication1
             this.KeyUp += FormJuego_KeyUp;
             this.DoubleBuffered = true;
 
-            mapa = new Mapa(tileSize);
-            miniTileSize = minimapaAlto / mapa.alto;
-            minimapa = new Mapa(miniTileSize);
-            jugador = new Jugador(256, 256); // posición inicial en pixeles
+            
             
             gameLoop.Interval = 33;
             gameLoop.Tick += GameLoop_Tick;
             gameLoop.Start();
 
-            
-            
+            panelAmigos.Size = new Size(200, 300);
+            panelAmigos.Location = new Point(this.ClientSize.Width - panelAmigos.Width - 10, panelInvitar.Bottom + 10);
+            panelAmigos.BackColor = Color.FromArgb(22, 22, 22);
+            redondearPanel(panelAmigos, 10);
+            panelAmigos.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+
+            this.Controls.Add(panelAmigos); 
+            panelAmigos.BringToFront();
+            panelAmigos.Visible = false;
+
+
+
 
             //PictureBox salir = new PictureBox
             //{
@@ -103,6 +138,82 @@ namespace WindowsFormsApplication1
             //this.ShowInTaskbar = false; // Esconder la taskbar
             //this.FormBorderStyle = FormBorderStyle.None; //Quitar el borderstyle
         }
+        private void redondearPanel(Panel panel, int radio)
+        {
+            System.Drawing.Drawing2D.GraphicsPath path = new System.Drawing.Drawing2D.GraphicsPath();
+            path.AddArc(0, 0, radio, radio, 180, 90);
+            path.AddArc(panel.Width - radio, 0, radio, radio, 270, 90);
+            path.AddArc(panel.Width - radio, panel.Height - radio, radio, radio, 0, 90);
+            path.AddArc(0, panel.Height - radio, radio, radio, 90, 90);
+            path.CloseAllFigures();
+            panel.Region = new Region(path);
+        }
+
+        public void ActualizarListaConectados(List<Conectados> listaconectados)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke((MethodInvoker)(() => ActualizarListaConectados(listaconectados)));
+                return;
+            }
+            conectados.DibujarConectadosEnLista(listaconectados, panelAmigos, this, user, server, panelAmigos.Width, panelAmigos.Height);
+            // Actualiza la lista de conectados
+            listaConectados.Clear();
+            listaConectados = listaconectados;
+
+
+        }
+
+        private void FormJuego_Resize(object sender, EventArgs e)
+        {
+            if (this.WindowState == FormWindowState.Maximized)
+            {
+                // Redibuja o escala los controles cuando se maximiza
+                vistaAlto = 5;
+                vistaAncho = 9;
+                this.BeginInvoke((MethodInvoker)delegate {
+                    this.Invalidate();
+                    this.Update();
+                    this.Refresh();
+                });
+            }
+            else if (this.WindowState == FormWindowState.Normal)
+            {
+                // Redibuja o escala los controles cuando se restaura
+                vistaAlto = 4;
+                vistaAncho = 5;
+
+
+                this.BeginInvoke((MethodInvoker)delegate
+                {
+                    this.Invalidate();
+                    this.Update();
+                    this.Refresh();
+                });
+            }
+        }
+
+        void AsignarEventoClick(Control contenedor)
+        {
+            contenedor.Click += InvitarClick;
+
+            foreach (Control hijo in contenedor.Controls)
+            {
+                AsignarEventoClick(hijo); // Aplica recursivamente
+            }
+        }
+        private void InvitarClick(object sender, EventArgs e)
+        {
+            if (panelAmigos.Visible == true)
+            {
+                panelAmigos.Visible = false;
+            }
+            else
+            {
+                panelAmigos.Visible = true;
+            }
+        }
+
 
         private void salir_Click(object sender, EventArgs e)
         {
@@ -165,9 +276,11 @@ namespace WindowsFormsApplication1
         private void PanelMinimapa_Paint(object sender, PaintEventArgs e)
         {
             Graphics g = e.Graphics;
+            g.Clear(Color.FromArgb(22, 22, 22)); // mismo color que tu fondo
+
 
             // Dibujar todo el mapa a escala
-            minimapa.Dibujar(g, 0, 0, miniTileSize, minimapaAncho, minimapaAlto);
+            minimapa.Dibujar(g, 0, 0, miniTileSize, panelMinimapa.Width, panelMinimapa.Height);
             
 
             // Dibujar jugador en el minimapa (escala directa)
