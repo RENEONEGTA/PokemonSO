@@ -31,6 +31,7 @@ public class Conectados
 
     string directorioBase = Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.FullName).FullName;
     int panelConectadoTop = 0;
+    
     // Guarda los formularios de invitación por ID del jugador que invita
     Dictionary<int, Form> formulariosInvitacionAbiertos = new Dictionary<int, Form>();
     public static List<Conectados> ParsearDatos(string datos, List<Conectados> lista)
@@ -51,10 +52,11 @@ public class Conectados
             int.TryParse(campos[0], out int id);
             int.TryParse(campos[4], out int victorias);
             int.TryParse(campos[5], out int derrotas);
-
+            
+            
 
             //Si no existe, lo añadimos
-             Conectados conectados = new Conectados
+            Conectados conectados = new Conectados
              {
                 Id = id,
                 Nombre = campos[1],
@@ -223,6 +225,7 @@ public class Conectados
                     //Combate.pantallaCombate(nuevoForm, conectado);
                 };
             }
+           
         }
         
     }
@@ -499,7 +502,7 @@ public class Conectados
 
         // Label con descripción
         Label descripcion = new Label();
-        descripcion.Text = "te ha invitado a combatir";
+        descripcion.Text = "te ha invitado a su partida";
         descripcion.Font = new Font("Segoe UI", 9);
         descripcion.ForeColor = Color.DarkGray;
         descripcion.Location = new Point(80, 30);
@@ -526,7 +529,7 @@ public class Conectados
         // Acción de aceptar
         btnAceptar.Click += (s, e) =>
         {
-            string mensajeAceptar = "91/" + jugadorInvitador.Id;
+            string mensajeAceptar = "92/" + jugadorInvitador.Id;
             byte[] datos = Encoding.ASCII.GetBytes(mensajeAceptar);
             server.Send(datos);
 
@@ -536,9 +539,6 @@ public class Conectados
         // Acción de rechazar
         btnRechazar.Click += (s, e) =>
         {
-            string mensajeRechazar = "92/" + jugadorInvitador.Id;
-            byte[] datos = Encoding.ASCII.GetBytes(mensajeRechazar);
-            server.Send(datos);
 
             formulario.Controls.Remove(panelInvitacion);
         };

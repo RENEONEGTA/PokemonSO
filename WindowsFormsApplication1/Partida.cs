@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 using System.Xml.Schema;
 using WindowsFormsApplication1;
@@ -130,7 +131,21 @@ public class Partida
                 AutoSize = true
             };
 
-            
+            panelPartida.Click += (sender, e1) =>
+            {
+                
+                Form1 formInstance = Application.OpenForms.OfType<Form1>().FirstOrDefault();
+                if (formInstance != null)
+                {
+                    formInstance.CrearPartida(partida.Id);
+                }
+                else
+                {
+                    MessageBox.Show("No se encontró una instancia de Form1.");
+                }
+            };
+
+
 
             panelPartida.Controls.Add(lblFecha);
             panelPartida.Controls.Add(panelFondo);

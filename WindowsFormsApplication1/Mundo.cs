@@ -169,6 +169,14 @@ namespace WindowsFormsApplication1
         }
     }
 
+    class JugadorInfo
+    {
+        public int id;
+        public int x;
+        public int y;
+    }
+
+
     public class Jugador
     {
         public float x, y;
@@ -200,15 +208,22 @@ namespace WindowsFormsApplication1
             }
         }
 
-        public void Dibujar(Graphics g, float camX, float camY, int tileSize)
+        public void Dibujar(Graphics g, float camX, float camY, int tileSize, Brush color = null)
         {
-            float pantallaX = x - camX - (tamano / 2); // Centrar en X
-            float pantallaY = y - camY - (tamano / 2); // Centrar en Y
-            g.FillEllipse(Brushes.Red, pantallaX, pantallaY, tamano, tamano);
+            if (color == null)
+            {
+                color = Brushes.Red; // Rojo por defecto (jugador local)  
+            }
+            float pantallaX = x - camX - (tamano / 2); // Centrar en X  
+            float pantallaY = y - camY - (tamano / 2); // Centrar en Y  
+            g.FillEllipse(color, pantallaX, pantallaY, tamano, tamano);
         }
-        public void DibujarEnMinimapa(Graphics g, int x, int y, int size)
+        public void DibujarEnMinimapa(Graphics g, int x, int y, int size, Brush color = null)
         {
-            
+            if (color == null)
+            {
+                color = Brushes.Red; // Rojo por defecto (jugador local)  
+            }
             g.FillEllipse(Brushes.Red, x - size/2, y - size/2, size, size);
         }
     }

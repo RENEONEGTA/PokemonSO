@@ -109,6 +109,7 @@ void *AtenderCliente(void *socket)
 	socket_conn = *s;
 	char peticion[512];
 	char buff2[1000];
+	int idPartida;
 	
 	
 	
@@ -336,7 +337,8 @@ void *AtenderCliente(void *socket)
 						}
 					}
 
-					strcpy(buff2, "2~$1\n"); // Usuario encontrado
+					sprintf(buff2, "2~$1/%d\n", userId); // Usuario encontrado
+					
 					printf("%s\n",buff2);
                     
 				} 
@@ -690,17 +692,209 @@ void *AtenderCliente(void *socket)
 			}
 			
 		}
-		else if(codigo == 10) // Enviar 3 pokémons aleatoris de la Pokedex
+		else if(codigo == 91) // Crear Partida
+		{
+			char query[512];
+			time_t t = time(NULL);
+			struct tm tm = *localtime(&t);
+			char fecha[11];
+			char jugador1[80];
+			char mensaje[80];
+			int idGenerado ;
+			strcpy(jugador1, user);
+			snprintf(fecha, sizeof(fecha), "%04d-%02d-%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
+			snprintf(query, sizeof(query),
+					 "INSERT INTO Partidas (fecha, jugador1) VALUES ('%s', '%s')",
+					 fecha, jugador1);
+			if (mysql_query(conn, query)) {
+				fprintf(stderr, "Error al crear partida: %s\n", mysql_error(conn));
+			} else {
+				printf("Partida creada con exito por %s\n", jugador1);
+				idGenerado = (int)mysql_insert_id(conn);
+			}
+			sprintf(mensaje, "91~$%d", idGenerado);
+			
+			write(socket_conn, mensaje, strlen(mensaje));
+				
+			
+		}
+		else if(codigo == 92) // Unirse a partida
+		{
+			MYSQL_RES *res;
+			MYSQL_ROW row;
+			char query[256];
+			char mensaje[100];
+			char jugador[80];
+			strcpy(jugador, user);
+			int idPartida;
+			char id[80];
+			
+			p = strtok(NULL, "/");
+			if(p != NULL)
+			{
+				strcpy(id, p);
+			}
+			idPartida = atoi(id);
+			
+			
+			// Buscar partidas con huecos
+			snprintf(query, sizeof(query),
+					 "SELECT jugador2, jugador3, jugador4 FROM Partidas WHERE id = %d",
+					 idPartida);
+			
+			
+			if (mysql_query(conn, query)) {
+				fprintf(stderr, "Error al consultar partida: %s\n", mysql_error(conn));
+				return;
+			}
+			res = mysql_store_result(conn);
+			if (res == NULL || mysql_num_rows(res) == 0) {
+				fprintf(stderr, "No existe la partida con id %d\n", idPartida);
+				if (res) mysql_free_result(res);
+				return;
+			}
+			row = mysql_fetch_row(res);
+			const char* jugador1 = row[0];
+			const char* jugador2 = row[1];
+			const char* jugador3 = row[2];
+			const char* jugador4 = row[3];
+			
+			char campoLibre[20] = "";
+			if (!jugador2 || strlen(jugador2) == 0)
+				strcpy(campoLibre, "jugador2");
+			else if (!jugador3 || strlen(jugador3) == 0)
+				strcpy(campoLibre, "jugador3");
+			else if (!jugador4 || strlen(jugador4) == 0)
+				strcpy(campoLibre, "jugador4");
+			
+			if (strlen(campoLibre) == 0) {
+				printf("La partida con id %d esta llena\n", idPartida);
+				mysql_free_result(res);
+				return;
+			}
+			
+			mysql_free_result(res);
+			
+			// Unirse a la partida actualizando el campo libre
+			char update[256];
+			snprintf(update, sizeof(update),
+					 "UPDATE Partidas SET %s = '%s' WHERE id = %d",
+					 campoLibre, jugador, idPartida);
+			
+			
+			if (mysql_query(conn, update)) {
+				fprintf(stderr, "Error al unirse a la partida: %s\n", mysql_error(conn));
+			} else {
+				printf("%s se ha unido a la partida %d como %s\n", jugador, idPartida, campoLibre);
+			}
+			
+		}
+		else if (codigo == 93) // Actualizar coordenadas jugador
+		{
+			int idJugador, idPartida, posX, posY;
+			
+			char *strIdPartida = strtok(NULL, "/");
+			char *strPosX = strtok(NULL, "/");
+			char *strPosY = strtok(NULL, "/");
+			
+			if (!strIdPartida || !strPosX || !strPosY) {
+				printf("Faltan datos en el mensaje de coordenadas\n");
+				return;
+			}
+			idJugador = userId;
+			idPartida = atoi(strIdPartida);
+			posX = atoi(strPosX);
+			posY = atoi(strPosY);
+			
+			char query[512];
+			snprintf(query, sizeof(query),
+					 "INSERT INTO JugadoresPartidas (idJugador, idPartida, posX, posY) "
+					 "VALUES (%d, %d, %d, %d) "
+					 "ON DUPLICATE KEY UPDATE posX = VALUES(posX), posY = VALUES(posY)",
+					 idJugador, idPartida, posX, posY);
+			
+			if (mysql_query(conn, query)) {
+				fprintf(stderr, "Error al insertar/actualizar coordenadas: %s\n", mysql_error(conn));
+			} else {
+				printf("Coordenadas registradas: Jugador %d en Partida %d -> (%d, %d)\n",
+					   idJugador, idPartida, posX, posY);
+			}
+			
+			// Paso 1: Obtener todas las coordenadas de jugadores en la misma partida
+			char queryCoordenadas[256];
+			snprintf(queryCoordenadas, sizeof(queryCoordenadas),
+					 "SELECT idJugador, posX, posY FROM JugadoresPartidas WHERE idPartida = %d",
+					 idPartida);
+			
+			if (mysql_query(conn, queryCoordenadas)) {
+				fprintf(stderr, "Error al obtener coordenadas de la partida: %s\n", mysql_error(conn));
+				return;
+			}
+			MYSQL_RES *resCoords = mysql_store_result(conn);
+			MYSQL_ROW rowCoords;
+			
+			char mensajeCoordenadas[1024] = "94~$"; // codigo de coordenadas
+			
+			while ((rowCoords = mysql_fetch_row(resCoords)) != NULL) {
+				int jugador = atoi(rowCoords[0]);
+				int x = atoi(rowCoords[1]);
+				int y = atoi(rowCoords[2]);
+				
+				char linea[64];
+				snprintf(linea, sizeof(linea), "%d:%d:%d/", jugador, x, y); // formato id:x:y/
+				strcat(mensajeCoordenadas, linea);
+			}
+			mysql_free_result(resCoords);
+			
+			// Paso 2: Obtener sockets de todos los jugadores de esta partida
+			char querySockets[256];
+			snprintf(querySockets, sizeof(querySockets),
+					 "SELECT idJugador FROM JugadoresPartidas WHERE idPartida = %d", idPartida);
+			
+			if (mysql_query(conn, querySockets)) {
+				fprintf(stderr, "Error al obtener lista de jugadores: %s\n", mysql_error(conn));
+				return;
+			}
+			MYSQL_RES *resSockets = mysql_store_result(conn);
+			MYSQL_ROW rowSocket;
+			
+			while ((rowSocket = mysql_fetch_row(resSockets)) != NULL) {
+				int jugadorId = atoi(rowSocket[0]);
+				
+				// Consultamos el socket de este jugador
+				char querySock[128];
+				snprintf(querySock, sizeof(querySock),
+						 "SELECT socket FROM Conectados WHERE idJ = %d", jugadorId);
+				if (mysql_query(conn, querySock) == 0) {
+					MYSQL_RES *resSock = mysql_store_result(conn);
+					MYSQL_ROW filaSock = mysql_fetch_row(resSock);
+					
+					if (filaSock != NULL) {
+						int socketJugador = atoi(filaSock[0]);
+						write(socketJugador, mensajeCoordenadas, strlen(mensajeCoordenadas));
+					}
+					
+					mysql_free_result(resSock);
+				}
+			}
+			
+			mysql_free_result(resSockets);			
+		}		
+		else if(codigo == 10) // Enviar 3 pokemons aleatoris de la Pokedex
 		{
 			strcpy(buff2, "");
-
+			int idP [3];
+			int idJ;
+			char nombrecliente[50];
 			char query[512];
+			p = strtok(NULL, "/");
+			strcpy(nombrecliente, p);
+			
 			sprintf(query, "SELECT * FROM Pokedex ORDER BY RAND() LIMIT 3;");
-
+			
 			if (mysql_query(conn, query) == 0) {
 				MYSQL_RES *res = mysql_store_result(conn);
 				MYSQL_ROW row;
-
 				if (res != NULL) {
 					strcpy(buff2, "10~$");
 					while ((row = mysql_fetch_row(res)) != NULL) {
@@ -708,21 +902,44 @@ void *AtenderCliente(void *socket)
 						for (int i = 0; i < mysql_num_fields(res); i++) {
 							strcat(buff2, row[i]);
 							strcat(buff2, "/");
+							idP[i] = row[i];
 						}
 						strcat(buff2, "#");
 					}
 					mysql_free_result(res);
+					//Ara posem els pokemons obtinguts en la taula relacio del jugador, per indicar que té aquest nous pokemons.
+					sprintf(query, "SELECT Jugadores.Id FROM Jugadores WHERE Jugadores.nombre = %s;", nombrecliente);
+					if(mysql_query(conn, query) == 0){
+						MYSQL_RES *res = mysql_store_result(conn);
+						MYSQL_ROW row;
+						idJ = row;
+						mysql_free_result(res);
+						
+						//Ara incerim els pokemons a la taula relacio
+						for(int i = 0; i<3; i++){
+							// Inserir a la taula Relacio
+							char insertRelacio[256];
+							sprintf(insertRelacio, "INSERT INTO Relacio (IdJ, IdP, Nivell) VALUES (%d, %d, 1);", idJ, idP[i]);
+							if (mysql_query(conn, insertRelacio) != 0) {
+								printf("Error afegint a Relacio: %s\n", mysql_error(conn));
+								sprintf(buff2, "10~$Error SQL: %s", mysql_error(conn));
+								
+							}
+						}
+						
+					}else{
+						sprintf(buff2, "10~$Error SQL: %s", mysql_error(conn));
+					}
+					
 				} else {
-					strcpy(buff2, "11~$Error: No s'han pogut obtenir pokémons");
+					strcpy(buff2, "10~$Error: No s'han pogut obtenir pokémons");
 				}
 			} else {
-				sprintf(buff2, "11~$Error SQL: %s", mysql_error(conn));
+				sprintf(buff2, "10~$Error SQL: %s", mysql_error(conn));
 			}
-
-			write(socket_conn, buff2, strlen(buff2));
-		}
-
-		
+			
+			write(socket_conn, buff2, strlen(buff2));			
+		}		
 	}
 	//Cerramos la conexion con el servidor
 	

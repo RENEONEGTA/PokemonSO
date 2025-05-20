@@ -147,11 +147,25 @@ DROP TABLE IF EXISTS `Conectados`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `Conectados` (
-  `IdJ` int(11) NOT NULL,
+  `idJ` int(11) NOT NULL,
   `nombre` varchar(20) NOT NULL,
   `socket` int(11) DEFAULT NULL,
   PRIMARY KEY (`IdJ`),
   CONSTRAINT `Conectados_ibfk_1` FOREIGN KEY (`IdJ`) REFERENCES `Jugadores` (`id`) ON DELETE CASCADE
+);
+-- Crea la tabla intermedia JugadoresPartidas
+CREATE TABLE IF NOT EXISTS JugadoresPartidas (
+    idJugador INT NOT NULL,
+    idPartida INT NOT NULL,
+    posX INT DEFAULT 0,
+    posY INT DEFAULT 0,
+    PRIMARY KEY (idJugador, idPartida),
+    FOREIGN KEY (idJugador) REFERENCES Jugadores(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (idPartida) REFERENCES Partidas(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
 

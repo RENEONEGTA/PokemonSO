@@ -67,6 +67,8 @@ namespace WindowsFormsApplication1
         bool escogerPokemon = false;
         public delegate void ConectadosActualizadosHandler(List<Conectados> conectados);
         public event ConectadosActualizadosHandler ConectadosActualizados;
+        Dictionary<int, JugadorInfo> jugadoresEnPartida = new Dictionary<int, JugadorInfo>();
+        int userId = 0; // ID del jugador local
 
         Mapa mapa;
         Jugador jugador;
@@ -700,23 +702,44 @@ namespace WindowsFormsApplication1
 
                                             break;
 
-                                        case 2: //Iniciado Sesion
+                                        case 2: // Iniciado Sesión
 
-                                            // Mostramos el mensaje recibido
+                                            // El mensaje que llega es del tipo "1/42"
+                                            string[] partesInicio = mensaje.Split('/');
 
-
-                                            // Comparamos correctamente
-                                            //MessageBox.Show(mensaje);
-                                            if (Convert.ToInt32(mensaje) == 1)
+                                            // Verificamos que tiene al menos 2 partes: el estado y el userId
+                                            if (partesInicio.Length >= 2)
                                             {
-                                                Inicio();
+                                                int estado, idJugador;
+
+                                                // Intentamos convertir ambas partes a enteros
+                                                if (int.TryParse(partesInicio[0], out estado) && int.TryParse(partesInicio[1], out idJugador))
+                                                {
+                                                    if (estado == 1)
+                                                    {
+                                                        // Guardamos el ID del jugador local
+                                                        userId = idJugador;
+
+                                                        // Llamamos a la función de inicio
+                                                        Inicio();
+                                                    }
+                                                    else
+                                                    {
+                                                        MessageBox.Show("No se ha podido iniciar sesión.");
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    MessageBox.Show("Error al interpretar los datos del servidor.");
+                                                }
                                             }
                                             else
                                             {
-                                                MessageBox.Show("No se ha podido Iniciar Sesion");
+                                                MessageBox.Show("Formato de mensaje inválido.");
                                             }
 
                                             break;
+
 
                                         case 3: //Pokedex
 
@@ -813,6 +836,35 @@ namespace WindowsFormsApplication1
                                             break;
                                         case 9:
                                             break;
+                                        case 91: //Recibimos confirmacion de crearPartida con id de partida
+
+                                            CrearPartida(Convert.ToInt32(mensaje));
+
+                                            break;
+                                        case 94:
+                                            // Formato esperado: 94~$15:120:250/17:135:220/...
+                                            string[] partesJugadores = mensaje.Split('/');
+                                            jugadoresEnPartida.Clear();
+
+                                            foreach (string entrada in partesJugadores)
+                                            {
+                                                if (string.IsNullOrWhiteSpace(entrada)) continue;
+
+                                                string[] datosPos = entrada.Split(':');
+                                                if (datosPos.Length != 3) continue;
+
+                                                int id = int.Parse(datosPos[0]);
+                                                int x = int.Parse(datosPos[1]);
+                                                int y = int.Parse(datosPos[2]);
+
+                                                if (Application.OpenForms.OfType<FormJuego>().FirstOrDefault() is FormJuego formJuego)
+                                                {
+                                                    formJuego.ActualizarJugadorRemoto(id, x, y);
+                                                }
+                                            }
+
+                                            break;
+
                                         case 10: //Abrir Sobre
                                             MessageBox.Show(mensaje);
                                             break;
@@ -1585,6 +1637,14 @@ namespace WindowsFormsApplication1
 
         private void nuevaPartida_Click(object sender, EventArgs e)
         {
+            //Enviamos para crear partida
+            string mensaje = "91/";
+            byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
+            server.Send(msg);
+
+        }
+        public void CrearPartida(int id)
+        {
             if (JugadorNuevo == true)
             {
                 MessageBox.Show("No tienes pokemons");
@@ -1593,7 +1653,7 @@ namespace WindowsFormsApplication1
             }
             else
             {
-                FormJuego juego = new FormJuego(user, server);
+                FormJuego juego = new FormJuego(user, server, id, userId);
                 // Enlazar al evento utilizando una instancia del formulario  
                 this.ConectadosActualizados += juego.ActualizarListaConectados;
                 // Enviarle la lista actual si ya tiene datos
@@ -1602,9 +1662,10 @@ namespace WindowsFormsApplication1
                     juego.ActualizarListaConectados(listaConectadosGlobal);
                 }
                 juego.Show();
+                //MessageBox.Show(Convert.ToString(id));
             }
         }
-           
+
         private void Atacar(Pokemon pokemon)
         {
             //Enviamos el ataque utilizado
@@ -1635,6 +1696,7 @@ namespace WindowsFormsApplication1
             byte[] msg2 = System.Text.Encoding.ASCII.GetBytes(mensaje);
             server.Send(msg2);
         }
+       
 
         private void Form1_Resize(object sender, EventArgs e)
         {

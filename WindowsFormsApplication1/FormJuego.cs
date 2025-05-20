@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using System.Timers;
 using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 
@@ -15,14 +16,17 @@ namespace WindowsFormsApplication1
 {
     public partial class FormJuego : Form
     {
-        Timer gameLoop = new Timer();
+       
+        System.Windows.Forms.Timer gameLoop = new System.Windows.Forms.Timer();
         Conectados conectados = new Conectados();
         List<Conectados> listaConectados = new List<Conectados>();
         string user;
+        int userId;
         Socket server;
         Mapa mapa;
         Mapa minimapa;
         Jugador jugador;
+        int idPartida;
         string directorioBase = Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.FullName).FullName;
 
         bool up, down, left, right;
@@ -31,15 +35,21 @@ namespace WindowsFormsApplication1
         int miniTileSize = 6;
         int vistaAncho = 5;
         int vistaAlto = 4;
+        private float lastPosX = -1;
+        private float lastPosY = -1;
+
 
         PanelDobleBuffer panelMapa = new PanelDobleBuffer();
         PanelDobleBuffer panelMinimapa = new PanelDobleBuffer();
         PictureBox invitar = new PictureBox();
         PanelDobleBuffer panelInvitar = new PanelDobleBuffer();
-        PanelDobleBuffer panelAmigos = new PanelDobleBuffer();   
+        PanelDobleBuffer panelAmigos = new PanelDobleBuffer();
+
+        Dictionary<int, Jugador> jugadoresRemotos = new Dictionary<int, Jugador>();
 
 
-        public FormJuego(string user, Socket server)
+
+        public FormJuego(string user, Socket server, int id, int userId)
         {
             this.Text = "Mapa con cámara";
             this.ClientSize = new Size(vistaAncho * tileSize, vistaAlto * tileSize);
@@ -48,9 +58,12 @@ namespace WindowsFormsApplication1
             this.MinimizeBox = true;                            
 
             this.Resize += new EventHandler(FormJuego_Resize);
+            this.FormClosing += new FormClosingEventHandler(FormJuego_FormClosing);
             this.user = user;
             this.server = server;
-            
+            this.idPartida = id;
+            this.userId = userId;
+
 
 
             panelInvitar.Size = new Size(48, 48);
@@ -115,6 +128,8 @@ namespace WindowsFormsApplication1
             panelAmigos.BringToFront();
             panelAmigos.Visible = false;
 
+            IniciarEnvioPeriodico();
+
 
 
 
@@ -138,6 +153,29 @@ namespace WindowsFormsApplication1
             //this.ShowInTaskbar = false; // Esconder la taskbar
             //this.FormBorderStyle = FormBorderStyle.None; //Quitar el borderstyle
         }
+
+        public void ActualizarJugadorRemoto(int idJugador, float x, float y)
+        {
+            // Si es el jugador local, no actualizamos nada
+            if (idJugador == userId)
+                return;
+
+            if (jugadoresRemotos.ContainsKey(idJugador))
+            {
+                jugadoresRemotos[idJugador].x = x;
+                jugadoresRemotos[idJugador].y = y;
+            }
+            else
+            {
+                Jugador nuevo = new Jugador(x, y);
+                jugadoresRemotos.Add(idJugador, nuevo);
+            }
+
+            // Fuerza redibujo
+            panelMapa.Invalidate();
+            panelMinimapa.Invalidate();
+        }
+
         private void redondearPanel(Panel panel, int radio)
         {
             System.Drawing.Drawing2D.GraphicsPath path = new System.Drawing.Drawing2D.GraphicsPath();
@@ -215,11 +253,21 @@ namespace WindowsFormsApplication1
         }
 
 
-        private void salir_Click(object sender, EventArgs e)
+        private void FormJuego_FormClosing(object sender, EventArgs e)
         {
-            this.Close();
-        }
+            
+            DetenerEnvio();
 
+        }
+        void DetenerEnvio()
+        {
+            if (timerEnviarCoords != null)
+            {
+                timerEnviarCoords.Stop();
+                timerEnviarCoords.Dispose();
+                timerEnviarCoords = null;
+            }
+        }
         private void FormJuego_FormJuegoClosing(object sender, FormClosingEventArgs e)
         {
             MessageBox.Show("Juego cerrado incorrectamente");
@@ -256,7 +304,47 @@ namespace WindowsFormsApplication1
             panelMapa.Invalidate();
             panelMinimapa.Invalidate();
 
+            //93/idJugador/idPartida/posX/posY
+
+
         }
+
+        System.Timers.Timer timerEnviarCoords;
+
+        void IniciarEnvioPeriodico()
+        {
+            timerEnviarCoords = new System.Timers.Timer(500); // Cada 0.5 segundos
+            timerEnviarCoords.Elapsed += EnviarCoordenadas;
+            timerEnviarCoords.AutoReset = true;
+            timerEnviarCoords.Enabled = true;
+        }
+
+        void EnviarCoordenadas(object sender, ElapsedEventArgs e)
+        {
+            float deltaX = Math.Abs(jugador.x - lastPosX);
+            float deltaY = Math.Abs(jugador.y - lastPosY);
+
+            if (deltaX > 0.1f || deltaY > 0.1f)
+            {
+                string mensaje = $"93/{idPartida}/{jugador.x}/{jugador.y}";
+
+                try
+                {
+                    byte[] msg = Encoding.ASCII.GetBytes(mensaje);
+                    server.Send(msg);
+
+                    // Actualiza la última posición enviada
+                    lastPosX = jugador.x;
+                    lastPosY = jugador.y;
+                }
+                catch (Exception ex)
+                {
+                    // Opcional: log o manejo de error
+                }
+            }
+            // Si no cambia, no haces nada (no envías nada)
+        }
+
 
         private void ActualizarCamara()
         {
@@ -272,6 +360,11 @@ namespace WindowsFormsApplication1
         {
             mapa.Dibujar(e.Graphics, camX, camY, tileSize, vistaAncho, vistaAlto);
             jugador.Dibujar(e.Graphics, camX, camY, tileSize);
+
+            foreach (var jugadorRemoto in jugadoresRemotos.Values)
+            {
+                jugadorRemoto.Dibujar(e.Graphics, camX, camY, tileSize, Brushes.Blue); // dibuja con otro color
+            }
         }
         private void PanelMinimapa_Paint(object sender, PaintEventArgs e)
         {
@@ -297,6 +390,13 @@ namespace WindowsFormsApplication1
             using (Pen pen = new Pen(Color.Red, 2))
             {
                 g.DrawRectangle(pen, vistaMiniX, vistaMiniY, vistaMiniAncho, vistaMiniAlto);
+            }
+
+            foreach (var jugadorRemoto in jugadoresRemotos.Values)
+            {
+                int remX = (int)(jugadorRemoto.x / tileSize * miniTileSize);
+                int remY = (int)(jugadorRemoto.y / tileSize * miniTileSize);
+                jugador.DibujarEnMinimapa(g, remX, remY, miniTileSize, Brushes.Blue);
             }
         }
 
