@@ -152,6 +152,27 @@ namespace WindowsFormsApplication1
             //this.StartPosition = FormStartPosition.CenterScreen; //Centrar el formulario
             //this.ShowInTaskbar = false; // Esconder la taskbar
             //this.FormBorderStyle = FormBorderStyle.None; //Quitar el borderstyle
+
+
+            //PictureBox max_min = new PictureBox //maximizar minimizar
+            //{
+            //    Size = new Size(40, 40), // Ajusta el tamaño según sea necesario
+            //    Location = new Point(1450, 45),
+            //    SizeMode = PictureBoxSizeMode.StretchImage // Opcional: para ajustar la imagen al tamaño del control
+            //};
+            //string salir_image = Path.Combine(directorioBase, "Resources", "cerrar.png");
+            //salir.Image = Image.FromFile(salir_image);
+            //this.Controls.Add(salir);
+            //salir.BringToFront();
+            //salir.Visible = true;
+            //salir.Click += salir_Click;
+
+            //this.FormBorderStyle = FormBorderStyle.None; // Quitar la barra de título y botones
+            //this.WindowState = FormWindowState.Maximized; // Maximizar el formulario
+            //this.ControlBox = false; //Quitar los controles 
+            //this.StartPosition = FormStartPosition.CenterScreen; //Centrar el formulario
+            //this.ShowInTaskbar = false; // Esconder la taskbar
+            //this.FormBorderStyle = FormBorderStyle.None; //Quitar el borderstyle
         }
 
         public void ActualizarJugadorRemoto(int idJugador, float x, float y)

@@ -81,10 +81,10 @@
             this.IP.Location = new System.Drawing.Point(100, 749);
             this.IP.Margin = new System.Windows.Forms.Padding(6);
             this.IP.Name = "IP";
-            this.IP.Size = new System.Drawing.Size(194, 27);
+            this.IP.Size = new System.Drawing.Size(194, 19);
             this.IP.TabIndex = 2;
             this.IP.TabStop = false;
-            this.IP.Text = "192.168.56.101";
+            this.IP.Text = "192.168.56.102";
             // 
             // aunNoCuenta
             // 
@@ -95,7 +95,7 @@
             this.aunNoCuenta.Location = new System.Drawing.Point(349, 625);
             this.aunNoCuenta.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.aunNoCuenta.Name = "aunNoCuenta";
-            this.aunNoCuenta.Size = new System.Drawing.Size(311, 32);
+            this.aunNoCuenta.Size = new System.Drawing.Size(216, 23);
             this.aunNoCuenta.TabIndex = 24;
             this.aunNoCuenta.Text = "¿Aún no tienes cuenta?";
             this.aunNoCuenta.Click += new System.EventHandler(this.aunNoCuenta_Click);

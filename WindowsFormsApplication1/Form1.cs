@@ -939,7 +939,6 @@ namespace WindowsFormsApplication1
                             MessageBox.Show("Error al recibir el mensaje del servidor: " + ex.Message);
 
                         }
-
                     }
                 }
             });
@@ -1056,8 +1055,6 @@ namespace WindowsFormsApplication1
             {
                 MessageBox.Show("No tienes conexion con el servidor");
             }
-
-
         }
 
         private void textContra_Enter(object sender, EventArgs e)
@@ -1692,12 +1689,12 @@ namespace WindowsFormsApplication1
         //Metodo para Abrir un Sobre de Pokemons
         private void AbrirSobre_Click(object sender, EventArgs e)
         {
-            string mensaje = $"10/";
-            byte[] msg2 = System.Text.Encoding.ASCII.GetBytes(mensaje);
-            server.Send(msg2);
+            string mensaje = "10/" + user;
+            byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
+            server.Send(msg);
+
         }
        
-
         private void Form1_Resize(object sender, EventArgs e)
         {
             EscalarControles();
