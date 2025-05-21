@@ -326,15 +326,13 @@ namespace WindowsFormsApplication1
             panelMinimapa.Invalidate();
 
             //93/idJugador/idPartida/posX/posY
-
-
         }
 
         System.Timers.Timer timerEnviarCoords;
 
         void IniciarEnvioPeriodico()
         {
-            timerEnviarCoords = new System.Timers.Timer(500); // Cada 0.5 segundos
+            timerEnviarCoords = new System.Timers.Timer(100); // Cada 0.5 segundos
             timerEnviarCoords.Elapsed += EnviarCoordenadas;
             timerEnviarCoords.AutoReset = true;
             timerEnviarCoords.Enabled = true;

@@ -14,7 +14,7 @@ char ubicacion[30];
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 int i = 0;
 int sockets[100];
-int Puerto = 9020; // Puertos disponibles 50081 - 50085
+int Puerto = 50082; // Puertos disponibles 50081 - 50085
 
 //Anade nuevo conectado
 int Anade(MYSQL *conn, int IdJ, char nombre[20], int socket) {
@@ -108,12 +108,12 @@ void *AtenderCliente(void *socket)
 	s =(int *) socket;
 	socket_conn = *s;
 	char peticion[512];
-	char buff2[1000];
+	char buff2[16384];
 	int idPartida;
 	
 	
 	
-	strcpy(ubicacion, "localhost");
+	strcpy(ubicacion, "shiva2.upc.es");
 	printf("Socket del cliente: %d\n", socket_conn);
 
 	//Inicio el MYSQL
@@ -402,6 +402,45 @@ void *AtenderCliente(void *socket)
 				mysql_free_result(res);
 			} else {
 				strcpy(buff2, "3~$Error: Problema con la base de datos");
+			}
+
+			//Enviamos el mensaje
+			write(socket_conn, buff2, strlen(buff2));
+
+		}
+
+		else if (codigo ==30) //Que pokemons tiene el jugador/ cliente
+		{
+			//Extraer el nombre del cliente
+			strcpy(buff2,"");
+			
+			printf("Importando Pokedex al usuario %s",user);
+
+			// Consulta SQL para obtener toda la informacion del Pokemon
+			char query[512];
+			sprintf(query, "SELECT * FROM Pokedex");
+			
+			// Ejecutar consulta
+			if (mysql_query(conn, query) == 0) {
+				MYSQL_RES *res = mysql_store_result(conn);
+				MYSQL_ROW row = mysql_fetch_row(res);
+
+				if(row == NULL){
+					printf("No hay Pokemons en la Pokedex");
+					sprintf(buff2, "30~$");
+				}else{
+					char listaPokemons[16384]="";
+					while(row != NULL){
+						sprintf(listaPokemons, "%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s#", listaPokemons, row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]);
+						row = mysql_fetch_row(res);
+					}
+					printf("Pokemons: %s",listaPokemons);
+					sprintf(buff2, "31~$%s",listaPokemons);
+				}
+
+				mysql_free_result(res);
+			} else {
+				strcpy(buff2, "30~$");
 			}
 
 			//Enviamos el mensaje
@@ -886,17 +925,11 @@ void *AtenderCliente(void *socket)
 			
 			mysql_free_result(resSockets);			
 		}		
-		else if(codigo == 10) // Enviar 3 pokemons aleatoris de la Pokedex
+		else if(codigo == 10) // Enviar 1 pokemon aleatori de la Pokedex
 		{
 			strcpy(buff2, "");
-			int idP [3];
-			int idJ;
-			char nombrecliente[50];
 			char query[512];
-			p = strtok(NULL, "/");
-			strcpy(nombrecliente, p);
-			
-			sprintf(query, "SELECT * FROM Pokedex ORDER BY RAND() LIMIT 3;");
+			sprintf(query, "SELECT * FROM Pokedex ORDER BY RAND() LIMIT 1;");
 			
 			if (mysql_query(conn, query) == 0) {
 				MYSQL_RES *res = mysql_store_result(conn);
@@ -905,57 +938,44 @@ void *AtenderCliente(void *socket)
 					strcpy(buff2, "10~$");
 					while ((row = mysql_fetch_row(res)) != NULL) {
 						// Format: id/nombre/ataque/hp/elemento/debilidad/fortaleza/fase/descripcion#
-						for (int i = 0; i < mysql_num_fields(res); i++) {
+						for(int i; i<mysql_num_fields(res); i++){
 							strcat(buff2, row[i]);
 							strcat(buff2, "/");
-							idP[i] = row[i];
-						}
-						strcat(buff2, "#");
-					}
-					mysql_free_result(res);
-					//Ara posem els pokemons obtinguts en la taula relacio del jugador, per indicar que té aquest nous pokemons.
-					sprintf(query, "SELECT Jugadores.Id FROM Jugadores WHERE Jugadores.nombre = %s;", nombrecliente);
-					if(mysql_query(conn, query) == 0){
-						MYSQL_RES *res = mysql_store_result(conn);
-						MYSQL_ROW row;
-						idJ = row;
-						mysql_free_result(res);
+						}	
 						
-						//Ara incerim els pokemons a la taula relacio
-						for(int i = 0; i<3; i++){
-							// Inserir a la taula Relacio
+						char idPChar[16];
+						int idP;
+						strcpy(idP,row[0]);
+						idP = atoi(idPChar);
+						strcat(buff2, "#");
+									
+						//Anadimos el pokemon a la tabla de Relacion
 							char insertRelacio[256];
-							sprintf(insertRelacio, "INSERT INTO Relacio (IdJ, IdP, Nivell) VALUES (%d, %d, 1);", idJ, idP[i]);
+							sprintf(insertRelacio, "INSERT INTO Relacio (IdJ, IdP, Nivell) VALUES (%d, %d, 1);", userId, idP);
 							if (mysql_query(conn, insertRelacio) != 0) {
 								printf("Error afegint a Relacio: %s\n", mysql_error(conn));
 								sprintf(buff2, "10~$Error SQL: %s", mysql_error(conn));
-								
 							}
-						}
-						
-					}else{
-						sprintf(buff2, "10~$Error SQL: %s", mysql_error(conn));
+							else{
+								sprintf(buff2,"10~$%d",idP);
+							}
 					}
-					
-				} else {
-					strcpy(buff2, "10~$Error: No s'han pogut obtenir pokémons");
+					mysql_free_result(res);
+				}										
+				else{
+					sprintf(buff2, "10~$Error SQL: %s", mysql_error(conn));
 				}
-			} else {
-				sprintf(buff2, "10~$Error SQL: %s", mysql_error(conn));
-			}
-			
-			write(socket_conn, buff2, strlen(buff2));			
-		}		
-	}
+			} 				
+		}						
+	}	
 	//Cerramos la conexion con el servidor
-	
-	close(socket_conn); 
+close(socket_conn); 
 }
 
 
 int main(int argc, char *argv[])
 {
-	strcpy(ubicacion, "localhost");
+	strcpy(ubicacion, "shiva2.upc.es");
 	//Inicio conexion con MYSQL
 	MYSQL *conn;
 	int err;

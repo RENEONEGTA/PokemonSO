@@ -27,7 +27,7 @@ namespace WindowsFormsApplication1
     public partial class Form1 : Form
     {
         Socket server;
-        private int puertoServidor = 9020; // Puerto del servidor
+        private int puertoServidor = 50082; // Puerto del servidor
         private Timer parpadeoTimer = new Timer();
         private bool serverRun = false;
         private bool colorAzul = true;
@@ -69,6 +69,8 @@ namespace WindowsFormsApplication1
         public event ConectadosActualizadosHandler ConectadosActualizados;
         Dictionary<int, JugadorInfo> jugadoresEnPartida = new Dictionary<int, JugadorInfo>();
         int userId = 0; // ID del jugador local
+        List<Pokemon> listaPokedex = new List<Pokemon>();
+        PanelDobleBuffer PanelSobre = new PanelDobleBuffer();
 
         Mapa mapa;
         Jugador jugador;
@@ -80,7 +82,6 @@ namespace WindowsFormsApplication1
             InitializeComponent();
             parpadeoTimer.Interval = 500; // Parpadeo cada 500 ms
             parpadeoTimer.Tick += ParpadeoTimer_Tick;
-            
 
             //this.FormBorderStyle = FormBorderStyle.None; // Quitar la barra de título y botones
             //this.WindowState = FormWindowState.Maximized; // Maximizar el formulario
@@ -88,6 +89,7 @@ namespace WindowsFormsApplication1
             //this.StartPosition = FormStartPosition.CenterScreen; //Centrar el formulario
             //this.ShowInTaskbar = false; // Esconder la taskbar
             //this.FormBorderStyle = FormBorderStyle.None; //Quitar el borderstyle
+
             AbrirSobre.Visible = false;
         }
 
@@ -681,7 +683,6 @@ namespace WindowsFormsApplication1
                         server.Receive(msg2);
                         try
                         {
-
                             string datos = Encoding.ASCII.GetString(msg2);
                             string[] mensajeSucio = datos.Split('\n'); // separa por línea
 
@@ -722,6 +723,7 @@ namespace WindowsFormsApplication1
 
                                                         // Llamamos a la función de inicio
                                                         Inicio();
+                                                        CargarPokedex();
                                                     }
                                                     else
                                                     {
@@ -747,7 +749,6 @@ namespace WindowsFormsApplication1
                                             Invoke((MethodInvoker)delegate
                                             {
                                                 List<Pokemon> listaPokemon = new List<Pokemon>();
-
                                                 listaPokemon = Pokemon.ParsearDatos(mensaje, listaPokemon);
 
                                                 if (listaPokemon.Count > 0)
@@ -784,6 +785,20 @@ namespace WindowsFormsApplication1
                                             });
 
                                             break;
+
+                                        case 30:
+
+                                            MessageBox.Show("Error al importar la Pokedex");
+                                            break;
+
+                                        case 31:
+
+                                            Invoke((MethodInvoker)delegate
+                                            {
+                                                listaPokedex = Pokemon.ParsearDatos(mensaje, listaPokedex);
+                                            });
+                                            break;
+
 
                                         case 4: //Lista de Partidas Donde esta el Jugador
 
@@ -866,8 +881,12 @@ namespace WindowsFormsApplication1
                                             break;
 
                                         case 10: //Abrir Sobre
-                                            MessageBox.Show(mensaje);
-                                            break;
+                                            
+                                            Invoke((MethodInvoker)delegate
+                                            {
+                                                MostrarSobre(Convert.ToInt32(mensaje));
+                                            });
+                                            break;                                            
 
                                         case 100: //Lista Conectados Notificacion
                                             //MessageBox.Show(mensaje);
@@ -943,6 +962,7 @@ namespace WindowsFormsApplication1
                 }
             });
         }
+
         private void DesconectarServidor()
         {
             if (serverRun == true && iniciado == true) //Nos desconectamos
@@ -1689,12 +1709,73 @@ namespace WindowsFormsApplication1
         //Metodo para Abrir un Sobre de Pokemons
         private void AbrirSobre_Click(object sender, EventArgs e)
         {
-            string mensaje = "10/" + user;
+            string mensaje = "10/";
             byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
             server.Send(msg);
 
         }
-       
+
+        private void CargarPokedex()
+        {
+            string mensaje = "30/";
+            byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
+            server.Send(msg);
+        }
+
+        private void MostrarSobre(int idP)
+        {
+            int ancho = 300;
+            int alto = 400;
+            List<CartaPokemon> lista = new List<CartaPokemon>();
+            PanelSobre = new PanelDobleBuffer
+            {
+                Size = new Size(ancho, alto),
+                Location = new Point(this.Width / 2 - (ancho / 2), this.Height / 2 - (alto / 2)),
+                BackColor = Color.FromArgb(44, 44, 44),
+                Padding = new Padding(5)
+            };
+            redondearPanelDobleBuffer(PanelSobre, 20); // Método para redondear
+            this.Controls.Add(PanelSobre);
+            PanelSobre.BringToFront();
+            PanelSobre.Visible = true;
+
+            int Cancho = 0;
+            int Calto = 0;
+            PanelDobleBuffer panelcarta = new PanelDobleBuffer
+            {
+                Size = new Size(Cancho,Calto),
+                Location = new Point(PanelSobre.Width / 2 - (Cancho / 2), PanelSobre.Height / 2 - (Calto / 2)),
+                BackColor = Color.FromArgb(44,44,44)
+            };
+            PanelSobre.Controls.Add(panelcarta);
+            PanelSobre.BringToFront(); 
+            PanelSobre.Visible = true;
+
+            List<CartaPokemon> sobre = new List<CartaPokemon>();
+
+            foreach (Pokemon pokemon in listaPokedex)
+            {
+                if (pokemon.Id == idP)
+                {
+                    // Crear la carta correctamente y añadirla a la lista
+                    CartaPokemon carta = new CartaPokemon(
+                        pokemon.Nombre,
+                        pokemon.Vida,
+                        pokemon.Elemento,
+                        "images/" + pokemon.Nombre + ".png",
+                        new List<(string, int)>
+                        {
+                            (pokemon.Ataque, pokemon.Daño),
+                            ("Rugido", 10)
+                        }
+                    );
+                    sobre.Add(carta); // Agregar la carta a la lista
+                }
+            }
+
+            gestorCartas.DibujarCartas(sobre, panelcarta, true, false);
+        }
+
         private void Form1_Resize(object sender, EventArgs e)
         {
             EscalarControles();

@@ -48,9 +48,6 @@ namespace WindowsFormsApplication1
         string directorioBase = Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.FullName).FullName;
         public void DibujarCartas(List<CartaPokemon> cartas, PanelDobleBuffer panelCartas, bool botones, bool escogerPokemon)
         {
-
-            
-
             panelCartas.Controls.Clear(); // Limpiar cartas anteriores
 
             int x = 10; // Posición inicial
