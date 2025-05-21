@@ -646,6 +646,7 @@ void *AtenderCliente(void *socket)
 		{	
 			char consulta[256];
 			char id[80];
+			char idP[80];
 			int idJugadorObjetivo;
 			char mensaje[100];
 			
@@ -655,6 +656,13 @@ void *AtenderCliente(void *socket)
 				strcpy(id, p);
 			}
 			idJugadorObjetivo = atoi(id);
+			
+			p = strtok(NULL, "/");
+			if(p != NULL)
+			{
+				strcpy(idP, p);
+			}
+			idPartida = atoi(idP);
 		
 			sprintf(consulta, "SELECT socket FROM Conectados WHERE idJ = %d", idJugadorObjetivo);
 			// Ejecutar consulta
@@ -682,7 +690,7 @@ void *AtenderCliente(void *socket)
 				printf("Socket invalido para jugador con ID %d\n", idJugadorObjetivo);
 				return;
 			}
-			sprintf(mensaje, "102~$%d/%s/%d",userId, user, socket_conn);
+			sprintf(mensaje, "102~$%d/%s/%d",userId, user, idPartida);
 			
 			int bytes = write(socketJugador, mensaje, strlen(mensaje));
 			if (bytes < 0) {
@@ -702,7 +710,7 @@ void *AtenderCliente(void *socket)
 			char mensaje[80];
 			int idGenerado ;
 			strcpy(jugador1, user);
-			snprintf(fecha, sizeof(fecha), "%04d-%02d-%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
+			snprintf(fecha, sizeof(fecha), "%04d%02d%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
 			snprintf(query, sizeof(query),
 					 "INSERT INTO Partidas (fecha, jugador1) VALUES ('%s', '%s')",
 					 fecha, jugador1);
@@ -754,17 +762,15 @@ void *AtenderCliente(void *socket)
 				return;
 			}
 			row = mysql_fetch_row(res);
-			const char* jugador1 = row[0];
-			const char* jugador2 = row[1];
-			const char* jugador3 = row[2];
-			const char* jugador4 = row[3];
+
 			
-			char campoLibre[20] = "";
-			if (!jugador2 || strlen(jugador2) == 0)
+			
+			char campoLibre[20]="";
+			if (row[1] == NULL || strlen(row[1]) == 0)
 				strcpy(campoLibre, "jugador2");
-			else if (!jugador3 || strlen(jugador3) == 0)
+			else if (row[2] == NULL || strlen(row[2]) == 0)
 				strcpy(campoLibre, "jugador3");
-			else if (!jugador4 || strlen(jugador4) == 0)
+			else if (row[3] == NULL || strlen(row[3]) == 0)
 				strcpy(campoLibre, "jugador4");
 			
 			if (strlen(campoLibre) == 0) {

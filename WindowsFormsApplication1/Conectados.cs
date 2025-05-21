@@ -230,7 +230,7 @@ public class Conectados
         
     }
 
-    public void DibujarConectadosEnLista(List<Conectados> conectados, PanelDobleBuffer panelConectados, Form ventana, string nombre, Socket server, int ancho, int alto)
+    public void DibujarConectadosEnLista(List<Conectados> conectados, PanelDobleBuffer panelConectados, Form ventana, string nombre, Socket server, int ancho, int alto, int idPartidaInvitada)
     {
         int y = 2;
         int x = 2;
@@ -341,7 +341,7 @@ public class Conectados
 
                 panelConectado.Click += (sender, e1) =>
                 {
-                    string invitacion = "9/" + conectado.Id;
+                    string invitacion = "9/" + conectado.Id + "/" + idPartidaInvitada;
                     byte[] msg = System.Text.Encoding.ASCII.GetBytes(invitacion);
                     server.Send(msg);
 
@@ -463,7 +463,7 @@ public class Conectados
 
     }
 
-    public void RecibirInvitacionMundo(Conectados jugadorInvitador, Form formulario, Socket server)
+    public void RecibirInvitacionMundo(Conectados jugadorInvitador, Form formulario, Socket server, int idPartidaInvitada)
     {
         // Crear panel principal de la invitación
         Panel panelInvitacion = new Panel();
@@ -529,7 +529,7 @@ public class Conectados
         // Acción de aceptar
         btnAceptar.Click += (s, e) =>
         {
-            string mensajeAceptar = "92/" + jugadorInvitador.Id;
+            string mensajeAceptar = "92/" + idPartidaInvitada;
             byte[] datos = Encoding.ASCII.GetBytes(mensajeAceptar);
             server.Send(datos);
 

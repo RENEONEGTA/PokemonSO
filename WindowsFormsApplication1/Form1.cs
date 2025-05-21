@@ -900,7 +900,7 @@ namespace WindowsFormsApplication1
 
                                             if (invitarPartes.Length >= 3 &&
                                                 int.TryParse(invitarPartes[0], out int idInvitador) &&
-                                                int.TryParse(invitarPartes[2], out int socketInvitador))
+                                                int.TryParse(invitarPartes[2], out int idPartida))
                                             {
                                                 string nombreInvitador = invitarPartes[1];
 
@@ -920,7 +920,7 @@ namespace WindowsFormsApplication1
                                                         };
                                                     }
 
-                                                    Conectados.RecibirInvitacionMundo(jugadorInvitador, this, server);
+                                                    Conectados.RecibirInvitacionMundo(jugadorInvitador, this, server, idPartida);
                                                 });
                                             }
                                             else

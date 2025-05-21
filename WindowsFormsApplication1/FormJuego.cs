@@ -215,7 +215,7 @@ namespace WindowsFormsApplication1
                 this.Invoke((MethodInvoker)(() => ActualizarListaConectados(listaconectados)));
                 return;
             }
-            conectados.DibujarConectadosEnLista(listaconectados, panelAmigos, this, user, server, panelAmigos.Width, panelAmigos.Height);
+            conectados.DibujarConectadosEnLista(listaconectados, panelAmigos, this, user, server, panelAmigos.Width, panelAmigos.Height, idPartida);
             // Actualiza la lista de conectados
             listaConectados.Clear();
             listaConectados = listaconectados;
