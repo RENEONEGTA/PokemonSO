@@ -27,7 +27,7 @@ namespace WindowsFormsApplication1
     public partial class Form1 : Form
     {
         Socket server;
-        private int puertoServidor = 50082; // Puerto del servidor
+        private int puertoServidor = 9020; // Puerto del servidor
         private Timer parpadeoTimer = new Timer();
         private bool serverRun = false;
         private bool colorAzul = true;
@@ -654,7 +654,7 @@ namespace WindowsFormsApplication1
             Invoke((MethodInvoker)delegate
             {
                 iniciado = true;
-                MessageBox.Show("Se ha iniciado la sesion con exito");
+                //MessageBox.Show("Se ha iniciado la sesion con exito");
 
                 foreach (Control control in this.Controls)
                 {
@@ -802,7 +802,7 @@ namespace WindowsFormsApplication1
 
                                         case 4: //Lista de Partidas Donde esta el Jugador
 
-                                            MessageBox.Show(mensaje);
+                                            //MessageBox.Show(mensaje);
 
                                             Invoke((MethodInvoker)delegate
                                             {
@@ -1554,8 +1554,6 @@ namespace WindowsFormsApplication1
             historialMensajes.ScrollBars = RichTextBoxScrollBars.Vertical; // Agrega una barra de desplazamiento vertical
             historialMensajes.WordWrap = true; // Permite el ajuste de línea
 
-            // Mostrar mensaje de prueba
-            MessageBox.Show("Chat creado");
         }
 
         private void redondearPanel(Panel panel, int radio)

@@ -41,8 +41,9 @@ namespace WindowsFormsApplication1
 
         PanelDobleBuffer panelMapa = new PanelDobleBuffer();
         PanelDobleBuffer panelMinimapa = new PanelDobleBuffer();
-        PictureBox invitar = new PictureBox();
-        PanelDobleBuffer panelInvitar = new PanelDobleBuffer();
+        PictureBox btnMenu = new PictureBox();
+        PanelDobleBuffer contenedorMenu = new PanelDobleBuffer();
+        PanelDobleBuffer panelMenu = new PanelDobleBuffer();
         PanelDobleBuffer panelAmigos = new PanelDobleBuffer();
 
         Dictionary<int, Jugador> jugadoresRemotos = new Dictionary<int, Jugador>();
@@ -57,31 +58,16 @@ namespace WindowsFormsApplication1
             this.MaximizeBox = true;               
             this.MinimizeBox = true;                            
 
-            this.Resize += new EventHandler(FormJuego_Resize);
+            this.SizeChanged += FormJuego_SizeChanged;
             this.FormClosing += new FormClosingEventHandler(FormJuego_FormClosing);
             this.user = user;
             this.server = server;
             this.idPartida = id;
             this.userId = userId;
 
+            CrearMenu();
 
 
-            panelInvitar.Size = new Size(48, 48);
-            panelInvitar.Location = new Point(this.ClientSize.Width - panelInvitar.Width-10, 10);
-            panelInvitar.BackColor = Color.FromArgb(22,22,22);
-            panelInvitar.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            redondearPanel(panelInvitar, 10);
-
-
-            invitar.Size = new Size(48, 48);
-            invitar.Image = Image.FromFile(directorioBase + "/Resources/images/menuIcono.png");
-            invitar.SizeMode = PictureBoxSizeMode.Zoom;
-            invitar.BackColor = Color.Transparent;
-
-            panelInvitar.Controls.Add(invitar);
-            panelInvitar.BringToFront();
-            this.Controls.Add(panelInvitar);
-            AsignarEventoClick(panelInvitar);
             panelMapa.Dock = DockStyle.Fill;
             panelMapa.Paint += PanelMapa_Paint;
             this.Controls.Add(panelMapa);
@@ -96,8 +82,8 @@ namespace WindowsFormsApplication1
             panelMinimapa.Height = mapa.alto * miniTileSize;
 
             panelMinimapa.BackColor = Color.FromArgb(22, 22, 22);
-            panelMinimapa.Location = new Point(this.ClientSize.Width - panelMinimapa.Width-10, this.ClientSize.Height - panelMinimapa.Height - 10);
-            panelMinimapa.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            panelMinimapa.Location = new Point(10, this.ClientSize.Height - panelMinimapa.Height - 10);
+            panelMinimapa.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             panelMinimapa.Paint += PanelMinimapa_Paint;
             
 
@@ -118,15 +104,7 @@ namespace WindowsFormsApplication1
             gameLoop.Tick += GameLoop_Tick;
             gameLoop.Start();
 
-            panelAmigos.Size = new Size(200, 300);
-            panelAmigos.Location = new Point(this.ClientSize.Width - panelAmigos.Width - 10, panelInvitar.Bottom + 10);
-            panelAmigos.BackColor = Color.FromArgb(22, 22, 22);
-            redondearPanel(panelAmigos, 10);
-            panelAmigos.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-
-            this.Controls.Add(panelAmigos); 
-            panelAmigos.BringToFront();
-            panelAmigos.Visible = false;
+            
 
             IniciarEnvioPeriodico();
 
@@ -173,6 +151,134 @@ namespace WindowsFormsApplication1
             //this.StartPosition = FormStartPosition.CenterScreen; //Centrar el formulario
             //this.ShowInTaskbar = false; // Esconder la taskbar
             //this.FormBorderStyle = FormBorderStyle.None; //Quitar el borderstyle
+        }
+        private void CrearMenu()
+        {
+            contenedorMenu.Size = new Size(48, 48);
+            contenedorMenu.Location = new Point(this.ClientSize.Width - contenedorMenu.Width - 10, 10);
+            contenedorMenu.BackColor = Color.FromArgb(22, 22, 22);
+            contenedorMenu.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            redondearPanel(contenedorMenu, 10);
+
+            int anchurabotones = 280;
+            int alturabotones = 40;
+
+            btnMenu.Size = new Size(48, 48);
+            btnMenu.Image = Image.FromFile(directorioBase + "/Resources/images/menuIcono.png");
+            btnMenu.SizeMode = PictureBoxSizeMode.Zoom;
+            btnMenu.BackColor = Color.Transparent;
+
+            contenedorMenu.Controls.Add(btnMenu);
+            btnMenu.BringToFront();
+            this.Controls.Add(contenedorMenu);
+            AsignarEventoClick(contenedorMenu);
+
+            panelMenu.Size = new Size(300, this.ClientSize.Height);
+            
+            panelMenu.Location = new Point(this.ClientSize.Width, 0);
+            panelMenu.BackColor = Color.FromArgb(22, 22, 22);
+            redondearPanel(panelMenu, 10);
+            panelMenu.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            this.Controls.Add(panelMenu);
+            panelMenu.BringToFront();
+            panelMenu.Visible = false;
+
+            //Titulo del menú
+            Label tituloMenu = new Label
+            {
+                Text = "Menú",
+                ForeColor = Color.White,
+                Font = new Font("Arial", 20, FontStyle.Bold),
+                Location = new Point(10, 20),
+                AutoSize = true
+            };
+            panelMenu.Controls.Add(tituloMenu);
+            tituloMenu.BringToFront();
+
+            // Zona de amigos
+            Label tituloAmigos = new Label
+            {
+                Text = "Conectados",
+                ForeColor = Color.White,
+                Font = new Font("Arial", 16, FontStyle.Bold),
+                Location = new Point(10, 80),
+                AutoSize = true
+            };
+            panelMenu.Controls.Add(tituloAmigos);
+            tituloAmigos.BringToFront();
+            //Panel de amigos
+
+            panelAmigos.Size = new Size(300, 300);
+            panelAmigos.Location = new Point(0, tituloAmigos.Top + tituloAmigos.Height + 10);
+            panelAmigos.BackColor = Color.FromArgb(44, 44, 44);
+            redondearPanel(panelAmigos, 10);
+            panelAmigos.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+
+            panelMenu.Controls.Add(panelAmigos);
+            panelAmigos.BringToFront();
+
+            // Boton de eliminar cuenta
+
+            PanelDobleBuffer botonEliminarCuenta = new PanelDobleBuffer
+            {
+                Size = new Size(anchurabotones, alturabotones),
+                Location = new Point(10, this.ClientSize.Height - alturabotones - 30),
+                BackColor = Color.FromArgb(220, 38, 38)
+            };
+            redondearPanel(botonEliminarCuenta, 10);
+            panelMenu.Controls.Add(botonEliminarCuenta);
+
+            Label eliminarCuentaLbl = new Label
+            {
+                Text = "Eliminar cuenta",
+                ForeColor = Color.White,
+                Font = new Font("Arial", 12, FontStyle.Bold),
+                Location = new Point(10, 10),
+                AutoSize = true
+            };
+            botonEliminarCuenta.Controls.Add(eliminarCuentaLbl);
+            // Centramos el label dentro del botón
+            eliminarCuentaLbl.Location = new Point(
+                (botonEliminarCuenta.Width - eliminarCuentaLbl.Width) / 2,
+                (botonEliminarCuenta.Height - eliminarCuentaLbl.Height) / 2
+            );
+
+            // Botón de cerrar sesion
+            PanelDobleBuffer botonCerrarSesion = new PanelDobleBuffer
+            {
+                Size = new Size(anchurabotones, alturabotones),
+                Location = new Point(10, botonEliminarCuenta.Top - alturabotones - 20),
+                BackColor = Color.FromArgb(44, 44, 44)
+            };
+            redondearPanel(botonCerrarSesion, 10);
+            panelMenu.Controls.Add(botonCerrarSesion);
+            botonCerrarSesion.BringToFront();
+
+            Label cerrarSesionLbl = new Label
+            {
+                Text = "Cerrar Sesión",
+                ForeColor = Color.White,
+                Font = new Font("Arial", 12, FontStyle.Bold),
+                Location = new Point(10, 10),
+                AutoSize = true
+            };
+            botonCerrarSesion.Controls.Add(cerrarSesionLbl);
+            // Centramos el label dentro del botón
+            cerrarSesionLbl.Location = new Point(
+                (botonCerrarSesion.Width - cerrarSesionLbl.Width) / 2,
+                (botonCerrarSesion.Height - cerrarSesionLbl.Height) / 2
+            );
+
+            botonCerrarSesion.Click += (s, e) =>
+            {
+                // Aquí puedes agregar la lógica para cerrar sesión
+                MessageBox.Show("Cerrar sesión");
+                this.Close(); // Cierra el formulario actual
+            };
+
+            
+
+
         }
 
         public void ActualizarJugadorRemoto(int idJugador, float x, float y)
@@ -223,34 +329,29 @@ namespace WindowsFormsApplication1
 
         }
 
-        private void FormJuego_Resize(object sender, EventArgs e)
+        private void FormJuego_SizeChanged(object sender, EventArgs e)
         {
+            AjustarPanelMenu();
+        }
+
+        private void AjustarPanelMenu()
+        {
+            // Ajusta el alto del menú al alto del cliente del formulario
+            panelMenu.Height = this.ClientSize.Height;
+            redondearPanel(panelMenu, 10);
+            // Ajusta la vista si quieres
             if (this.WindowState == FormWindowState.Maximized)
             {
-                // Redibuja o escala los controles cuando se maximiza
                 vistaAlto = 5;
                 vistaAncho = 9;
-                this.BeginInvoke((MethodInvoker)delegate {
-                    this.Invalidate();
-                    this.Update();
-                    this.Refresh();
-                });
             }
             else if (this.WindowState == FormWindowState.Normal)
             {
-                // Redibuja o escala los controles cuando se restaura
                 vistaAlto = 4;
                 vistaAncho = 5;
-
-
-                this.BeginInvoke((MethodInvoker)delegate
-                {
-                    this.Invalidate();
-                    this.Update();
-                    this.Refresh();
-                });
             }
         }
+
 
         void AsignarEventoClick(Control contenedor)
         {
@@ -263,13 +364,16 @@ namespace WindowsFormsApplication1
         }
         private void InvitarClick(object sender, EventArgs e)
         {
-            if (panelAmigos.Visible == true)
+            if (panelMenu.Left == this.ClientSize.Width-panelMenu.Width)
             {
-                panelAmigos.Visible = false;
+                ButtonAnimator.AnimatePanel(panelMenu, new Point(panelMenu.Left, panelMenu.Top), new Point(panelMenu.Left + 300, panelMenu.Top), ButtonAnimator.AnimationDirection.Right, false);
+                contenedorMenu.BringToFront(); // Asegura que el contenedor del botón esté al frente               
             }
-            else
-            {
-                panelAmigos.Visible = true;
+            else if (panelMenu.Left == this.ClientSize.Width)
+            {             
+                panelMenu.Visible = true; // Asegura que el panel sea visible antes de animar             
+                ButtonAnimator.AnimatePanel(panelMenu, new Point(panelMenu.Left, panelMenu.Top), new Point(panelMenu.Left - 300, panelMenu.Top), ButtonAnimator.AnimationDirection.Left, true);
+                contenedorMenu.BringToFront(); // Asegura que el contenedor del botón esté al frente
             }
         }
 

@@ -14,7 +14,7 @@ char ubicacion[30];
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 int i = 0;
 int sockets[100];
-int Puerto = 50082; // Puertos disponibles 50081 - 50085
+int Puerto = 9020; // Puertos disponibles 50081 - 50085
 
 //Anade nuevo conectado
 int Anade(MYSQL *conn, int IdJ, char nombre[20], int socket) {
@@ -113,7 +113,7 @@ void *AtenderCliente(void *socket)
 	
 	
 	
-	strcpy(ubicacion, "shiva2.upc.es");
+	strcpy(ubicacion, "localhost");
 	printf("Socket del cliente: %d\n", socket_conn);
 
 	//Inicio el MYSQL
@@ -975,7 +975,7 @@ close(socket_conn);
 
 int main(int argc, char *argv[])
 {
-	strcpy(ubicacion, "shiva2.upc.es");
+	strcpy(ubicacion, "localhost");
 	//Inicio conexion con MYSQL
 	MYSQL *conn;
 	int err;

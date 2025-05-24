@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
+using WindowsFormsApplication1;
 
 public class ButtonAnimator
 {
@@ -84,4 +85,85 @@ public class ButtonAnimator
         // Iniciar la animación
         timer.Start();
     }
+
+
+    public static void AnimatePanel(PanelDobleBuffer button, Point start, Point end, AnimationDirection direction, bool fadeIn)
+    {
+        int step = 30;
+        float opacityStep = 0.05f;
+
+        // Detenemos cualquier animación previa
+        if (button.Tag is Timer previousTimer)
+        {
+            previousTimer.Stop();
+            previousTimer.Dispose();
+        }
+
+        Timer timer = new Timer { Interval = 15 };
+        button.Tag = timer; // Guardamos el timer para futuras animaciones
+
+        button.Location = start;
+
+        // Empezamos con transparencia si es fadeIn
+        int alpha = fadeIn ? 150 : 255;
+        button.BackColor = Color.FromArgb(alpha, button.BackColor.R, button.BackColor.G, button.BackColor.B);
+        button.Visible = true;
+
+        timer.Tick += (s, args) =>
+        {
+            bool moved = false;
+            Point current = button.Location;
+
+            // Movimiento en X
+            if (direction == AnimationDirection.Left || direction == AnimationDirection.Right)
+            {
+                int dx = end.X - current.X;
+                if (Math.Abs(dx) > 0)
+                {
+                    button.Left += Math.Sign(dx) * Math.Min(Math.Abs(dx), step);
+                    moved = true;
+                }
+            }
+
+            // Movimiento en Y
+            if (direction == AnimationDirection.Up || direction == AnimationDirection.Down)
+            {
+                int dy = end.Y - current.Y;
+                if (Math.Abs(dy) > 0)
+                {
+                    button.Top += Math.Sign(dy) * Math.Min(Math.Abs(dy), step);
+                    moved = true;
+                }
+            }
+
+            // Opacidad
+            int currentAlpha = button.BackColor.A;
+            if (fadeIn && currentAlpha < 255)
+            {
+                currentAlpha = Math.Min(255, currentAlpha + (int)(opacityStep * 255));
+                moved = true;
+            }
+            else if (!fadeIn && currentAlpha > 150)
+            {
+                currentAlpha = Math.Max(150, currentAlpha - (int)(opacityStep * 255));
+                moved = true;
+            }
+
+            button.BackColor = Color.FromArgb(currentAlpha, button.BackColor.R, button.BackColor.G, button.BackColor.B);
+
+            // ¿Terminó la animación?
+            if (!moved)
+            {
+                timer.Stop();
+                timer.Dispose();
+                button.Tag = null;
+
+                if (!fadeIn)
+                    button.Visible = false;
+            }
+        };
+
+        timer.Start();
+    }
+
 }
