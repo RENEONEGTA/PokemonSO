@@ -20,13 +20,12 @@ namespace WindowsFormsApplication1
         System.Windows.Forms.Timer gameLoop = new System.Windows.Forms.Timer();
         Conectados conectados = new Conectados();
         List<Conectados> listaConectados = new List<Conectados>();
-        string user;
-        int userId;
-        Socket server;
+        
         Mapa mapa;
         Mapa minimapa;
         Jugador jugador;
-        int idPartida;
+        public Menu menu = new Menu();
+  
         string directorioBase = Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.FullName).FullName;
 
         bool up, down, left, right;
@@ -37,7 +36,10 @@ namespace WindowsFormsApplication1
         int vistaAlto = 4;
         private float lastPosX = -1;
         private float lastPosY = -1;
-
+        TextBox mensajeChat = new TextBox();
+        RichTextBox historialMensajes = new RichTextBox();
+        PanelDobleBuffer panelChat = new PanelDobleBuffer();
+        PanelDobleBuffer botonCerrarSesion = new PanelDobleBuffer();
 
         PanelDobleBuffer panelMapa = new PanelDobleBuffer();
         PanelDobleBuffer panelMinimapa = new PanelDobleBuffer();
@@ -48,9 +50,15 @@ namespace WindowsFormsApplication1
 
         Dictionary<int, Jugador> jugadoresRemotos = new Dictionary<int, Jugador>();
 
+        public string user { get; set; }
+        public Socket server { get; set; }
+        public int idPartida { get; set; }
+        public int userId { get; set; }
 
 
-        public FormJuego(string user, Socket server, int id, int userId)
+
+
+        public FormJuego()
         {
             this.Text = "Mapa con cámara";
             this.ClientSize = new Size(vistaAncho * tileSize, vistaAlto * tileSize);
@@ -60,12 +68,7 @@ namespace WindowsFormsApplication1
 
             this.SizeChanged += FormJuego_SizeChanged;
             this.FormClosing += new FormClosingEventHandler(FormJuego_FormClosing);
-            this.user = user;
-            this.server = server;
-            this.idPartida = id;
-            this.userId = userId;
-
-            CrearMenu();
+            this.Shown += FormJuego_Shown;
 
 
             panelMapa.Dock = DockStyle.Fill;
@@ -90,16 +93,15 @@ namespace WindowsFormsApplication1
             redondearPanel(panelMinimapa, 10);  
             this.Controls.Add(panelMinimapa);
             panelMinimapa.BringToFront();
-
-            
-            
+           
 
             this.KeyDown += FormJuego_KeyDown;
             this.KeyUp += FormJuego_KeyUp;
-            this.DoubleBuffered = true;
 
-            
-            
+            // Para optimizar el renderizado y evitar parpadeos
+            this.DoubleBuffered = true;
+            this.SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
+
             gameLoop.Interval = 33;
             gameLoop.Tick += GameLoop_Tick;
             gameLoop.Start();
@@ -107,6 +109,7 @@ namespace WindowsFormsApplication1
             
 
             IniciarEnvioPeriodico();
+            
 
 
 
@@ -152,134 +155,11 @@ namespace WindowsFormsApplication1
             //this.ShowInTaskbar = false; // Esconder la taskbar
             //this.FormBorderStyle = FormBorderStyle.None; //Quitar el borderstyle
         }
-        private void CrearMenu()
+        private void FormJuego_Shown(object sender, EventArgs e)
         {
-            contenedorMenu.Size = new Size(48, 48);
-            contenedorMenu.Location = new Point(this.ClientSize.Width - contenedorMenu.Width - 10, 10);
-            contenedorMenu.BackColor = Color.FromArgb(22, 22, 22);
-            contenedorMenu.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            redondearPanel(contenedorMenu, 10);
-
-            int anchurabotones = 280;
-            int alturabotones = 40;
-
-            btnMenu.Size = new Size(48, 48);
-            btnMenu.Image = Image.FromFile(directorioBase + "/Resources/images/menuIcono.png");
-            btnMenu.SizeMode = PictureBoxSizeMode.Zoom;
-            btnMenu.BackColor = Color.Transparent;
-
-            contenedorMenu.Controls.Add(btnMenu);
-            btnMenu.BringToFront();
-            this.Controls.Add(contenedorMenu);
-            AsignarEventoClick(contenedorMenu);
-
-            panelMenu.Size = new Size(300, this.ClientSize.Height);
-            
-            panelMenu.Location = new Point(this.ClientSize.Width, 0);
-            panelMenu.BackColor = Color.FromArgb(22, 22, 22);
-            redondearPanel(panelMenu, 10);
-            panelMenu.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            this.Controls.Add(panelMenu);
-            panelMenu.BringToFront();
-            panelMenu.Visible = false;
-
-            //Titulo del menú
-            Label tituloMenu = new Label
-            {
-                Text = "Menú",
-                ForeColor = Color.White,
-                Font = new Font("Arial", 20, FontStyle.Bold),
-                Location = new Point(10, 20),
-                AutoSize = true
-            };
-            panelMenu.Controls.Add(tituloMenu);
-            tituloMenu.BringToFront();
-
-            // Zona de amigos
-            Label tituloAmigos = new Label
-            {
-                Text = "Conectados",
-                ForeColor = Color.White,
-                Font = new Font("Arial", 16, FontStyle.Bold),
-                Location = new Point(10, 80),
-                AutoSize = true
-            };
-            panelMenu.Controls.Add(tituloAmigos);
-            tituloAmigos.BringToFront();
-            //Panel de amigos
-
-            panelAmigos.Size = new Size(300, 300);
-            panelAmigos.Location = new Point(0, tituloAmigos.Top + tituloAmigos.Height + 10);
-            panelAmigos.BackColor = Color.FromArgb(44, 44, 44);
-            redondearPanel(panelAmigos, 10);
-            panelAmigos.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-
-            panelMenu.Controls.Add(panelAmigos);
-            panelAmigos.BringToFront();
-
-            // Boton de eliminar cuenta
-
-            PanelDobleBuffer botonEliminarCuenta = new PanelDobleBuffer
-            {
-                Size = new Size(anchurabotones, alturabotones),
-                Location = new Point(10, this.ClientSize.Height - alturabotones - 30),
-                BackColor = Color.FromArgb(220, 38, 38)
-            };
-            redondearPanel(botonEliminarCuenta, 10);
-            panelMenu.Controls.Add(botonEliminarCuenta);
-
-            Label eliminarCuentaLbl = new Label
-            {
-                Text = "Eliminar cuenta",
-                ForeColor = Color.White,
-                Font = new Font("Arial", 12, FontStyle.Bold),
-                Location = new Point(10, 10),
-                AutoSize = true
-            };
-            botonEliminarCuenta.Controls.Add(eliminarCuentaLbl);
-            // Centramos el label dentro del botón
-            eliminarCuentaLbl.Location = new Point(
-                (botonEliminarCuenta.Width - eliminarCuentaLbl.Width) / 2,
-                (botonEliminarCuenta.Height - eliminarCuentaLbl.Height) / 2
-            );
-
-            // Botón de cerrar sesion
-            PanelDobleBuffer botonCerrarSesion = new PanelDobleBuffer
-            {
-                Size = new Size(anchurabotones, alturabotones),
-                Location = new Point(10, botonEliminarCuenta.Top - alturabotones - 20),
-                BackColor = Color.FromArgb(44, 44, 44)
-            };
-            redondearPanel(botonCerrarSesion, 10);
-            panelMenu.Controls.Add(botonCerrarSesion);
-            botonCerrarSesion.BringToFront();
-
-            Label cerrarSesionLbl = new Label
-            {
-                Text = "Cerrar Sesión",
-                ForeColor = Color.White,
-                Font = new Font("Arial", 12, FontStyle.Bold),
-                Location = new Point(10, 10),
-                AutoSize = true
-            };
-            botonCerrarSesion.Controls.Add(cerrarSesionLbl);
-            // Centramos el label dentro del botón
-            cerrarSesionLbl.Location = new Point(
-                (botonCerrarSesion.Width - cerrarSesionLbl.Width) / 2,
-                (botonCerrarSesion.Height - cerrarSesionLbl.Height) / 2
-            );
-
-            botonCerrarSesion.Click += (s, e) =>
-            {
-                // Aquí puedes agregar la lógica para cerrar sesión
-                MessageBox.Show("Cerrar sesión");
-                this.Close(); // Cierra el formulario actual
-            };
-
-            
-
-
+            menu.CrearMenu(true, this, server, user);
         }
+
 
         public void ActualizarJugadorRemoto(int idJugador, float x, float y)
         {
@@ -294,7 +174,7 @@ namespace WindowsFormsApplication1
             }
             else
             {
-                Jugador nuevo = new Jugador(x, y);
+                Jugador nuevo = new Jugador(x, y); 
                 jugadoresRemotos.Add(idJugador, nuevo);
             }
 
@@ -331,15 +211,12 @@ namespace WindowsFormsApplication1
 
         private void FormJuego_SizeChanged(object sender, EventArgs e)
         {
-            AjustarPanelMenu();
+            AjustarTamaño();
         }
 
-        private void AjustarPanelMenu()
+        private void AjustarTamaño()
         {
-            // Ajusta el alto del menú al alto del cliente del formulario
-            panelMenu.Height = this.ClientSize.Height;
-            redondearPanel(panelMenu, 10);
-            // Ajusta la vista si quieres
+            menu.AjustarPanelMenu();
             if (this.WindowState == FormWindowState.Maximized)
             {
                 vistaAlto = 5;
@@ -351,32 +228,6 @@ namespace WindowsFormsApplication1
                 vistaAncho = 5;
             }
         }
-
-
-        void AsignarEventoClick(Control contenedor)
-        {
-            contenedor.Click += InvitarClick;
-
-            foreach (Control hijo in contenedor.Controls)
-            {
-                AsignarEventoClick(hijo); // Aplica recursivamente
-            }
-        }
-        private void InvitarClick(object sender, EventArgs e)
-        {
-            if (panelMenu.Left == this.ClientSize.Width-panelMenu.Width)
-            {
-                ButtonAnimator.AnimatePanel(panelMenu, new Point(panelMenu.Left, panelMenu.Top), new Point(panelMenu.Left + 300, panelMenu.Top), ButtonAnimator.AnimationDirection.Right, false);
-                contenedorMenu.BringToFront(); // Asegura que el contenedor del botón esté al frente               
-            }
-            else if (panelMenu.Left == this.ClientSize.Width)
-            {             
-                panelMenu.Visible = true; // Asegura que el panel sea visible antes de animar             
-                ButtonAnimator.AnimatePanel(panelMenu, new Point(panelMenu.Left, panelMenu.Top), new Point(panelMenu.Left - 300, panelMenu.Top), ButtonAnimator.AnimationDirection.Left, true);
-                contenedorMenu.BringToFront(); // Asegura que el contenedor del botón esté al frente
-            }
-        }
-
 
         private void FormJuego_FormClosing(object sender, EventArgs e)
         {

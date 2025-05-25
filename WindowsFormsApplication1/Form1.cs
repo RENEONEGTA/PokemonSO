@@ -27,6 +27,7 @@ namespace WindowsFormsApplication1
     public partial class Form1 : Form
     {
         Socket server;
+        FormJuego formJuego = new FormJuego();
         private int puertoServidor = 9020; // Puerto del servidor
         private Timer parpadeoTimer = new Timer();
         private bool serverRun = false;
@@ -39,6 +40,7 @@ namespace WindowsFormsApplication1
         private Combate Combate = new Combate();
         private bool combate = false;
         private PanelDobleBuffer panelCartas;
+        Menu menu = new Menu();
         private PanelDobleBuffer panelElegirPokemon;
         private PanelDobleBuffer panelCargarPartida;
         private PanelDobleBuffer panelCargarCombate;
@@ -91,6 +93,36 @@ namespace WindowsFormsApplication1
             //this.FormBorderStyle = FormBorderStyle.None; //Quitar el borderstyle
 
             AbrirSobre.Visible = false;
+
+        }
+        
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            this.WindowState = FormWindowState.Maximized;
+            ChangeCircleColor(Color.Blue);
+            ConectarServidor();
+            AtenderServidor();
+            
+            this.SizeChanged += Form1_SizeChanged;
+
+            // Ejecutar la función después de que el formulario se muestre
+            this.BeginInvoke((MethodInvoker)delegate {
+                EscalarControles(); // o Refresh general
+            });
+        }
+        private void Form1_SizeChanged(object sender, EventArgs e)
+        {
+            if (iniciado == true)
+            {
+                AjustarTamaño();
+            }
+        }
+
+        private void AjustarTamaño()
+        {
+            menu.AjustarPanelMenu();
+          
         }
 
         // Actualiza el progreso de la barra
@@ -132,37 +164,7 @@ namespace WindowsFormsApplication1
             }
         }
 
-        private void Form1_Load(object sender, EventArgs e)
-        {
-
-            ////Inicio Sesion
-            //Usuario.Visible = false;
-            //textUsu.Visible = false;
-            //Contraseña.Visible = false;
-            //textContra.Visible = false;
-            //SignIn.Visible = false;
-
-            ////Resitrarse
-            //UsuarioRegistrarse.Visible = false;
-            //textUsuR.Visible = false;
-            //ContraseñaRegistrarse.Visible = false;
-            //textContraR.Visible = false;
-            //RepetirContraseña.Visible = false;
-            //textConRR.Visible = false;
-            //SignUp.Visible = false;
-
-            ////Consultas 
-            //groupBox1.Visible = false;
-            this.WindowState = FormWindowState.Maximized;
-            ChangeCircleColor(Color.Blue);
-            ConectarServidor();
-            AtenderServidor();
-
-            // Ejecutar la función después de que el formulario se muestre
-            this.BeginInvoke((MethodInvoker)delegate {
-                EscalarControles(); // o Refresh general
-            });
-        }
+        
         private void EscalarControles()
         {
             aunNoCuenta.Location = new Point(iniciarSesionBox.Left + (iniciarSesionBox.Width-aunNoCuenta.Width)/2, iniciarSesionBox.Bottom + 30);
@@ -403,9 +405,10 @@ namespace WindowsFormsApplication1
             salirJuegoBox.Location = new Point(32, 320);
             Cerrar.Visible = false;
             AbrirSobre.Visible = true;
+            menu.contenedorMenu.Visible = true; // Mostrar el menú
+
 
             crearPanelCombate();
-            crearChat();
 
             PictureBox pokedexBox = new PictureBox
             {
@@ -656,6 +659,12 @@ namespace WindowsFormsApplication1
                 iniciado = true;
                 //MessageBox.Show("Se ha iniciado la sesion con exito");
 
+                //Creacion de menu al obtener el socket para poder usar el chat
+
+                menu.CrearMenu(false, this, server, user);
+                menu.contenedorMenu.Visible = false; // Ocultar el menú al inicio
+                AjustarTamaño();
+
                 foreach (Control control in this.Controls)
                 {
                     control.Visible = false;
@@ -720,9 +729,11 @@ namespace WindowsFormsApplication1
                                                     {
                                                         // Guardamos el ID del jugador local
                                                         userId = idJugador;
+                                                        this.user = textUsu.Text; // Actualizamos el TextBox con el usuario
 
                                                         // Llamamos a la función de inicio
                                                         Inicio();
+
                                                         CargarPokedex();
                                                     }
                                                     else
@@ -907,8 +918,15 @@ namespace WindowsFormsApplication1
 
                                             Invoke((MethodInvoker)delegate
                                             {
-                                                HistorialMensajes(mensaje.ToString());
+                                                string texto = mensaje.ToString();                                     
 
+                                                // Mostrar mensaje en el formulario de Partidas si está abierto
+                                                if (formJuego != null && !formJuego.IsDisposed && formJuego.menu != null)
+                                                    formJuego.menu.HistorialMensajes(texto);
+
+                                                // Mostrar mensaje en el formulario de Principal si está abierto
+                                                if (this != null && !this.IsDisposed && this.menu != null)
+                                                    this.menu.HistorialMensajes(texto);
                                             });
                                             break;
 
@@ -1470,91 +1488,7 @@ namespace WindowsFormsApplication1
             }
         }
 
-        private void crearChat()
-        {
-            int padding = 20;
-            int buttonSize = 50;
-            int textBoxWidth = 300;
-            int textBoxHeight = 50;
-            int historyHeight = 300;
-
-            // Botón de enviar (redondeado con clase personalizada RoundButton)
-            enviarMensaje = new RoundButton
-            {
-                Size = new Size(buttonSize, buttonSize),
-                Location = new Point(this.Width - padding - buttonSize, this.Height - padding - buttonSize),
-                Image = Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "enviar.png")),
-                BackColor = Color.FromArgb(88, 88, 88)
-            };
-
-            // TextBox de mensaje con borde redondeado usando Panel
-            var panelTextBox = new Panel
-            {
-                Size = new Size(textBoxWidth, textBoxHeight),
-                Location = new Point(enviarMensaje.Left - textBoxWidth - 10, enviarMensaje.Top),
-                BackColor = Color.FromArgb(66, 66, 66),
-                Padding = new Padding(5)
-            };
-
-            textBoxMensaje = new System.Windows.Forms.TextBox
-            {
-                BorderStyle = BorderStyle.None,
-                BackColor = Color.FromArgb(66, 66, 66),
-                ForeColor = Color.White,
-                Multiline = true,
-                MaxLength = 100,
-                Dock = DockStyle.Fill
-            };
-
-            panelTextBox.Controls.Add(textBoxMensaje);
-            redondearPanel(panelTextBox, 10); // Método para redondear
-
-            // RichTextBox historial (envuelto también en panel redondeado)
-            panelChat = new PanelDobleBuffer
-            {
-                Size = new Size(textBoxWidth, historyHeight),
-                Location = new Point(panelTextBox.Left, panelTextBox.Top - historyHeight - 20),
-                BackColor = Color.FromArgb(44, 44, 44),
-                Padding = new Padding(5)
-            };
-
-            historialMensajes = new RichTextBox
-            {
-                Size = new Size(panelChat.Width - 10, panelChat.Height - 10),
-                Location = new Point(5, 5),
-                BorderStyle = BorderStyle.None,
-                BackColor = Color.FromArgb(44, 44, 44),
-                ForeColor = Color.White,
-                ReadOnly = true,
-                Dock = DockStyle.Fill,
-                WordWrap = true,
-                ScrollBars = RichTextBoxScrollBars.Vertical
-            };
-
-            panelChat.Controls.Add(historialMensajes);
-            redondearPanel(panelChat, 10);
-
-            // Agregar controles
-            this.Controls.Add(panelChat);
-            this.Controls.Add(panelTextBox);
-            this.Controls.Add(enviarMensaje);
-
-            // Evento de enviar mensaje
-            enviarMensaje.Click += enviarMensaje_Click;
-
-            historialMensajes.Visible = true;
-            enviarMensaje.Visible = true;
-            textBoxMensaje.Visible = true;
-
-            panelChat.BringToFront();
-            enviarMensaje.BringToFront();
-            panelTextBox.BringToFront();
-            historialMensajes.ReadOnly = true;
-            historialMensajes.HideSelection = false; // Permite seleccionar el texto en el RichTextBox
-            historialMensajes.ScrollBars = RichTextBoxScrollBars.Vertical; // Agrega una barra de desplazamiento vertical
-            historialMensajes.WordWrap = true; // Permite el ajuste de línea
-
-        }
+        
 
         private void redondearPanel(Panel panel, int radio)
         {
@@ -1578,26 +1512,6 @@ namespace WindowsFormsApplication1
             panel.Region = new Region(path);
         }
 
-
-        //Metodos para el xat
-        private void enviarMensaje_Click(object sender, EventArgs e)
-        {
-            //Puede ser que textUsu cuando se estconde ya no se puede aceder a su contenido
-            string mensaje = $"7/{textUsu.Text}/{textBoxMensaje.Text}";
-            byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
-            server.Send(msg);
-            textBoxMensaje.Clear(); // Limpiar el TextBox después de enviar el mensaje
-        }
-
-        void HistorialMensajes(string nuevoMensaje)
-        {
-            string timeStamp = DateTime.Now.ToString("HH:mm:ss");
-            string entrada = $"[{timeStamp}] {nuevoMensaje}{Environment.NewLine}";
-            historialMensajes.AppendText(entrada);
-            historialMensajes.SelectionStart = historialMensajes.Text.Length;
-            historialMensajes.ScrollToCaret();
-            panelChat.Update();
-        }
 
         public static void AgregarPokemon(CartaPokemon cartaPokemon)
         {   
@@ -1668,15 +1582,23 @@ namespace WindowsFormsApplication1
             }
             else
             {
-                FormJuego juego = new FormJuego(user, server, id, userId);
+               
+                formJuego.user = user;
+                formJuego.server = server;
+                formJuego.idPartida = id;
+                formJuego.userId = userId;
+
+                
+
                 // Enlazar al evento utilizando una instancia del formulario  
-                this.ConectadosActualizados += juego.ActualizarListaConectados;
+                this.ConectadosActualizados += formJuego.ActualizarListaConectados;
                 // Enviarle la lista actual si ya tiene datos
                 if (listaConectadosGlobal.Count > 0)
                 {
-                    juego.ActualizarListaConectados(listaConectadosGlobal);
+                    formJuego.ActualizarListaConectados(listaConectadosGlobal);
                 }
-                juego.Show();
+                formJuego.Show();
+                
                 //MessageBox.Show(Convert.ToString(id));
             }
         }

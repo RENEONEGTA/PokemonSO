@@ -67,6 +67,7 @@
     <Compile Include="FormJuego.Designer.cs">
       <DependentUpon>FormJuego.cs</DependentUpon>
     </Compile>
+    <Compile Include="Menu.cs" />
     <Compile Include="Mundo.cs" />
     <Compile Include="Combate.cs" />
     <Compile Include="Conectados.cs">
