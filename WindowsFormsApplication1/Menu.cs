@@ -4,6 +4,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Runtime.Remoting.Channels;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,6 +19,7 @@ namespace WindowsFormsApplication1
         string directorioBase = Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.FullName).FullName;
         Form form;
         int padding = 10;
+        bool partida;
 
         TextBox mensajeChat = new TextBox();
         RichTextBox historialMensajes = new RichTextBox();
@@ -30,6 +32,7 @@ namespace WindowsFormsApplication1
         Label tituloChat = new Label();
         Label tituloAmigos = new Label();
         PanelDobleBuffer panelTextBox = new PanelDobleBuffer();
+        PanelDobleBuffer panelEliminarCuenta = new PanelDobleBuffer();
 
 
         public void CrearMenu(bool partida, Form form, Socket server, string user)
@@ -37,6 +40,7 @@ namespace WindowsFormsApplication1
             this.form = form;
             this.server = server;
             this.user = user;
+            this.partida = partida;
             contenedorMenu.Size = new Size(48, 48);
             contenedorMenu.Location = new Point(form.ClientSize.Width - contenedorMenu.Width - 10, 10);
             contenedorMenu.BackColor = Color.FromArgb(22, 22, 22);
@@ -55,7 +59,7 @@ namespace WindowsFormsApplication1
             btnMenu.BringToFront();
             form.Controls.Add(contenedorMenu);
             contenedorMenu.BringToFront();
-            AsignarEventoClick(contenedorMenu);
+            AsignarEventoClick(contenedorMenu, MenuClick);
 
             panelMenu.Size = new Size(300, form.ClientSize.Height);
 
@@ -167,40 +171,41 @@ namespace WindowsFormsApplication1
                 (botonCerrarSesion.Width - cerrarSesionLbl.Width) / 2,
                 (botonCerrarSesion.Height - cerrarSesionLbl.Height) / 2
             );
-
-            botonEliminarCuenta.Click += (s, e) =>
-            {
-                if (partida)
-                {
-                    // lógica para abandonar la partida
-                    form.Close();
-                }
-                else
-                {
-                    // lógica para eliminar la cuenta
-                    MessageBox.Show("Eliminar Cuenta");
-                    form.Close();
-                }
-
-            };
-            botonCerrarSesion.Click += (s, e) =>
-            {
-                if (partida)
-                {
-                    // lógica para reanudar la partida
-                    MenuClick(s, e); // Cierra el menú si está abierto
-                }
-                else
-                {
-                    // lógica para cerrar sesión
-                    MessageBox.Show("Cerrar Sesión");
-                    form.Close();
-                }
-            };
+            AsignarEventoClick(botonEliminarCuenta, BtnEliminarCuenta);
+            AsignarEventoClick(botonCerrarSesion, BtnCerrarSesion);
+            
 
             // Chat
             CrearChat();
             AjustarPanelMenu(); // Ajusta el tamaño del panel del menú y los paneles de chat y amigos
+        }
+
+        private void BtnEliminarCuenta(object sender, EventArgs e)
+        {
+            if (partida)
+            {
+                // lógica para abandonar la partida
+                form.Close();
+            }
+            else
+            {
+                EliminarCuenta(); // Enviar mensaje de eliminación al servidor
+            }
+        }
+        private void BtnCerrarSesion(object sender, EventArgs e)
+        {
+            if (partida)
+            {
+                // lógica para reanudar la partida
+                MenuClick(sender, e); // Cierra el menú si está abierto
+            }
+            else
+            {
+                if (form is Form1 form1)
+                {
+                    form1.MostrarIniciarSesion();
+                }
+            }
         }
 
         private void CrearChat()
@@ -347,6 +352,112 @@ namespace WindowsFormsApplication1
             server.Send(msg);
             mensajeChat.Clear(); // Limpiar el TextBox después de enviar el mensaje
         }
+       
+        private void EliminarCuenta()
+        {
+            panelEliminarCuenta = new PanelDobleBuffer
+            {
+                Size = new Size(450, 200),
+                Location = new Point((form.ClientSize.Width - 450) / 2, (form.ClientSize.Height - 200) / 2),
+                BackColor = Color.FromArgb(44, 44, 44),
+                BorderStyle = BorderStyle.None
+            };
+            redondearPanel(panelEliminarCuenta, 10); // Redondear el panel
+            Label mensajeEliminar = new Label
+            {
+                Text = "¿Estás seguro de que quieres eliminar tu cuenta?",
+                ForeColor = Color.White,
+                Font = new Font("Arial", 12, FontStyle.Regular),
+                Location = new Point(20, 20),
+                AutoSize = true
+            };
+            panelEliminarCuenta.Controls.Add(mensajeEliminar);
+            // Centramos el label dentro del panel
+            mensajeEliminar.Location = new Point(
+                (panelEliminarCuenta.Width - mensajeEliminar.Width) / 2,
+                (panelEliminarCuenta.Height - mensajeEliminar.Height) / 2 - 20
+            );
+
+
+            //Boton de confirmar eliminación
+            PanelDobleBuffer botonConfirmar = new PanelDobleBuffer
+            {
+                Size = new Size(100, 40),
+                Location = new Point((panelEliminarCuenta.Width-220)/2, 100),
+                BackColor = Color.FromArgb(220, 38, 38)
+            };
+            redondearPanel(botonConfirmar, 10); // Redondear el panel del botón
+            Label confirmarLbl = new Label
+            {
+                Text = "Confirmar",
+                ForeColor = Color.White,
+                Font = new Font("Arial", 12, FontStyle.Bold),
+                Location = new Point(10, 10),
+                AutoSize = true
+            };
+            botonConfirmar.Controls.Add(confirmarLbl);
+            // Centramos el label dentro del botón
+            confirmarLbl.Location = new Point(
+                (botonConfirmar.Width - confirmarLbl.Width) / 2,
+                (botonConfirmar.Height - confirmarLbl.Height) / 2
+            );
+            
+            //Añadimos el event al boton y a sus child
+            AsignarEventoClick(botonConfirmar, ConfirmarEliminarCuenta);
+
+
+
+            panelEliminarCuenta.Controls.Add(botonConfirmar);
+
+
+            // Botón de cancelar
+            PanelDobleBuffer botonCancelar = new PanelDobleBuffer
+            {
+                Size = new Size(100, 40),
+                Location = new Point(botonConfirmar.Right+20, 100),
+                BackColor = Color.FromArgb(66, 66, 66)
+            };
+            redondearPanel(botonCancelar, 10); // Redondear el panel del botón
+            Label cancelarLbl = new Label
+            {
+                Text = "Cancelar",
+                ForeColor = Color.White,
+                BackColor = Color.Transparent,
+                Font = new Font("Arial", 12, FontStyle.Bold),
+                Location = new Point(10, 10),
+                AutoSize = true
+            };
+            botonCancelar.Controls.Add(cancelarLbl);
+            // Centramos el label dentro del botón
+            cancelarLbl.Location = new Point(
+                (botonCancelar.Width - cancelarLbl.Width) / 2,
+                (botonCancelar.Height - cancelarLbl.Height) / 2
+            );
+            //Añadimos el event al boton y a sus child
+            AsignarEventoClick(botonCancelar, CancelarEliminarCuenta);
+            panelEliminarCuenta.Controls.Add(botonCancelar);
+
+            // Añadir el panel de eliminar cuenta al formulario
+            form.Controls.Add(panelEliminarCuenta);
+            panelEliminarCuenta.BringToFront();
+            panelEliminarCuenta.Visible = true; // Asegura que el panel sea visible
+            panelEliminarCuenta.Anchor = AnchorStyles.Top | AnchorStyles.Right; // Asegura que el panel esté centrado en el formulario
+
+        }
+        private void ConfirmarEliminarCuenta(object sender, EventArgs e)
+        {
+            string mensaje = "11/";
+            byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
+            server.Send(msg);
+            if (form is Form1 form1)
+            {
+                form1.MostrarIniciarSesion();
+            }
+        }
+        private void CancelarEliminarCuenta(object sender, EventArgs e)
+        {
+            panelEliminarCuenta.Visible = false; // Oculta el panel de eliminar cuenta
+        }
         public void HistorialMensajes(string nuevoMensaje)
         {
             string timeStamp = DateTime.Now.ToString("HH:mm:ss");
@@ -357,15 +468,74 @@ namespace WindowsFormsApplication1
             panelChat.Update();
         }
 
-        void AsignarEventoClick(Control contenedor)
+        void AsignarEventoClick(Control contenedor, EventHandler eventoClick)
         {
-            contenedor.Click += MenuClick;
+            contenedor.Click += eventoClick;
+            contenedor.MouseEnter += (s, e) => IluminarBtn(s, e, contenedor); // Evento para iluminar el botón al pasar el ratón
+            contenedor.MouseLeave += (s, e) => DesIluminarBtn(s, e, contenedor); // Evento para desiluminar el botón al salir el ratón
 
             foreach (Control hijo in contenedor.Controls)
             {
-                AsignarEventoClick(hijo); // Aplica recursivamente
+                AsignarEventoClick(hijo, eventoClick); // Recursividad con el mismo evento
             }
         }
+
+        private void IluminarBtn(object sender, EventArgs e, Control control)
+        {
+            if (control is PanelDobleBuffer panel)
+            {
+                Color original = panel.BackColor;
+
+                // Aumentamos 22 puntos cada componente, sin pasarnos de 255
+                int r = Math.Min(original.R + 22, 255);
+                int g = Math.Min(original.G + 22, 255);
+                int b = Math.Min(original.B + 22, 255);
+
+                panel.BackColor = Color.FromArgb(r, g, b);
+            }
+
+            else if (control is Label label)
+            {
+                Color original = label.Parent.BackColor;
+
+                // Aumentamos 22 puntos cada componente, sin pasarnos de 255
+                int r = Math.Min(original.R + 22, 255);
+                int g = Math.Min(original.G + 22, 255);
+                int b = Math.Min(original.B + 22, 255);
+
+                label.Parent.BackColor = Color.FromArgb(r, g, b);
+            }
+
+        }
+
+        private void DesIluminarBtn(object sender, EventArgs e, Control control)
+        {
+            if (control is PanelDobleBuffer panel)
+            {
+                Color original = panel.BackColor;
+
+                // Aumentamos 22 puntos cada componente, sin pasarnos de 255
+                int r = Math.Min(original.R - 22, 255);
+                int g = Math.Min(original.G - 22, 255);
+                int b = Math.Min(original.B - 22, 255);
+
+                panel.BackColor = Color.FromArgb(r, g, b);
+            }
+
+            else if (control is Label label)
+            {
+                Color original = label.Parent.BackColor;
+
+                // Aumentamos 22 puntos cada componente, sin pasarnos de 255
+                int r = Math.Min(original.R - 22, 255);
+                int g = Math.Min(original.G - 22, 255);
+                int b = Math.Min(original.B - 22, 255);
+
+                label.Parent.BackColor = Color.FromArgb(r, g, b);
+            }
+
+        }
+
         private void MenuClick(object sender, EventArgs e)
         {
             if (panelMenu.Left == form.ClientSize.Width - panelMenu.Width) // abrir

@@ -688,294 +688,309 @@ namespace WindowsFormsApplication1
                     if (serverRun == true)
                     {
                         //recivimos mensake del servidor
-                        byte[] msg2 = new byte[2048];
-                        server.Receive(msg2);
                         try
                         {
-                            string datos = Encoding.ASCII.GetString(msg2);
-                            string[] mensajeSucio = datos.Split('\n'); // separa por línea
-
-                            foreach (string mensaje1 in mensajeSucio)
+                            byte[] msg2 = new byte[2048];
+                            server.Receive(msg2);
+                            try
                             {
-                                if (mensaje1.Contains("~$"))
+                                string datos = Encoding.ASCII.GetString(msg2);
+                                string[] mensajeSucio = datos.Split('\n'); // separa por línea
+
+                                foreach (string mensaje1 in mensajeSucio)
                                 {
-                                    string[] partes = mensaje1.Split(new string[] { "~$" }, StringSplitOptions.None);
-                                    int codigo = Convert.ToInt32(partes[0]);
-                                    string mensaje = partes[1].Trim();
-
-                                    switch (codigo)
+                                    if (mensaje1.Contains("~$"))
                                     {
-                                        case 1: //Creado Cuenta
+                                        string[] partes = mensaje1.Split(new string[] { "~$" }, StringSplitOptions.None);
+                                        int codigo = Convert.ToInt32(partes[0]);
+                                        string mensaje = partes[1].Trim();
 
-                                            MessageBox.Show(mensaje);
-                                            cambiarInicioRegistro();
+                                        switch (codigo)
+                                        {
+                                            case 1: //Creado Cuenta
 
-                                            break;
+                                                MessageBox.Show(mensaje);
+                                                cambiarInicioRegistro();
 
-                                        case 2: // Iniciado Sesión
+                                                break;
 
-                                            // El mensaje que llega es del tipo "1/42"
-                                            string[] partesInicio = mensaje.Split('/');
+                                            case 2: // Iniciado Sesión
 
-                                            // Verificamos que tiene al menos 2 partes: el estado y el userId
-                                            if (partesInicio.Length >= 2)
-                                            {
-                                                int estado, idJugador;
+                                                // El mensaje que llega es del tipo "1/42"
+                                                string[] partesInicio = mensaje.Split('/');
 
-                                                // Intentamos convertir ambas partes a enteros
-                                                if (int.TryParse(partesInicio[0], out estado) && int.TryParse(partesInicio[1], out idJugador))
+                                                // Verificamos que tiene al menos 2 partes: el estado y el userId
+                                                if (partesInicio.Length >= 2)
                                                 {
-                                                    if (estado == 1)
+                                                    int estado, idJugador;
+
+                                                    // Intentamos convertir ambas partes a enteros
+                                                    if (int.TryParse(partesInicio[0], out estado) && int.TryParse(partesInicio[1], out idJugador))
                                                     {
-                                                        // Guardamos el ID del jugador local
-                                                        userId = idJugador;
-                                                        this.user = textUsu.Text; // Actualizamos el TextBox con el usuario
+                                                        if (estado == 1)
+                                                        {
+                                                            // Guardamos el ID del jugador local
+                                                            userId = idJugador;
+                                                            this.user = textUsu.Text; // Actualizamos el TextBox con el usuario
 
-                                                        // Llamamos a la función de inicio
-                                                        Inicio();
+                                                            // Llamamos a la función de inicio
+                                                            Inicio();
 
-                                                        CargarPokedex();
+                                                            CargarPokedex();
+                                                        }
+                                                        else
+                                                        {
+                                                            MessageBox.Show("No se ha podido iniciar sesión.");
+                                                        }
                                                     }
                                                     else
                                                     {
-                                                        MessageBox.Show("No se ha podido iniciar sesión.");
+                                                        MessageBox.Show("Error al interpretar los datos del servidor.");
                                                     }
                                                 }
                                                 else
                                                 {
-                                                    MessageBox.Show("Error al interpretar los datos del servidor.");
+                                                    MessageBox.Show("Formato de mensaje inválido.");
                                                 }
-                                            }
-                                            else
-                                            {
-                                                MessageBox.Show("Formato de mensaje inválido.");
-                                            }
 
-                                            break;
+                                                break;
 
 
-                                        case 3: //Pokedex
+                                            case 3: //Pokedex
 
-                                            MessageBox.Show(mensaje);
-                                            Invoke((MethodInvoker)delegate
-                                            {
-                                                List<Pokemon> listaPokemon = new List<Pokemon>();
-                                                listaPokemon = Pokemon.ParsearDatos(mensaje, listaPokemon);
-
-                                                if (listaPokemon.Count > 0)
+                                                MessageBox.Show(mensaje);
+                                                Invoke((MethodInvoker)delegate
                                                 {
-                                                    List<CartaPokemon> cartas = new List<CartaPokemon>();
+                                                    List<Pokemon> listaPokemon = new List<Pokemon>();
+                                                    listaPokemon = Pokemon.ParsearDatos(mensaje, listaPokemon);
 
-                                                    foreach (Pokemon pokemon in listaPokemon)
+                                                    if (listaPokemon.Count > 0)
                                                     {
-                                                        // Crear la carta correctamente y añadirla a la lista
-                                                        CartaPokemon carta = new CartaPokemon(
-                                                            pokemon.Nombre,
-                                                            pokemon.Vida,
-                                                            pokemon.Elemento,
-                                                            "images/" + pokemon.Nombre + ".png",
-                                                            new List<(string, int)>
-                                                            {
-                                                        (pokemon.Ataque, pokemon.Daño),
-                                                        ("Rugido", 10)
-                                                            }
-                                                        );
-                                                        cartas.Add(carta); // Agregar la carta a la lista
+                                                        List<CartaPokemon> cartas = new List<CartaPokemon>();
+
+                                                        foreach (Pokemon pokemon in listaPokemon)
+                                                        {
+                                                            // Crear la carta correctamente y añadirla a la lista
+                                                            CartaPokemon carta = new CartaPokemon(
+                                                                pokemon.Nombre,
+                                                                pokemon.Vida,
+                                                                pokemon.Elemento,
+                                                                "images/" + pokemon.Nombre + ".png",
+                                                                new List<(string, int)>
+                                                                {
+                                                            (pokemon.Ataque, pokemon.Daño),
+                                                            ("Rugido", 10)
+                                                                }
+                                                            );
+                                                            cartas.Add(carta); // Agregar la carta a la lista
+                                                        }
+
+                                                        panelCartas.BringToFront();
+                                                        combate = true;
+                                                        gestorCartas.DibujarCartas(cartas, panelCartas, true, escogerPokemon);
+                                                        panelCartas.Visible = true;
                                                     }
+                                                    else
+                                                    {
+                                                        MessageBox.Show("No tienes pokemons");
+                                                        PrimerPokemon();
+                                                    }
+                                                });
 
-                                                    panelCartas.BringToFront();
-                                                    combate = true;
-                                                    gestorCartas.DibujarCartas(cartas, panelCartas, true, escogerPokemon);
-                                                    panelCartas.Visible = true;
-                                                }
-                                                else
-                                                {
-                                                    MessageBox.Show("No tienes pokemons");
-                                                    PrimerPokemon();
-                                                }
-                                            });
+                                                break;
 
-                                            break;
+                                            case 30:
 
-                                        case 30:
+                                                MessageBox.Show("Error al importar la Pokedex");
+                                                break;
 
-                                            MessageBox.Show("Error al importar la Pokedex");
-                                            break;
-
-                                        case 31:
-
-                                            Invoke((MethodInvoker)delegate
-                                            {
-                                                listaPokedex = Pokemon.ParsearDatos(mensaje, listaPokedex);
-                                            });
-                                            break;
-
-
-                                        case 4: //Lista de Partidas Donde esta el Jugador
-
-                                            //MessageBox.Show(mensaje);
-
-                                            Invoke((MethodInvoker)delegate
-                                            {
-                                                List<Partida> listaPartidas = new List<Partida>();
-                                                listaPartidas = Partida.ParsearRespuesta(mensaje, listaPartidas);
-                                                if (listaPartidas.Count > 0)
-                                                {
-                                                    Partida.DibujarPartidas(listaPartidas, panelCargarPartida);
-                                                }
-                                                else
-                                                {
-                                                    MessageBox.Show("No tienes partidas");
-                                                }
-                                            });
-
-                                            break;
-                                        case 5: //La gente que tiene el pokemon selecionado
-
-                                            MessageBox.Show(mensaje);
-
-                                            break;
-                                        case 6: //Lista conectados Combates 
-
-                                            //MessageBox.Show(mensaje);
-
-
-                                            //Invoke((MethodInvoker)delegate
-                                            //{
-
-
-                                            //    //listaConectadosGlobal = Conectados.ParsearDatos(mensaje, listaConectadosGlobal);
-                                            //    if (listaConectadosGlobal.Count > 0)
-                                            //    {
-                                            //        Conectados.DibujarConectados(listaConectadosGlobal, panelCargarCombate, this, user, server);
-                                            //    }
-                                            //    else
-                                            //    {
-                                            //        MessageBox.Show("No tienes partidas");
-                                            //    }
-                                            //});
-
-                                            break;
-                                        case 7:
-                                            break;
-                                        case 8:
-                                            break;
-                                        case 9:
-                                            break;
-                                        case 91: //Recibimos confirmacion de crearPartida con id de partida
-
-                                            CrearPartida(Convert.ToInt32(mensaje));
-
-                                            break;
-                                        case 94:
-                                            // Formato esperado: 94~$15:120:250/17:135:220/...
-                                            string[] partesJugadores = mensaje.Split('/');
-                                            jugadoresEnPartida.Clear();
-
-                                            foreach (string entrada in partesJugadores)
-                                            {
-                                                if (string.IsNullOrWhiteSpace(entrada)) continue;
-
-                                                string[] datosPos = entrada.Split(':');
-                                                if (datosPos.Length != 3) continue;
-
-                                                int id = int.Parse(datosPos[0]);
-                                                int x = int.Parse(datosPos[1]);
-                                                int y = int.Parse(datosPos[2]);
-
-                                                if (Application.OpenForms.OfType<FormJuego>().FirstOrDefault() is FormJuego formJuego)
-                                                {
-                                                    formJuego.ActualizarJugadorRemoto(id, x, y);
-                                                }
-                                            }
-
-                                            break;
-
-                                        case 10: //Abrir Sobre
-                                            
-                                            Invoke((MethodInvoker)delegate
-                                            {
-                                                MostrarSobre(Convert.ToInt32(mensaje));
-                                            });
-                                            break;                                            
-
-                                        case 100: //Lista Conectados Notificacion
-                                            //MessageBox.Show(mensaje);
-                                            Invoke((MethodInvoker)delegate
-                                            {
-                                                listaConectadosGlobal.Clear();
-
-                                                listaConectadosGlobal = Conectados.ParsearDatos(mensaje, listaConectadosGlobal);
-                                                if (boolPanelCargarCombate == false)
-                                                {
-                                                    Conectados.DibujarConectados(listaConectadosGlobal, panelCargarCombate, this, user, server);
-                                                }
-                                                ConectadosActualizados?.Invoke(listaConectadosGlobal);
-                                            });
-                                            break;
-
-                                        case 101: //Recivimos Notificacion del Chat
-
-                                            Invoke((MethodInvoker)delegate
-                                            {
-                                                string texto = mensaje.ToString();                                     
-
-                                                // Mostrar mensaje en el formulario de Partidas si está abierto
-                                                if (formJuego != null && !formJuego.IsDisposed && formJuego.menu != null)
-                                                    formJuego.menu.HistorialMensajes(texto);
-
-                                                // Mostrar mensaje en el formulario de Principal si está abierto
-                                                if (this != null && !this.IsDisposed && this.menu != null)
-                                                    this.menu.HistorialMensajes(texto);
-                                            });
-                                            break;
-
-                                        case 102: //Invitacion Combate
-
-
-                                            string[] invitarPartes = mensaje.Split('/');
-
-                                            if (invitarPartes.Length >= 3 &&
-                                                int.TryParse(invitarPartes[0], out int idInvitador) &&
-                                                int.TryParse(invitarPartes[2], out int idPartida))
-                                            {
-                                                string nombreInvitador = invitarPartes[1];
-
-                                                // Buscar al jugador en la lista global
-                                                Conectados jugadorInvitador = listaConectadosGlobal
-                                                    .FirstOrDefault(c => c.Id == idInvitador);
+                                            case 31:
 
                                                 Invoke((MethodInvoker)delegate
                                                 {
-                                                    if (jugadorInvitador == null)
-                                                    {
-                                                        // Si no está, lo creamos manualmente con los datos recibidos
-                                                        jugadorInvitador = new Conectados
-                                                        {
-                                                            Id = idInvitador,
-                                                            Nombre = nombreInvitador
-                                                        };
-                                                    }
-
-                                                    Conectados.RecibirInvitacionMundo(jugadorInvitador, this, server, idPartida);
+                                                    listaPokedex = Pokemon.ParsearDatos(mensaje, listaPokedex);
                                                 });
-                                            }
-                                            else
-                                            {
-                                                MessageBox.Show("Error al interpretar la invitación: formato incorrecto.");
-                                            }
+                                                break;
 
 
-                                            break;
+                                            case 4: //Lista de Partidas Donde esta el Jugador
+
+                                                //MessageBox.Show(mensaje);
+
+                                                Invoke((MethodInvoker)delegate
+                                                {
+                                                    List<Partida> listaPartidas = new List<Partida>();
+                                                    listaPartidas = Partida.ParsearRespuesta(mensaje, listaPartidas);
+                                                    if (listaPartidas.Count > 0)
+                                                    {
+                                                        Partida.DibujarPartidas(listaPartidas, panelCargarPartida);
+                                                    }
+                                                    else
+                                                    {
+                                                        MessageBox.Show("No tienes partidas");
+                                                    }
+                                                });
+
+                                                break;
+                                            case 5: //La gente que tiene el pokemon selecionado
+
+                                                MessageBox.Show(mensaje);
+
+                                                break;
+                                            case 6: //Lista conectados Combates 
+
+                                                //MessageBox.Show(mensaje);
+
+
+                                                //Invoke((MethodInvoker)delegate
+                                                //{
+
+
+                                                //    //listaConectadosGlobal = Conectados.ParsearDatos(mensaje, listaConectadosGlobal);
+                                                //    if (listaConectadosGlobal.Count > 0)
+                                                //    {
+                                                //        Conectados.DibujarConectados(listaConectadosGlobal, panelCargarCombate, this, user, server);
+                                                //    }
+                                                //    else
+                                                //    {
+                                                //        MessageBox.Show("No tienes partidas");
+                                                //    }
+                                                //});
+
+                                                break;
+                                            case 7:
+                                                break;
+                                            case 8:
+                                                break;
+                                            case 9:
+                                                break;
+                                            case 91: //Recibimos confirmacion de crearPartida con id de partida
+
+                                                CrearPartida(Convert.ToInt32(mensaje));
+
+                                                break;
+                                            case 94:
+                                                // Formato esperado: 94~$15:120:250/17:135:220/...
+                                                string[] partesJugadores = mensaje.Split('/');
+                                                jugadoresEnPartida.Clear();
+
+                                                foreach (string entrada in partesJugadores)
+                                                {
+                                                    if (string.IsNullOrWhiteSpace(entrada)) continue;
+
+                                                    string[] datosPos = entrada.Split(':');
+                                                    if (datosPos.Length != 3) continue;
+
+                                                    int id = int.Parse(datosPos[0]);
+                                                    int x = int.Parse(datosPos[1]);
+                                                    int y = int.Parse(datosPos[2]);
+
+                                                    if (Application.OpenForms.OfType<FormJuego>().FirstOrDefault() is FormJuego formJuego)
+                                                    {
+                                                        formJuego.ActualizarJugadorRemoto(id, x, y);
+                                                    }
+                                                }
+
+                                                break;
+
+                                            case 10: //Abrir Sobre
+                                            
+                                                Invoke((MethodInvoker)delegate
+                                                {
+                                                    MostrarSobre(Convert.ToInt32(mensaje));
+                                                });
+                                                break;                                            
+
+                                            case 100: //Lista Conectados Notificacion
+                                                //MessageBox.Show(mensaje);
+                                                Invoke((MethodInvoker)delegate
+                                                {
+                                                    listaConectadosGlobal.Clear();
+
+                                                    listaConectadosGlobal = Conectados.ParsearDatos(mensaje, listaConectadosGlobal);
+                                                    if (boolPanelCargarCombate == false)
+                                                    {
+                                                        Conectados.DibujarConectados(listaConectadosGlobal, panelCargarCombate, this, user, server);
+                                                    }
+                                                    ConectadosActualizados?.Invoke(listaConectadosGlobal);
+                                                });
+                                                break;
+
+                                            case 101: //Recivimos Notificacion del Chat
+
+                                                Invoke((MethodInvoker)delegate
+                                                {
+                                                    string texto = mensaje.ToString();                                     
+
+                                                    // Mostrar mensaje en el formulario de Partidas si está abierto
+                                                    if (formJuego != null && !formJuego.IsDisposed && formJuego.menu != null)
+                                                        formJuego.menu.HistorialMensajes(texto);
+
+                                                    // Mostrar mensaje en el formulario de Principal si está abierto
+                                                    if (this != null && !this.IsDisposed && this.menu != null)
+                                                        this.menu.HistorialMensajes(texto);
+                                                });
+                                                break;
+
+                                            case 102: //Invitacion Combate
+
+
+                                                string[] invitarPartes = mensaje.Split('/');
+
+                                                if (invitarPartes.Length >= 3 &&
+                                                    int.TryParse(invitarPartes[0], out int idInvitador) &&
+                                                    int.TryParse(invitarPartes[2], out int idPartida))
+                                                {
+                                                    string nombreInvitador = invitarPartes[1];
+
+                                                    // Buscar al jugador en la lista global
+                                                    Conectados jugadorInvitador = listaConectadosGlobal
+                                                        .FirstOrDefault(c => c.Id == idInvitador);
+
+                                                    Invoke((MethodInvoker)delegate
+                                                    {
+                                                        if (jugadorInvitador == null)
+                                                        {
+                                                            // Si no está, lo creamos manualmente con los datos recibidos
+                                                            jugadorInvitador = new Conectados
+                                                            {
+                                                                Id = idInvitador,
+                                                                Nombre = nombreInvitador
+                                                            };
+                                                        }
+
+                                                        Conectados.RecibirInvitacionMundo(jugadorInvitador, this, server, idPartida);
+                                                    });
+                                                }
+                                                else
+                                                {
+                                                    MessageBox.Show("Error al interpretar la invitación: formato incorrecto.");
+                                                }
+
+
+                                                break;
+                                        }
                                     }
                                 }
                             }
-                        }
-                        catch (Exception ex)
-                        {
-                            MessageBox.Show("Error al recibir el mensaje del servidor: " + ex.Message);
+                            catch (Exception ex)
+                            {
+                                MessageBox.Show("Error al recibir el mensaje del servidor: " + ex.Message);
 
+                            }
                         }
+                        catch (SocketException ex)
+                        {
+                            // Si hay un error de socket, mostramos un mensaje y salimos del bucle
+                            Invoke((MethodInvoker)delegate
+                            {
+                                MessageBox.Show("Error de conexión con el servidor: " + ex.Message);
+                                serverRun = false;
+                                Task.CompletedTask.Wait();
+                            });
+                            break; // Salir del bucle si hay un error de conexión
+                        }
+                        
                     }
                 }
             });
@@ -989,6 +1004,7 @@ namespace WindowsFormsApplication1
                 // Enviamos al servidor el nombre tecleado
                 byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
                 server.Send(msg);
+                serverRun = false; // Cambiamos el estado de la conexión
             }
             else if (serverRun == true)
             {
@@ -996,6 +1012,7 @@ namespace WindowsFormsApplication1
                 // Enviamos al servidor el nombre 0
                 byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
                 server.Send(msg);
+                serverRun = false; // Cambiamos el estado de la conexión
             }
         }
 
@@ -1699,6 +1716,40 @@ namespace WindowsFormsApplication1
         private void Form1_Resize(object sender, EventArgs e)
         {
             EscalarControles();
+        }
+
+        public void MostrarIniciarSesion()
+        {
+            DesconectarServidor();
+            //volver todos los constroles invisibles
+            foreach (Control control in this.Controls)
+            {
+                control.Visible = false;
+            }
+            // Mostrar el panel de inicio de sesión
+            iniciarSesionBox.Visible = true;
+            SignIn.Visible = true;
+
+            usuarioBox.Visible = true;
+            textUsu.Visible = true;
+            textUsu.Text = "Usuario";
+
+            contraseñaBox.Visible = true;
+            textContra.Visible = true;
+            textContra.Text = "Contraseña";
+
+            aunNoCuenta.Visible = true;
+            circuloServidor.Visible = true;
+            IP.Visible = true;
+            pictureBox1.Visible = true;
+            Cerrar.Visible = true;  
+            this.WindowState = FormWindowState.Normal;
+            ConectarServidor();
+            AtenderServidor();
+
+            registro = false;
+            iniciado = false;
+
         }
     }
 }

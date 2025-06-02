@@ -258,15 +258,40 @@ void *AtenderCliente(void *socket)
 			write(socket_conn, buff2, strlen(buff2));
 			pthread_mutex_unlock(&mutex);
 		}
-
-		else if (codigo ==2) //piden iniciar sesion en un usuario con nombre y contrase�a, si se encuientra en la base de datos manda un Ok
+		else if(codigo == 11)//Eliminar cuenta del usuario
+		{
+			char query[256];
+			const char *campos[] = { "jugador1", "jugador2", "jugador3", "jugador4", "ganador" };
+			int numCampos = 5;
+			
+			// 1. Actualizar todos los campos de Partidas		
+			for (int i = 0; i < numCampos; i++) {
+				snprintf(query, sizeof(query),
+						 "UPDATE Partidas SET %s = NULL WHERE %s = '%s';",
+						 campos[i], campos[i], user);
+				
+				if (mysql_query(conn, query)) {
+					fprintf(stderr, "Error al actualizar %s: %s\n", campos[i], mysql_error(conn));
+				}
+			}
+			// 2. Eliminar el jugador
+			snprintf(query, sizeof(query),
+					 "DELETE FROM Jugadores WHERE id = '%d';", userId);
+			
+			if (mysql_query(conn, query)) {
+				fprintf(stderr, "Error al eliminar jugador: %s\n", mysql_error(conn));
+			} else {
+				printf("Jugador '%s' eliminado correctamente.\n", user);
+			}
+		}
+		else if (codigo ==2) //piden iniciar sesion en un usuario con nombre y contrasena, si se encuientra en la base de datos manda un Ok
 		{
 			strcpy(buff2,"");
 			pthread_mutex_lock(&mutex);
 			char nombre[50] = "";
 			char contrasena[50] = "";
 			
-			// Separar la consulta en nombre y contraseña
+			// Separar la consulta en nombre y contrasena
 			p = strtok(NULL, "/");
 			if (p != NULL) {
 				strcpy(nombre, p);//Copimaos el usuario
