@@ -506,6 +506,17 @@ namespace WindowsFormsApplication1
                 label.Parent.BackColor = Color.FromArgb(r, g, b);
             }
 
+            else if (control is PictureBox pb)
+            {
+                Color original = pb.Parent.BackColor;
+
+                // Aumentamos 22 puntos cada componente, sin pasarnos de 255
+                int r = Math.Min(original.R + 22, 255);
+                int g = Math.Min(original.G + 22, 255);
+                int b = Math.Min(original.B + 22, 255);
+
+                pb.Parent.BackColor = Color.FromArgb(r, g, b);
+            }
         }
 
         private void DesIluminarBtn(object sender, EventArgs e, Control control)
@@ -532,6 +543,17 @@ namespace WindowsFormsApplication1
                 int b = Math.Min(original.B - 22, 255);
 
                 label.Parent.BackColor = Color.FromArgb(r, g, b);
+            }
+            else if (control is PictureBox pb)
+            {
+                Color original = pb.Parent.BackColor;
+
+                // Aumentamos 22 puntos cada componente, sin pasarnos de 255
+                int r = Math.Min(original.R - 22, 255);
+                int g = Math.Min(original.G - 22, 255);
+                int b = Math.Min(original.B - 22, 255);
+
+                pb.Parent.BackColor = Color.FromArgb(r, g, b);
             }
 
         }

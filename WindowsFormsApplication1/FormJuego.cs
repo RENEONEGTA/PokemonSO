@@ -102,7 +102,7 @@ namespace WindowsFormsApplication1
             this.DoubleBuffered = true;
             this.SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
 
-            gameLoop.Interval = 33;
+            gameLoop.Interval = 16;
             gameLoop.Tick += GameLoop_Tick;
             gameLoop.Start();
 
@@ -169,8 +169,13 @@ namespace WindowsFormsApplication1
 
             if (jugadoresRemotos.ContainsKey(idJugador))
             {
+                // Actualiza el movimiento remoto del jugador
+                jugadoresRemotos[idJugador].ActualizarMovimientoRemoto(x, y);
+
+                // Actualiza la posición del jugador remoto
                 jugadoresRemotos[idJugador].x = x;
                 jugadoresRemotos[idJugador].y = y;
+                
             }
             else
             {
@@ -178,9 +183,7 @@ namespace WindowsFormsApplication1
                 jugadoresRemotos.Add(idJugador, nuevo);
             }
 
-            // Fuerza redibujo
-            panelMapa.Invalidate();
-            panelMinimapa.Invalidate();
+           
         }
 
         private void redondearPanel(Panel panel, int radio)
@@ -276,6 +279,10 @@ namespace WindowsFormsApplication1
             if (right) dx += 1;
 
             jugador.Mover(dx, dy, mapa);
+            foreach (var jugadorRemoto in jugadoresRemotos.Values)
+            {
+                jugadorRemoto.ComprobarEstadoMovimiento();
+            }
             ActualizarCamara();
             panelMapa.Invalidate();
             panelMinimapa.Invalidate();
@@ -287,7 +294,7 @@ namespace WindowsFormsApplication1
 
         void IniciarEnvioPeriodico()
         {
-            timerEnviarCoords = new System.Timers.Timer(100); // Cada 0.5 segundos
+            timerEnviarCoords = new System.Timers.Timer(100); // Cada 0.1 segundos
             timerEnviarCoords.Elapsed += EnviarCoordenadas;
             timerEnviarCoords.AutoReset = true;
             timerEnviarCoords.Enabled = true;
@@ -338,6 +345,7 @@ namespace WindowsFormsApplication1
             foreach (var jugadorRemoto in jugadoresRemotos.Values)
             {
                 jugadorRemoto.Dibujar(e.Graphics, camX, camY, tileSize, Brushes.Blue); // dibuja con otro color
+
             }
         }
         private void PanelMinimapa_Paint(object sender, PaintEventArgs e)

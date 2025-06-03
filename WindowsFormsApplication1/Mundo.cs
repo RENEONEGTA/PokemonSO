@@ -180,19 +180,88 @@ namespace WindowsFormsApplication1
     public class Jugador
     {
         public float x, y;
-        public float velocidad = 4f;
+        public float velocidad = 6f;
    
-        public int tamano = 16; 
+        public int tamano = 16;
+
+
+        private int direccion; // 0 = arriba, 1 = abajo, 2 = izquierda, 3 = derecha
+        private int frame; // Para la animación de caminar
+        private bool enMovimiento;
+        float xAnterior, yAnterior; // Para el movimiento remoto
+
+        private Image[] caminarArriba;
+        private Image[] caminarAbajo;
+        private Image[] caminarIzquierda;
+        private Image[] caminarDerecha;
+        private Image quietoArriba, quietoAbajo, quietoIzquierda, quietoDerecha;
+
+        private Timer timerAnimacion; // Temporizador para la animación
+        string directorioBase = Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.FullName).FullName;
+
+        private float tiempoQuieto = 0f;
+        private DateTime ultimaActualizacion = DateTime.Now;
+
 
 
         public Jugador(float x, float y)
         {
             this.x = x;
             this.y = y;
+
+            // Cargar imágenes de caminar
+            caminarArriba = new Image[] {
+                Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "mapa", "jugador", "arriba_caminando.png")),
+                Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "mapa", "jugador", "arriba_caminando.png"))
+            };
+
+            caminarAbajo = new Image[] {
+                Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "mapa", "jugador", "abajo_caminando.png")),
+                Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "mapa", "jugador", "abajo_caminando.png"))
+            };
+
+            caminarIzquierda = new Image[] {
+                Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "mapa", "jugador", "arriba_caminando.png")),
+                Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "mapa", "jugador", "arriba_caminando.png"))
+            };
+
+            caminarDerecha = new Image[] {
+                Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "mapa", "jugador", "arriba_caminando.png")),
+                Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "mapa", "jugador", "arriba_caminando.png"))
+            };
+
+
+            // Cargar imágenes de quieto
+            quietoArriba = Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "mapa", "jugador", "arriba.png"));
+            quietoAbajo = Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "mapa", "jugador", "abajo.png"));
+            quietoIzquierda = Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "mapa", "jugador", "izquierda.png"));
+            quietoDerecha = Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "mapa", "jugador", "derecha.png"));
+
+            // Inicializar el temporizador de animación
+            timerAnimacion = new Timer();
+            timerAnimacion.Interval = 150;
+            timerAnimacion.Tick += TimerAnimacion_Tick;
         }
+                    
+        private void TimerAnimacion_Tick(object sender, EventArgs e)
+        {
+            // Cambiar el frame de la animación
+            frame = (frame + 1) % 2; // Alternar entre 0 y 1
+        }
+
 
         public void Mover(float dx, float dy, Mapa mapa)
         {
+            // Calcular la norma del vector de movimiento
+            float norma = (float)Math.Sqrt(dx * dx + dy * dy);
+
+            if (norma > 1)
+            {
+                // Normalizar para que la velocidad sea constante
+                dx /= norma;
+                dy /= norma;
+            }
+
             float nuevoX = x + dx * velocidad;
             float nuevoY = y + dy * velocidad;
 
@@ -205,6 +274,26 @@ namespace WindowsFormsApplication1
             {
                 x = nuevoX;
                 y = nuevoY;
+
+                //movimiento animacion
+                if (dx != 0 || dy != 0)
+                {
+                    enMovimiento = true;
+                    if (dy < 0) direccion = 0; // Arriba
+                    else if (dy > 0) direccion = 1; // Abajo
+                    else if (dx < 0) direccion = 2; // Izquierda
+                    else if (dx > 0) direccion = 3; // Derecha
+
+                    x += dx;
+                    y += dy;
+
+                    timerAnimacion.Start(); // Iniciar animación
+                }
+                else if (timerAnimacion.Enabled)
+                {
+                    enMovimiento = false;
+                    timerAnimacion.Stop(); // Detener animación
+                }
             }
         }
 
@@ -217,7 +306,125 @@ namespace WindowsFormsApplication1
             float pantallaX = x - camX - (tamano / 2); // Centrar en X  
             float pantallaY = y - camY - (tamano / 2); // Centrar en Y  
             g.FillEllipse(color, pantallaX, pantallaY, tamano, tamano);
+
+            // Dibujar el sprite del jugador
+            int spriteSize = tileSize / 2;
+            float pantallax = x - camX - spriteSize / 2f;
+            float pantallay = y - camY - spriteSize;
+
+
+
+
+            Image imagen;
+            // Dependiendo de la dirección y si está en movimiento o quieto, se elige la imagen
+            if (enMovimiento)
+            {
+                switch (direccion)
+                {
+                    case 0: // Arriba
+                        imagen = caminarArriba[frame];
+                        break;
+                    case 1: // Abajo
+                        imagen = caminarAbajo[frame];
+                        break;
+                    case 2: // Izquierda
+                        imagen = caminarIzquierda[frame];
+                        break;
+                    case 3: // Derecha
+                        imagen = caminarDerecha[frame];
+                        break;
+                    default:
+                        imagen = caminarAbajo[frame]; // Default si no hay movimiento
+                        break;
+                }
+            }
+            else
+            {
+                switch (direccion)
+                {
+                    case 0: // Quieto arriba
+                        imagen = quietoArriba;
+                        break;
+                    case 1: // Quieto abajo
+                        imagen = quietoAbajo;
+                        break;
+                    case 2: // Quieto izquierda
+                        imagen = quietoIzquierda;
+                        break;
+                    case 3: // Quieto derecha
+                        imagen = quietoDerecha;
+                        break;
+                    default:
+                        imagen = quietoAbajo; // Default
+                        break;
+                }
+            }
+            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
+            
+
+            g.DrawImage(imagen, pantallax, pantallay, spriteSize, spriteSize);
+
         }
+
+        public void ActualizarMovimientoRemoto(float nuevaX, float nuevaY)
+        {
+            float dx = nuevaX - x;
+            float dy = nuevaY - y;
+
+            DateTime ahora = DateTime.Now;
+
+            if (dx != 0 || dy != 0)
+            {
+                // Movimiento detectado: reiniciamos tiempo quieto
+                tiempoQuieto = 0f;
+                ultimaActualizacion = ahora;
+
+                float distancia = (float)Math.Sqrt(dx * dx + dy * dy);
+                float vx = dx / distancia;
+                float vy = dy / distancia;
+
+                x += vx * velocidad;
+                y += vy * velocidad;
+
+                enMovimiento = true;
+
+                if (Math.Abs(dx) > Math.Abs(dy))
+                    direccion = (dx < 0) ? 2 : 3; // izquierda o derecha
+                else
+                    direccion = (dy < 0) ? 0 : 1; // arriba o abajo
+
+                timerAnimacion.Start();
+            }
+            else
+            {
+                // Posición igual: acumular tiempo quieto
+                float segundosTranscurridos = (float)(ahora - ultimaActualizacion).TotalSeconds;
+                tiempoQuieto += segundosTranscurridos;
+                ultimaActualizacion = ahora;
+
+                if (tiempoQuieto >= 0.2f)
+                {
+                    enMovimiento = false;
+                    timerAnimacion.Stop();
+                }
+            }
+        }
+
+        public void ComprobarEstadoMovimiento()
+        {
+            DateTime ahora = DateTime.Now;
+            float segundosSinActualizar = (float)(ahora - ultimaActualizacion).TotalSeconds;
+
+            if (segundosSinActualizar >= 0.2f && enMovimiento)
+            {
+                enMovimiento = false;
+                timerAnimacion.Stop();
+            }
+        }
+
+
+
+
         public void DibujarEnMinimapa(Graphics g, int x, int y, int size, Brush color = null)
         {
             if (color == null)
