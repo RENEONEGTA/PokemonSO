@@ -27,10 +27,13 @@ namespace WindowsFormsApplication1
     public partial class Form1 : Form
     {
         Socket server;
+        Socket server2;
         FormJuego formJuego = new FormJuego();
         private int puertoServidor = 9020; // Puerto del servidor
+        private int puertoServidor2 = 9050;
         private Timer parpadeoTimer = new Timer();
         private bool serverRun = false;
+        private bool serverRun2 = false;
         private bool colorAzul = true;
         private bool registro = false;
         private GestorCratas gestorCartas = new GestorCratas();
@@ -989,8 +992,7 @@ namespace WindowsFormsApplication1
                                 Task.CompletedTask.Wait();
                             });
                             break; // Salir del bucle si hay un error de conexión
-                        }
-                        
+                        }                  
                     }
                 }
             });
@@ -1354,8 +1356,7 @@ namespace WindowsFormsApplication1
                     boolPanelCargarCombate = true;
                     panelCargarCombate.Visible = false;
                 }
-            }
-                 
+            }                 
         }
 
         public static void MostrarInformacionCarta(CartaPokemon carta)
@@ -1440,8 +1441,6 @@ namespace WindowsFormsApplication1
                             {
                                 ePanel.Graphics.DrawPath(pen, path);
                             }
-
-
                         }
                     });
 
@@ -1583,12 +1582,20 @@ namespace WindowsFormsApplication1
 
         private void nuevaPartida_Click(object sender, EventArgs e)
         {
-            //Enviamos para crear partida
-            string mensaje = "91/";
-            byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
-            server.Send(msg);
-
+            ConectarServidor2();
+            if(serverRun2 == true)
+            {
+                //Enviamos para crear partida
+                string mensaje = "91/";
+                byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
+                server2.Send(msg);
+            }
+            else
+            {
+                MessageBox.Show("No se ha establecido conexion con el servidor de partidas");
+            }
         }
+
         public void CrearPartida(int id)
         {
             if (JugadorNuevo == true)
@@ -1749,6 +1756,52 @@ namespace WindowsFormsApplication1
 
             registro = false;
             iniciado = false;
+
+        }
+
+        private async void ConectarServidor2()
+        {
+            parpadeoTimer.Start(); // Iniciar el parpadeo
+            await Task.Run(() =>
+            {
+
+                //Creamos un IPEndPoint con el ip del servidor y puerto del servidor 
+                //al que deseamos conectarnos
+                IPAddress direc = IPAddress.Parse(IP.Text);
+                IPEndPoint ipep = new IPEndPoint(direc, puertoServidor2);
+
+
+                //Creamos el socket 
+                server2 = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                try
+                {
+                    server.Connect(ipep);//Intentamos conectar el socket
+
+                    Invoke((MethodInvoker)delegate
+                    {
+                        serverRun2 = true;
+                        Task.CompletedTask.Wait();
+
+                    });
+                }
+                catch (SocketException ex)
+                {
+                    //Si hay excepcion imprimimos error y salimos del programa con return 
+                    Invoke((MethodInvoker)delegate
+                    {
+                        ChangeCircleColor(Color.Red);
+                        parpadeoTimer.Stop(); // Detener el parpadeo
+                        MessageBox.Show("Error de conexión con el segundo servidor: " + ex.Message);
+                        serverRun2 = false;
+                        Task.CompletedTask.Wait();
+
+                    });
+                    return;
+                }
+            });
+            string mensaje = "0/" + user + userId;
+            byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
+            server2.Send(msg);
 
         }
     }

@@ -54,6 +54,7 @@ namespace WindowsFormsApplication1
         public Socket server { get; set; }
         public int idPartida { get; set; }
         public int userId { get; set; }
+        public Socket server2 { get; set; }
 
 
 
@@ -160,7 +161,6 @@ namespace WindowsFormsApplication1
             menu.CrearMenu(true, this, server, user);
         }
 
-
         public void ActualizarJugadorRemoto(int idJugador, float x, float y)
         {
             // Si es el jugador local, no actualizamos nada
@@ -234,10 +234,9 @@ namespace WindowsFormsApplication1
 
         private void FormJuego_FormClosing(object sender, EventArgs e)
         {
-            
             DetenerEnvio();
-
         }
+
         void DetenerEnvio()
         {
             if (timerEnviarCoords != null)
