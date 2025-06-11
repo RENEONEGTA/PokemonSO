@@ -87,7 +87,7 @@ public class ButtonAnimator
     }
 
 
-    public static void AnimatePanel(PanelDobleBuffer button, Point start, Point end, AnimationDirection direction, bool fadeIn)
+    public static void AnimatePanel(PanelDobleBuffer button, Point start, Point end, AnimationDirection direction, bool fadeIn, Action onAnimationComplete = null)
     {
         int step = 30;
         float opacityStep = 0.05f;
@@ -160,6 +160,8 @@ public class ButtonAnimator
 
                 if (!fadeIn)
                     button.Visible = false;
+
+                onAnimationComplete?.Invoke();
             }
         };
 

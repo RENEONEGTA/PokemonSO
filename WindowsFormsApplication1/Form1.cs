@@ -30,7 +30,7 @@ namespace WindowsFormsApplication1
         Socket server2;
         FormJuego formJuego = new FormJuego();
         private int puertoServidor = 9020; // Puerto del servidor
-        private int puertoServidor2 = 9050;
+        private int puertoServidor2 = 9040;
         private Timer parpadeoTimer = new Timer();
         private bool serverRun = false;
         private bool serverRun2 = false;
@@ -42,7 +42,7 @@ namespace WindowsFormsApplication1
         private Conectados Conectados = new Conectados();
         private Combate Combate = new Combate();
         private bool combate = false;
-        private PanelDobleBuffer panelCartas;
+
         Menu menu = new Menu();
         private PanelDobleBuffer panelElegirPokemon;
         private PanelDobleBuffer panelCargarPartida;
@@ -105,7 +105,8 @@ namespace WindowsFormsApplication1
             this.WindowState = FormWindowState.Maximized;
             ChangeCircleColor(Color.Blue);
             ConectarServidor();
-            AtenderServidor();
+            ConectarServidor2();
+            AtenderServidorPrincipal();
             
             this.SizeChanged += Form1_SizeChanged;
 
@@ -413,199 +414,9 @@ namespace WindowsFormsApplication1
 
             crearPanelCombate();
 
-            PictureBox pokedexBox = new PictureBox
-            {
-                Size = new Size(100, 100), // Ajusta el tamaño según sea necesario
-                Location = new Point(PokedexLocationX, PokedexLocationY),
-                SizeMode = PictureBoxSizeMode.StretchImage // Opcional: para ajustar la imagen al tamaño del control
-            };
-            string pokeballPath = Path.Combine(directorioBase, "Resources", "images", "pokeball.png");
-            pokedexBox.Image = Image.FromFile(pokeballPath);
-            this.Controls.Add(pokedexBox);
-            pokedexBox.BringToFront();
-            pokedexBox.Visible = true;
-            pokedexBox.Click += pokedexBox_Click;
+            
         }
 
-        // Evento para desplazar los controles dentro del panel
-        private void PanelCartas_MouseWheel(object sender, MouseEventArgs e)
-        {
-            int desplazamiento = 15; // Velocidad de desplazamiento
-
-            // Usar BeginUpdate y EndUpdate para evitar parpadeos
-            panelCartas.SuspendLayout();
-
-            // Mover todos los controles dentro de panelCartas
-            foreach (Control ctrl in panelCartas.Controls)
-            {
-                // Excluir los botones específicos del desplazamiento
-                if (ctrl is RoundButton || ctrl is RombeButton)
-                {
-                    continue;
-                }
-
-                // Desplazar hacia abajo solo hasta el punto de partida
-                if (e.Delta > 0 && ctrl.Top < panelCartasTop)
-                {
-                    ctrl.Top += desplazamiento;
-                    if (ctrl.Top > panelCartasTop)
-                    {
-                        ctrl.Top = panelCartasTop;
-                    }
-                }
-                // Desplazar hacia arriba
-                else if (e.Delta < 0)
-                {
-                    ctrl.Top -= desplazamiento;
-                }
-            }
-            panelCartas.ResumeLayout();
-            panelCartas.Update(); // Forzar la redibujación del panel
-        }
-
-
-
-
-        private void pokedexBox_Click(object sender, EventArgs e)
-        {
-
-            if (!panelCreado)
-            {
-                int PanelSizeX = 780;
-                int PanelSizeY = 600;
-
-                panelCartas = new PanelDobleBuffer
-                {
-                    Size = new Size(PanelSizeX, PanelSizeY), // Tamaño ajustado
-                    Location = new Point(PokedexLocationX - (PanelSizeX / 2) + 50, PokedexLocationY - PanelSizeY - 20),
-                    BackColor = Color.Black,
-                };
-                this.Controls.Add(panelCartas);
-                panelCartas.Visible = false;
-                panelCreado = true;
-
-                // Evento para manejar el desplazamiento
-                panelCartas.MouseWheel += PanelCartas_MouseWheel;
-
-                // Configurar el evento Paint para aplicar bordes redondeados y degradado
-                panelCartas.Paint += new PaintEventHandler((object senderPanel, PaintEventArgs ePanel) =>
-                {
-                    PanelDobleBuffer panel = (PanelDobleBuffer)senderPanel;
-                    int radio = 20; // Radio para las esquinas redondeadas
-                    Rectangle rect = new Rectangle(0, 0, panel.Width, panel.Height);
-
-                    // Crear la ruta con esquinas redondeadas
-                    using (GraphicsPath path = new GraphicsPath())
-                    {
-                        path.AddArc(rect.X, rect.Y, radio, radio, 180, 90);
-                        path.AddArc(rect.Right - radio, rect.Y, radio, radio, 270, 90);
-                        path.AddArc(rect.Right - radio, rect.Bottom - radio, radio, radio, 0, 90);
-                        path.AddArc(rect.X, rect.Bottom - radio, radio, radio, 90, 90);
-                        path.CloseFigure();
-
-                        // Asigna la región redondeada al panel
-                        panelCartas.Region = new Region(path);
-
-                        // Configurar el suavizado
-                        ePanel.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-
-                        // Crear un pincel de degradado: de blanco a un gris muy claro
-                        using (LinearGradientBrush brush = new LinearGradientBrush(
-                            rect,
-                            Color.Black,
-                            Color.DarkGray,
-                            LinearGradientMode.Vertical))
-                        {
-                            // Rellenar la ruta con el degradado
-                            ePanel.Graphics.FillPath(brush, path);
-                        }
-
-                        // Si deseas dibujar un borde:
-                        using (Pen pen = new Pen(Color.FromArgb(38, 209, 255), 4))
-                        {
-                            ePanel.Graphics.DrawPath(pen, path);
-                        }
-
-                        panelCartasTop = panelCartas.Top - 50;
-                    }
-                });
-            }
-
-            if (!combate)
-            {
-                if (serverRun == true)
-                {
-                    if (user != null)
-                    {
-                        string mensaje = "3/" + user;
-                        // Enviamos al servidor el nombre tecleado
-                        byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
-                        server.Send(msg);
-
-                        ////Recibimos la respuesta del servidor
-                        //byte[] msg2 = new byte[1000];
-                        //server.Receive(msg2);
-                        //mensaje = Encoding.ASCII.GetString(msg2);
-
-
-                        //MessageBox.Show(mensaje);
-                        //List<Pokemon> listaPokemon = new List<Pokemon>();
-
-                        //listaPokemon = Pokemon.ParsearDatos(mensaje, listaPokemon);
-
-                        //if (listaPokemon.Count > 0)
-                        //{            
-                        //    List<CartaPokemon> cartas = new List<CartaPokemon>();
-
-                        //    foreach (Pokemon pokemon in listaPokemon)
-                        //    {
-                        //        // Crear la carta correctamente y añadirla a la lista
-                        //        CartaPokemon carta = new CartaPokemon(
-                        //            pokemon.Nombre,
-                        //            pokemon.Vida,
-                        //            pokemon.Elemento,
-                        //            "images/" + pokemon.Nombre + ".png",
-                        //            new List<(string, int)>
-                        //            {
-                        //                (pokemon.Ataque, pokemon.Daño),
-                        //                ("Rugido", 10)
-                        //            }
-                        //        );
-                        //        cartas.Add(carta); // Agregar la carta a la lista
-                        //    }
-
-                        //    panelCartas.BringToFront();
-                        //    combate = true;
-                        //    gestorCartas.DibujarCartas(cartas, panelCartas, true);
-                        //    panelCartas.Visible = true;
-                        //}
-                        //else
-                        //{
-                        //    MessageBox.Show("No tienes pokemons");
-
-                        //}
-                    }
-                    else
-                    {
-                        MessageBox.Show("Ha habido un error al buscar los pokemons del jugador " + user);
-                    }
-                }
-                else
-                {
-                    MessageBox.Show("No tienes conexion con el servidor");
-                }
-
-
-            }
-            else
-            {
-                panelCartas.Visible = false;
-                combate = false;
-
-
-            }
-
-        }
 
         private async void ConectarServidor()
         {
@@ -681,7 +492,7 @@ namespace WindowsFormsApplication1
             });
         }
 
-        private async void AtenderServidor()
+        private async void AtenderServidorPrincipal()
         {
             await Task.Run(() =>
             {
@@ -740,6 +551,10 @@ namespace WindowsFormsApplication1
                                                             Inicio();
 
                                                             CargarPokedex();
+                                                            // Solo enviamos el mensaje DESPUÉS de conectar con éxito.
+                                                            string mensajeservidor = "0/" + user + "/" + userId;
+                                                            byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensajeservidor);
+                                                            server2.Send(msg);
                                                         }
                                                         else
                                                         {
@@ -761,44 +576,13 @@ namespace WindowsFormsApplication1
 
                                             case 3: //Pokedex
 
-                                                MessageBox.Show(mensaje);
-                                                Invoke((MethodInvoker)delegate
+                                               
+                                                if (formJuego != null && !formJuego.IsDisposed)
                                                 {
-                                                    List<Pokemon> listaPokemon = new List<Pokemon>();
-                                                    listaPokemon = Pokemon.ParsearDatos(mensaje, listaPokemon);
-
-                                                    if (listaPokemon.Count > 0)
-                                                    {
-                                                        List<CartaPokemon> cartas = new List<CartaPokemon>();
-
-                                                        foreach (Pokemon pokemon in listaPokemon)
-                                                        {
-                                                            // Crear la carta correctamente y añadirla a la lista
-                                                            CartaPokemon carta = new CartaPokemon(
-                                                                pokemon.Nombre,
-                                                                pokemon.Vida,
-                                                                pokemon.Elemento,
-                                                                "images/" + pokemon.Nombre + ".png",
-                                                                new List<(string, int)>
-                                                                {
-                                                            (pokemon.Ataque, pokemon.Daño),
-                                                            ("Rugido", 10)
-                                                                }
-                                                            );
-                                                            cartas.Add(carta); // Agregar la carta a la lista
-                                                        }
-
-                                                        panelCartas.BringToFront();
-                                                        combate = true;
-                                                        gestorCartas.DibujarCartas(cartas, panelCartas, true, escogerPokemon);
-                                                        panelCartas.Visible = true;
-                                                    }
-                                                    else
-                                                    {
-                                                        MessageBox.Show("No tienes pokemons");
-                                                        PrimerPokemon();
-                                                    }
-                                                });
+                                                    // Si el formulario del juego está abierto, le pasamos los datos a él
+                                                    formJuego.MostrarPokedex(mensaje);
+                                                }
+                                                
 
                                                 break;
 
@@ -867,34 +651,6 @@ namespace WindowsFormsApplication1
                                                 break;
                                             case 9:
                                                 break;
-                                            case 91: //Recibimos confirmacion de crearPartida con id de partida
-
-                                                CrearPartida(Convert.ToInt32(mensaje));
-
-                                                break;
-                                            case 94:
-                                                // Formato esperado: 94~$15:120:250/17:135:220/...
-                                                string[] partesJugadores = mensaje.Split('/');
-                                                jugadoresEnPartida.Clear();
-
-                                                foreach (string entrada in partesJugadores)
-                                                {
-                                                    if (string.IsNullOrWhiteSpace(entrada)) continue;
-
-                                                    string[] datosPos = entrada.Split(':');
-                                                    if (datosPos.Length != 3) continue;
-
-                                                    int id = int.Parse(datosPos[0]);
-                                                    int x = int.Parse(datosPos[1]);
-                                                    int y = int.Parse(datosPos[2]);
-
-                                                    if (Application.OpenForms.OfType<FormJuego>().FirstOrDefault() is FormJuego formJuego)
-                                                    {
-                                                        formJuego.ActualizarJugadorRemoto(id, x, y);
-                                                    }
-                                                }
-
-                                                break;
 
                                             case 10: //Abrir Sobre
                                             
@@ -962,7 +718,7 @@ namespace WindowsFormsApplication1
                                                             };
                                                         }
 
-                                                        Conectados.RecibirInvitacionMundo(jugadorInvitador, this, server, idPartida);
+                                                        Conectados.RecibirInvitacionMundo(jugadorInvitador, this, server2, idPartida);
                                                     });
                                                 }
                                                 else
@@ -1582,7 +1338,7 @@ namespace WindowsFormsApplication1
 
         private void nuevaPartida_Click(object sender, EventArgs e)
         {
-            ConectarServidor2();
+            
             if(serverRun2 == true)
             {
                 //Enviamos para crear partida
@@ -1598,6 +1354,10 @@ namespace WindowsFormsApplication1
 
         public void CrearPartida(int id)
         {
+            if (formJuego == null || formJuego.IsDisposed)
+            {
+                formJuego = new FormJuego(); 
+            }
             if (JugadorNuevo == true)
             {
                 MessageBox.Show("No tienes pokemons");
@@ -1606,13 +1366,34 @@ namespace WindowsFormsApplication1
             }
             else
             {
-               
+                if (server2 == null || !server2.Connected)
+                {
+                    // Este método ya lo tienes, se encarga de conectar.
+                    ConectarServidor2();
+                }
+
+                // Enviamos un mensaje para notificar que nos hemos unido a la instancia de la partida.
+                // Usamos el nuevo código 89.
+                string mensaje = $"90/{id}";
+                byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
+                // Usamos un bloque try-catch por si la conexión aún no está lista.
+                try
+                {
+                    server2.Send(msg);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("No se pudo notificar la unión a la partida: " + ex.Message);
+                }
+
                 formJuego.user = user;
                 formJuego.server = server;
+                formJuego.server2 = server2;
                 formJuego.idPartida = id;
                 formJuego.userId = userId;
+                formJuego.listaPokedex = this.listaPokedex;
 
-                
+
 
                 // Enlazar al evento utilizando una instancia del formulario  
                 this.ConectadosActualizados += formJuego.ActualizarListaConectados;
@@ -1752,7 +1533,7 @@ namespace WindowsFormsApplication1
             Cerrar.Visible = true;  
             this.WindowState = FormWindowState.Normal;
             ConectarServidor();
-            AtenderServidor();
+            AtenderServidorPrincipal();
 
             registro = false;
             iniciado = false;
@@ -1775,12 +1556,13 @@ namespace WindowsFormsApplication1
                 server2 = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 try
                 {
-                    server.Connect(ipep);//Intentamos conectar el socket
+                    server2.Connect(ipep);//Intentamos conectar el socket
 
                     Invoke((MethodInvoker)delegate
                     {
                         serverRun2 = true;
-                        Task.CompletedTask.Wait();
+
+                        AtenderServidorDePartidas();
 
                     });
                 }
@@ -1799,10 +1581,106 @@ namespace WindowsFormsApplication1
                     return;
                 }
             });
-            string mensaje = "0/" + user + userId;
-            byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
-            server2.Send(msg);
 
+        }
+        // En Form1.cs, puedes añadir este método después de AtenderServidorPrincipal
+
+        private async void AtenderServidorDePartidas()
+        {
+            await Task.Run(() =>
+            {
+                while (true)
+                {
+                    // Escuchamos solo si la conexión con el servidor 2 está activa
+                    if (serverRun2 == true && server2 != null && server2.Connected)
+                    {
+                        try
+                        {
+                            byte[] msg2 = new byte[2048];
+                            // La clave: Recibimos mensajes del socket 'server2'
+                            int bytesRecibidos = server2.Receive(msg2);
+
+                            if (bytesRecibidos > 0)
+                            {
+                                string datos = Encoding.ASCII.GetString(msg2, 0, bytesRecibidos);
+                                string[] mensajes = datos.Split(new string[] { "~$" }, StringSplitOptions.None);
+
+                                if (mensajes.Length < 2) continue;
+
+                                int codigo = Convert.ToInt32(mensajes[0]);
+                                string mensaje = mensajes[1].Trim();
+
+                                // Este switch solo manejará códigos del servidor de partidas
+                                switch (codigo)
+                                {
+                                    case 90: // Sincronizar la lista inicial de Pokémon en el mapa
+                                        
+                                        if (formJuego != null && !formJuego.IsDisposed)
+                                        {
+                                            Invoke((MethodInvoker)delegate
+                                            {
+                                                formJuego.SincronizarPokemonesEnMapa(mensaje);
+                                            });                                      
+                                        }
+                                        break;
+
+                                    case 91: // Respuesta de Crear Partida (ahora desde server2)
+                                        CrearPartida(Convert.ToInt32(mensaje));
+                                        break;
+
+                                    case 94: // Actualización de coordenadas de otros jugadores
+                                        string[] partesJugadores = mensaje.Split('/');
+                                        Invoke((MethodInvoker)delegate
+                                        {
+                                            foreach (string entrada in partesJugadores)
+                                            {
+                                                if (string.IsNullOrWhiteSpace(entrada)) continue;
+                                                string[] datosPos = entrada.Split(':');
+                                                if (datosPos.Length != 3) continue;
+
+                                                int id = int.Parse(datosPos[0]);
+                                                int x = int.Parse(datosPos[1]);
+                                                int y = int.Parse(datosPos[2]);
+
+                                                if (Application.OpenForms.OfType<FormJuego>().FirstOrDefault() is FormJuego fj)
+                                                {
+                                                    fj.ActualizarJugadorRemoto(id, x, y);
+                                                }
+                                            }
+                                        });
+                                        
+                                        break;
+
+                                    case 97: // Un Pokémon se ha movido
+                                        if (formJuego != null && !formJuego.IsDisposed)
+                                        {
+                                            Invoke((MethodInvoker)delegate
+                                            {
+                                                formJuego.ActualizarDestinoPokemon(mensaje);
+                                            });
+                                            
+                                        }
+                                        break;
+                                }
+                            }
+                        }
+                        catch (SocketException)
+                        {
+                            // Si hay un error, el socket probablemente se cerró.
+                            serverRun2 = false;
+                        }
+                        catch (Exception)
+                        {
+                            // Otra excepción, podríamos querer registrarla
+                        }
+                    }
+                    else
+                    {
+                        // Pequeña pausa para no consumir 100% de CPU si el server no está conectado
+                        System.Threading.Thread.Sleep(100);
+                    }
+                }
+            });
         }
     }
 }

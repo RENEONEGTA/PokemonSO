@@ -21,6 +21,13 @@ namespace WindowsFormsApplication1
         int padding = 10;
         bool partida;
 
+        public event Action AnimationStarted;
+        public event Action AnimationFinished;
+
+        private bool isMenuOpen = false;
+        private bool isAnimating = false;
+
+
         TextBox mensajeChat = new TextBox();
         RichTextBox historialMensajes = new RichTextBox();
         PanelDobleBuffer panelChat = new PanelDobleBuffer();
@@ -60,6 +67,10 @@ namespace WindowsFormsApplication1
             form.Controls.Add(contenedorMenu);
             contenedorMenu.BringToFront();
             AsignarEventoClick(contenedorMenu, MenuClick);
+
+            // AÑADE la suscripción a nuestros propios eventos para controlar la bandera isAnimating
+            this.AnimationStarted += () => { isAnimating = true; };
+            this.AnimationFinished += () => { isAnimating = false; };
 
             panelMenu.Size = new Size(300, form.ClientSize.Height);
 
@@ -560,17 +571,46 @@ namespace WindowsFormsApplication1
 
         private void MenuClick(object sender, EventArgs e)
         {
-            if (panelMenu.Left == form.ClientSize.Width - panelMenu.Width) // abrir
+            if (isAnimating)
             {
-                ButtonAnimator.AnimatePanel(panelMenu, new Point(panelMenu.Left, panelMenu.Top), new Point(panelMenu.Left + 300, panelMenu.Top), ButtonAnimator.AnimationDirection.Right, false);
-                contenedorMenu.BringToFront(); // Asegura que el contenedor del botón esté al frente               
+                return;
             }
-            else if (panelMenu.Left == form.ClientSize.Width) // cerrar
+
+            // Dispara el evento de que la animación HA COMENZADO
+            AnimationStarted?.Invoke();
+
+            
+            Action onComplete = () => {
+                // Dispara el evento de que la animación HA TERMINADO
+                AnimationFinished?.Invoke();
+            };
+
+            if (isMenuOpen)
             {
-                panelMenu.Visible = true; // Asegura que el panel sea visible antes de animar             
-                ButtonAnimator.AnimatePanel(panelMenu, new Point(panelMenu.Left, panelMenu.Top), new Point(panelMenu.Left - 300, panelMenu.Top), ButtonAnimator.AnimationDirection.Left, true);
+                // --- LÓGICA PARA CERRAR EL MENÚ ---
+                Point startPoint = new Point(form.ClientSize.Width - panelMenu.Width, panelMenu.Top);
+                Point endPoint = new Point(form.ClientSize.Width, panelMenu.Top);
+
+                // Llama al animador con fadeIn = false y la acción onComplete
+                ButtonAnimator.AnimatePanel(panelMenu, startPoint, endPoint, ButtonAnimator.AnimationDirection.Right, false, onComplete);
                 contenedorMenu.BringToFront();
             }
+            else
+            {
+                // --- LÓGICA PARA ABRIR EL MENÚ ---
+                panelMenu.Visible = true;
+                Point startPoint = new Point(form.ClientSize.Width, panelMenu.Top);
+                Point endPoint = new Point(form.ClientSize.Width - panelMenu.Width, panelMenu.Top);
+
+                // Llama al animador con fadeIn = true y la acción onComplete
+                ButtonAnimator.AnimatePanel(panelMenu, startPoint, endPoint, ButtonAnimator.AnimationDirection.Left, true, onComplete);
+                contenedorMenu.BringToFront();
+
+            }
+
+            // Finalmente, invertimos el estado del menú
+            isMenuOpen = !isMenuOpen;
+
         }
         public void redondearPanel(Panel panel, int radio)
         {
@@ -582,7 +622,7 @@ namespace WindowsFormsApplication1
             path.CloseAllFigures();
             panel.Region = new Region(path);
             
-            panel.Update();      // Fuerza el repintado inmediato
+            //panel.Update();      // Fuerza el repintado inmediato
 
         }
         public void AjustarPanelMenu()

@@ -140,7 +140,7 @@ void *AtenderCliente(void *socket)
     }
 	else 
 	{
-		printf("Se ha conectado a la base de datos con exito\n");
+		printf("Servidor 1 Se ha conectado a la base de datos con exito\n");
 	}
 
 	int terminar = 0;
@@ -1065,7 +1065,7 @@ int main(int argc, char *argv[])
 	
 	pthread_t thread;
 	for(;;){
-		printf ("Escuchando\n");
+		printf ("Servidor 1 Escuchando\n");
 		
 		sock_conn = accept(sock_listen, NULL, NULL);
 		printf ("He recibido conexi?n\n");

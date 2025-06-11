@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <mysql.h>
 #include <pthread.h>
+#include <time.h> 
 
 char ubicacion[30];
 
@@ -14,87 +15,60 @@ char ubicacion[30];
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 int i = 0;
 int sockets[100];
-int Puerto = 9050; // Puertos disponibles 50081 - 50085
+int Puerto = 9040; // Puertos disponibles 50081 - 50085
 
-//Anade nuevo conectado
-int Anade(MYSQL *conn, int IdJ, char nombre[20], int socket) {
-   
 
-	printf("Anadiendo jugador: '%s' con id %d y socket %d a la lista de conectados\n", nombre, IdJ, socket);
-    char query[512];
-	sprintf(query,
-			"INSERT INTO Conectados (IdJ, nombre, socket) VALUES (%d, '%s', %d)"
-			"ON DUPLICATE KEY UPDATE socket = VALUES(socket);",
-			IdJ, nombre, socket);
+
+typedef struct {
+	int instancia_id;
+	int pokedex_id;
+	float x;
+	float y;
+} PokemonEnMapa;
+// LISTA FIJA DE POKEMON PARA EL MAPA DE LA PARTIDA
+PokemonEnMapa pokemonesDelMapa[] = {
+	{1, 2, 800, 800},   // Un Charmander (pokedex_id=2) en (800, 800)
+	{2, 3, 1500, 3500}, // Un Squirtle (pokedex_id=3) en (1500, 3500)
+	{3, 1, 3000, 1200}  // Un Pikachu (pokedex_id=1) en (3000, 1200)
+};
+int numPokemonesEnMapa = 3;
+
+void* HiloDeMovimiento(void* arg)
+{
+	printf("Hilo de movimiento iniciado.\n");
 	
-
-    int result = -1;
-
-	if (mysql_query(conn, query) == 0) {
-		result = 0;  // Exito aunque no se modificara nada
-		printf("Insercion a la lista de conectados exitosa\n");
+	while(1)
+	{
+		// Pausa de 5 segundos antes de mover los Pokemon de nuevo
+		sleep(5);
+		
+		pthread_mutex_lock(&mutex);
+		
+		// Recorremos todos los Pokemon del mapa
+		for (int k = 0; k < numPokemonesEnMapa; k++)
+		{
+			// Calculamos una nueva posicion aleatoria en un radio de 200 pi≠xeles
+			int radioMovimiento = 200;
+			pokemonesDelMapa[k].x += (rand() % (2 * radioMovimiento)) - radioMovimiento;
+			pokemonesDelMapa[k].y += (rand() % (2 * radioMovimiento)) - radioMovimiento;
+			
+			char mensajeMovimiento[200];
+			sprintf(mensajeMovimiento, "97~$%d/%.0f/%.0f", 
+					pokemonesDelMapa[k].instancia_id,
+					pokemonesDelMapa[k].x,
+					pokemonesDelMapa[k].y);
+			printf("Enviando actualizacion de movimiento: %s\n", mensajeMovimiento);
+			for (int j = 0; j < i; j++)
+			{
+				write(sockets[j], mensajeMovimiento, strlen(mensajeMovimiento));
+			}
+		}
+		pthread_mutex_unlock(&mutex);
 	}
-   
-    return result;
+	
+	return NULL;
 }
-
-
-//Retorna 0 si elimina y -1 si el usuario no esta en la Base de datos de conectados
-int Elimina(MYSQL *conn, char nombre[20]) {
-    pthread_mutex_lock(&mutex);
-
-    char query[256];
-    sprintf(query, "DELETE FROM Conectados WHERE nombre = '%s';", nombre);
-
-    int result = -1;
-    if (mysql_query(conn, query) == 0 && mysql_affected_rows(conn) > 0) {
-        result = 0;  // Eliminaci√≥ exitosa
-    }
-
-    pthread_mutex_unlock(&mutex);
-    return result;
-}
-
-
-int VerListaConectados(MYSQL *conn, char *resultado) {
-    MYSQL_RES *res;
-    MYSQL_ROW row;
-    char query[256] = "SELECT Jugadores.* FROM Conectados, Jugadores WHERE Jugadores.id = Conectados.IdJ";
-    
-    if (mysql_query(conn, query) != 0) {
-        printf("Error en la consulta VerListaConectados: %s\n", mysql_error(conn));
-        return -1;
-    }
-
-    res = mysql_store_result(conn);
-    if (res == NULL) {
-        printf("Error al almacenar resultado: %s\n", mysql_error(conn));
-        return -1;
-    }
-
-    strcpy(resultado, "");  // Inicialitzar la cadena
-
-    while ((row = mysql_fetch_row(res)) != NULL) {
-        // Format: nombre1,socket1/nombre2,socket2/...
-        strcat(resultado, row[0]); // id
-        strcat(resultado, "/");
-        strcat(resultado, row[1]); // nombre
-		strcat(resultado, "/");
-		strcat(resultado, row[2]); // password
-		strcat(resultado, "/");
-		strcat(resultado, row[3]); // numPokemons
-		strcat(resultado, "/");
-		strcat(resultado, row[4]); // Victorias
-		strcat(resultado, "/");
-		strcat(resultado, row[5]); // Derrotas
-		strcat(resultado, "/");
-		strcat(resultado, row[6]); // Posicion
-        strcat(resultado, "#");
-    }
-
-    mysql_free_result(res);
-    return 0;
-}
+	
 
 
 void *AtenderCliente(void *socket)
@@ -140,7 +114,7 @@ void *AtenderCliente(void *socket)
     }
 	else 
 	{
-		printf("Se ha conectado a la base de datos con exito\n");
+		printf("Servidor 2 Se ha conectado a la base de datos con exito\n");
 	}
 
 	int terminar = 0;
@@ -166,30 +140,48 @@ void *AtenderCliente(void *socket)
 		}
 		int codigo =  atoi (p);
 
-		//Formato de la consulta: 0/nombreUsuario
+		//Formato de la consulta: 0/nombreUsuario/userId
 		if(codigo == 0)
 		{
+			char userIdChar[80];
 			p = strtok(NULL, "/");
 			if (p != NULL) {
 				strcpy(user, p);
 			}
 			else {
-				strcpy(buff2, "7~$Error: Formato de nombre incorrecto");
+				strcpy(buff2, "Error: Formato de nombre incorrecto");
 				write(socket_conn, buff2, strlen(buff2));
 				break;
 			}
 			p = strtok(NULL, "/");
 			if (p != NULL) {
-				strcpy(userId, p);
+				strcpy(userIdChar, p);
 			}
 			else {
-				strcpy(buff2, "7~$Error: Formato de nombre incorrecto");
+				strcpy(buff2, "Error: Formato de nombre incorrecto");
 				write(socket_conn, buff2, strlen(buff2));
 				break;
 			}
+			userId=atoi(userIdChar);
+			
 			printf("Usuario %s con Id %d conectado al servidor de partidas", user, userId);
 		}
-
+		else if(codigo == 90) // El cliente notifica que se ha unido a una partida
+		{
+			printf("Recibida notificacion de  union a partida.\n");
+			char mensajeLista[2048] = "90~$";			
+			for (int k = 0; k < numPokemonesEnMapa; k++) {
+				char bufferPokemon[100];
+				sprintf(bufferPokemon, "%d/%d/%.0f/%.0f#",
+						pokemonesDelMapa[k].instancia_id,
+						pokemonesDelMapa[k].pokedex_id,
+						pokemonesDelMapa[k].x,
+						pokemonesDelMapa[k].y);
+				strcat(mensajeLista, bufferPokemon);
+			}
+			printf("Enviando lista de Pokemon por union: %s\n", mensajeLista);
+			write(socket_conn, mensajeLista, strlen(mensajeLista));
+		}
 		else if(codigo == 91) // Crear Partida
 		{
 			char query[512];
@@ -213,6 +205,25 @@ void *AtenderCliente(void *socket)
 			sprintf(mensaje, "91~$%d", idGenerado);
 			
 			write(socket_conn, mensaje, strlen(mensaje));
+			
+			
+			//Enviamos la lista de pokemons
+			char mensajeLista[2048] = "90~$"; 
+			
+			for (int k = 0; k < numPokemonesEnMapa; k++) {
+				char bufferPokemon[100];
+				// Formato: <instancia_id>/<pokedex_id>/<x>/<y>#
+				sprintf(bufferPokemon, "%d/%d/%.0f/%.0f#",
+						pokemonesDelMapa[k].instancia_id,
+						pokemonesDelMapa[k].pokedex_id,
+						pokemonesDelMapa[k].x,
+						pokemonesDelMapa[k].y);
+				strcat(mensajeLista, bufferPokemon);
+			}
+			printf("Enviando a socket %d la lista de Pokemon: %s\n", socket_conn, mensajeLista);
+			// Enviamos el mensaje completo al cliente que crea la partida
+			write(socket_conn, mensajeLista, strlen(mensajeLista));
+			
 		}
 		else if(codigo == 92) // Unirse a partida
 		{
@@ -281,6 +292,23 @@ void *AtenderCliente(void *socket)
 			} else {
 				printf("%s se ha unido a la partida %d como %s\n", jugador, idPartida, campoLibre);
 			}
+			
+			//Enviamos la lista de pokemons
+			char mensajeLista[2048] = "90~$"; 
+			
+			for (int k = 0; k < numPokemonesEnMapa; k++) {
+				char bufferPokemon[100];
+				// Formato: <instancia_id>/<pokedex_id>/<x>/<y>#
+				sprintf(bufferPokemon, "%d/%d/%.0f/%.0f#",
+						pokemonesDelMapa[k].instancia_id,
+						pokemonesDelMapa[k].pokedex_id,
+						pokemonesDelMapa[k].x,
+						pokemonesDelMapa[k].y);
+				strcat(mensajeLista, bufferPokemon);
+			}
+			printf("Enviando a socket %d la lista de Pokemon: %s\n", socket_conn, mensajeLista);
+			// Enviamos el mensaje completo al cliente que crea la partida
+			write(socket_conn, mensajeLista, strlen(mensajeLista));
 			
 		}
 		else if (codigo == 93) // Actualizar coordenadas jugador
@@ -443,11 +471,32 @@ int main(int argc, char *argv[])
 	}
 		
 
+	
+	
+	// INICIAMOS EL HILO DE MOVIMIENTO
+	pthread_t thread_movimiento;
+	srand(time(NULL)); // Inicializamos la semilla para numeros aleatorios
+	
+	if (pthread_create(&thread_movimiento, NULL, HiloDeMovimiento, NULL) != 0) {
+		perror("No se pudo crear el hilo de movimiento");
+		return 1;
+	}
+
+	printf("DEBUG: Intentando crear el hilo de movimiento...\n");
+	fflush(stdout); 
+	
+	if (pthread_create(&thread_movimiento, NULL, HiloDeMovimiento, NULL) != 0) {
+		perror("ERROR: No se pudo crear el hilo de movimiento");
+		return 1;
+	}
+	printf("DEBUG: °Hilo de movimiento creado con Exito!\n");
+	fflush(stdout);
+	
 	//Aqui iniciariamos la listas de conectados
 	
 	pthread_t thread;
 	for(;;){
-		printf ("Escuchando\n");
+		printf ("Servidor 2 Escuchando\n");
 		
 		sock_conn = accept(sock_listen, NULL, NULL);
 		printf ("He recibido conexi?n\n");
@@ -460,6 +509,9 @@ int main(int argc, char *argv[])
 		
 		i++;
 	}
+	
+	
+	
 
 	//Cerramos la conexion MYSQL
 	mysql_close(conn);

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
@@ -16,14 +17,27 @@ namespace WindowsFormsApplication1
 {
     public partial class FormJuego : Form
     {
-       
+        public class PokemonEnMapa
+        {
+            public int PokedexId { get; set; }
+            public float X { get; set; } // Posición actual
+            public float Y { get; set; } // Posición actual
+            public float TargetX { get; set; } // Posición de destino
+            public float TargetY { get; set; } // Posición de destino
+            public Image Sprite { get; set; }
+        }
+
+        Dictionary<int, PokemonEnMapa> pokemonesEnElMapa = new Dictionary<int, PokemonEnMapa>();
+
         System.Windows.Forms.Timer gameLoop = new System.Windows.Forms.Timer();
         Conectados conectados = new Conectados();
         List<Conectados> listaConectados = new List<Conectados>();
-        
+        public List<Pokemon> listaPokedex { get; set; }
+
         Mapa mapa;
         Mapa minimapa;
         Jugador jugador;
+        GestorCratas gestorCartas = new GestorCratas();
         public Menu menu = new Menu();
   
         string directorioBase = Directory.GetParent(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.FullName).FullName;
@@ -34,6 +48,7 @@ namespace WindowsFormsApplication1
         int miniTileSize = 6;
         int vistaAncho = 5;
         int vistaAlto = 4;
+        bool isIluminated = false; // Variable para controlar si el botón está iluminado o no
         private float lastPosX = -1;
         private float lastPosY = -1;
         TextBox mensajeChat = new TextBox();
@@ -47,6 +62,20 @@ namespace WindowsFormsApplication1
         PanelDobleBuffer contenedorMenu = new PanelDobleBuffer();
         PanelDobleBuffer panelMenu = new PanelDobleBuffer();
         PanelDobleBuffer panelAmigos = new PanelDobleBuffer();
+
+        PanelDobleBuffer panelInferior = new PanelDobleBuffer();
+        PanelDobleBuffer btnPokedex = new PanelDobleBuffer();
+        PanelDobleBuffer btnMochila = new PanelDobleBuffer();
+        PanelDobleBuffer panelElegirPokemon = new PanelDobleBuffer();
+        PictureBox btnMisPokemon = new PictureBox();
+        public PanelDobleBuffer panelCartas = new PanelDobleBuffer();
+        int panelCartasTop;
+        bool panelCreado = false;
+
+        
+        private bool panelPokedexCreado = false;
+        private bool pokedexVisible = false;
+        
 
         Dictionary<int, Jugador> jugadoresRemotos = new Dictionary<int, Jugador>();
 
@@ -110,55 +139,25 @@ namespace WindowsFormsApplication1
             
 
             IniciarEnvioPeriodico();
-            
-
-
-
-
-            //PictureBox salir = new PictureBox
-            //{
-            //    Size = new Size(40, 40), // Ajusta el tamaño según sea necesario
-            //    Location = new Point(1450, 45),
-            //    SizeMode = PictureBoxSizeMode.StretchImage // Opcional: para ajustar la imagen al tamaño del control
-            //};
-            //string salir_image = Path.Combine(directorioBase, "Resources", "cerrar.png");
-            //salir.Image = Image.FromFile(salir_image);
-            //this.Controls.Add(salir);
-            //salir.BringToFront();
-            //salir.Visible = true;
-            //salir.Click += salir_Click;
-
-            //this.FormBorderStyle = FormBorderStyle.None; // Quitar la barra de título y botones
-            //this.WindowState = FormWindowState.Maximized; // Maximizar el formulario
-            //this.ControlBox = false; //Quitar los controles 
-            //this.StartPosition = FormStartPosition.CenterScreen; //Centrar el formulario
-            //this.ShowInTaskbar = false; // Esconder la taskbar
-            //this.FormBorderStyle = FormBorderStyle.None; //Quitar el borderstyle
-
-
-            //PictureBox max_min = new PictureBox //maximizar minimizar
-            //{
-            //    Size = new Size(40, 40), // Ajusta el tamaño según sea necesario
-            //    Location = new Point(1450, 45),
-            //    SizeMode = PictureBoxSizeMode.StretchImage // Opcional: para ajustar la imagen al tamaño del control
-            //};
-            //string salir_image = Path.Combine(directorioBase, "Resources", "cerrar.png");
-            //salir.Image = Image.FromFile(salir_image);
-            //this.Controls.Add(salir);
-            //salir.BringToFront();
-            //salir.Visible = true;
-            //salir.Click += salir_Click;
-
-            //this.FormBorderStyle = FormBorderStyle.None; // Quitar la barra de título y botones
-            //this.WindowState = FormWindowState.Maximized; // Maximizar el formulario
-            //this.ControlBox = false; //Quitar los controles 
-            //this.StartPosition = FormStartPosition.CenterScreen; //Centrar el formulario
-            //this.ShowInTaskbar = false; // Esconder la taskbar
-            //this.FormBorderStyle = FormBorderStyle.None; //Quitar el borderstyle
+            CrearBotonesInferiores();
         }
         private void FormJuego_Shown(object sender, EventArgs e)
         {
             menu.CrearMenu(true, this, server, user);
+            
+            // AÑADE la suscripción a los eventos del menú
+            menu.AnimationStarted += Menu_AnimationStarted;
+            menu.AnimationFinished += Menu_AnimationFinished;
+        }
+
+        private void Menu_AnimationStarted()
+        {
+            gameLoop.Stop(); // Pausa el bucle del juego
+        }
+
+        private void Menu_AnimationFinished()
+        {
+            gameLoop.Start(); // Reanuda el bucle del juego
         }
 
         public void ActualizarJugadorRemoto(int idJugador, float x, float y)
@@ -282,6 +281,28 @@ namespace WindowsFormsApplication1
             {
                 jugadorRemoto.ComprobarEstadoMovimiento();
             }
+
+            foreach (var pokemon in pokemonesEnElMapa.Values)
+            {
+                // Calcula la distancia vectorial hacia el punto de destino
+                float dxp = pokemon.TargetX - pokemon.X;
+                float dyp = pokemon.TargetY - pokemon.Y;
+                float distancia = (float)Math.Sqrt(dxp * dxp + dyp * dyp);
+
+                // Si está a más de 1 píxel de su destino, lo movemos
+                if (distancia > 1)
+                {
+                    float velocidadPokemon = 1.0f; // Puedes ajustar esta velocidad
+                    pokemon.X += (dxp / distancia) * velocidadPokemon;
+                    pokemon.Y += (dyp / distancia) * velocidadPokemon;
+                }
+                else
+                {
+                    // Si ya está muy cerca, lo colocamos en la posición exacta para evitar vibraciones
+                    pokemon.X = pokemon.TargetX;
+                    pokemon.Y = pokemon.TargetY;
+                }
+            }
             ActualizarCamara();
             panelMapa.Invalidate();
             panelMinimapa.Invalidate();
@@ -311,7 +332,7 @@ namespace WindowsFormsApplication1
                 try
                 {
                     byte[] msg = Encoding.ASCII.GetBytes(mensaje);
-                    server.Send(msg);
+                    server2.Send(msg);
 
                     // Actualiza la última posición enviada
                     lastPosX = jugador.x;
@@ -339,6 +360,17 @@ namespace WindowsFormsApplication1
         private void PanelMapa_Paint(object sender, PaintEventArgs e)
         {
             mapa.Dibujar(e.Graphics, camX, camY, tileSize, vistaAncho, vistaAlto);
+
+            // DIBUJAR LOS POKÉMON DEL MAPA
+            foreach (var pokemonEntry in pokemonesEnElMapa.Values)
+            {
+                float pantallaX = pokemonEntry.X - camX;
+                float pantallaY = pokemonEntry.Y - camY;
+
+                // Dibuja el sprite
+                e.Graphics.DrawImage(pokemonEntry.Sprite, pantallaX, pantallaY, 48, 48);
+            }
+
             jugador.Dibujar(e.Graphics, camX, camY, tileSize);
 
             foreach (var jugadorRemoto in jugadoresRemotos.Values)
@@ -386,6 +418,368 @@ namespace WindowsFormsApplication1
         {
             if (mapa != null) mapa.Dispose();
             base.OnFormClosing(e);
+        }
+
+        private void CrearBotonesInferiores()
+        {
+            int anchoPanel = 400;
+            int altoPanel = 100;
+
+            panelInferior = new PanelDobleBuffer
+            {
+                Anchor = AnchorStyles.Bottom,
+                Size = new Size(anchoPanel, altoPanel),
+                Location = new Point((this.Width-anchoPanel)/2, this.ClientSize.Height - altoPanel -10), // Ajusta la posición del panel inferior
+                BackColor = Color.FromArgb(22, 22, 22)
+            };
+
+            redondearPanel(panelInferior, 10); // Redondear bordes del panel inferior
+
+            int altoBoton = 50;
+            int anchoBoton = 100;
+            btnMochila = new PanelDobleBuffer
+            {
+                Size = new Size(anchoBoton, altoBoton),
+                Location = new Point(10, (panelInferior.Height - altoBoton) / 2),
+                BackColor = Color.FromArgb(30, 170, 240)
+            };
+            Label lblMochila = new Label
+            {
+                Text = "Mochila",
+                ForeColor = Color.Black,
+                Font = new Font("Arial", 12, FontStyle.Bold),
+                AutoSize = false, 
+                Dock = DockStyle.Fill, 
+                TextAlign = ContentAlignment.MiddleCenter, 
+                BackColor = Color.Transparent
+
+            };
+            // Reenviamos los eventos de la etiqueta al panel que la contiene.
+            
+            lblMochila.MouseEnter += (sender, e) => {
+                IluminarControl(btnMochila, e); 
+            };
+           
+            lblMochila.MouseLeave += (sender, e) => {
+                RestaurarControl(btnMochila, e); 
+            };
+
+            lblMochila.Click += (sender, e) => {
+                BtnMochila_Click(btnMochila, e);
+            };
+            btnMochila.Controls.Add(lblMochila);
+
+            redondearPanel(btnMochila, 10); 
+            panelInferior.Controls.Add(btnMochila); // Añadir el botón Mochila al panel inferior
+
+            btnPokedex = new PanelDobleBuffer
+            {
+                Size = new Size(anchoBoton, altoBoton),
+                Location = new Point(panelInferior.Width-anchoBoton-10, (panelInferior.Height - altoBoton) / 2),
+                BackColor = Color.FromArgb(30, 170, 240)
+            };
+            Label lblPokedex = new Label
+            {
+                Text = "Pokédex",
+                ForeColor = Color.Black,
+                Font = new Font("Arial", 12, FontStyle.Bold),
+                AutoSize = false,
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleCenter,
+                BackColor = Color.Transparent
+            };
+
+            // Reenviamos los eventos de la etiqueta al panel que la contiene.
+            lblPokedex.MouseEnter += (sender, e) =>{
+                IluminarControl(btnPokedex, e);
+            };
+            lblPokedex.MouseLeave += (sender, e) =>{
+                RestaurarControl(btnPokedex, e);
+            };
+            lblPokedex.Click += (sender, e) =>{
+                BtnPokedex_Click(btnPokedex, e);
+            };
+
+            btnPokedex.Controls.Add(lblPokedex); // Añadir etiqueta al botón Pokédex
+
+            redondearPanel(btnPokedex, 10); // Redondear bordes del botón Mochila
+            
+            btnPokedex.MouseEnter += IluminarControl;
+            btnPokedex.MouseLeave += RestaurarControl;
+            btnPokedex.Click += BtnPokedex_Click;
+            panelInferior.Controls.Add(btnPokedex); // Añadir el botón Pokédex al panel inferior
+
+            btnMisPokemon = new PictureBox
+            {
+                Size = new Size(100, 100),
+                Location = new Point((panelInferior.Width - 100) / 2, (panelInferior.Height-100)/2),
+                BackColor = Color.Transparent,
+                Image = Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "pokeball.png")),
+                SizeMode = PictureBoxSizeMode.StretchImage
+            };
+            
+            
+            panelInferior.Controls.Add(btnMisPokemon);
+            btnMisPokemon.BringToFront();
+            btnMisPokemon.Visible = true;
+            btnMisPokemon.Click += PokedexBox_Click;
+            this.Controls.Add(panelInferior); // Añadir el panel inferior al formulario
+            panelInferior.BringToFront(); // Asegurarse de que el panel inferior esté al frente
+
+        }
+
+
+        private void BtnPokedex_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("Abrir Pokédex");
+        }
+
+        private void BtnMochila_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("Abrir Mochila");
+        }
+        private void IluminarControl(object sender, EventArgs e)
+        {
+            // Convertimos 'sender' al tipo 'Control' para poder acceder a sus propiedades
+            if (sender is Control control)
+            {
+                // Si es la primera vez que pasamos el ratón, guardamos el color original
+                if (control.Tag == null)
+                {
+                    control.Tag = control.BackColor;
+                }
+
+                Color colorOriginal = control.BackColor;
+
+                // Aumentamos el valor de cada componente de color (R, G, B) para aclararlo.
+                // Usamos Math.Min para asegurarnos de que ningún valor supere 255.
+                int r = Math.Min(colorOriginal.R + 30, 255);
+                int g = Math.Min(colorOriginal.G + 30, 255);
+                int b = Math.Min(colorOriginal.B + 30, 255);
+
+                control.BackColor = Color.FromArgb(colorOriginal.A, r, g, b); 
+            }
+        }
+        private void RestaurarControl(object sender, EventArgs e)
+        {
+            // Convertimos 'sender' al tipo 'Control'
+            if (sender is Control control)
+            {
+                // Si guardamos un color original en la propiedad Tag, lo restauramos
+                if (control.Tag is Color colorOriginal)
+                {
+                    control.BackColor = colorOriginal;
+                }
+            }
+        }
+
+
+        // Evento para desplazar los controles dentro del panel
+        private void PanelCartas_MouseWheel(object sender, MouseEventArgs e)
+        {
+            int desplazamiento = 15; // Velocidad de desplazamiento
+
+            // Usar BeginUpdate y EndUpdate para evitar parpadeos
+            panelCartas.SuspendLayout();
+
+            // Mover todos los controles dentro de panelCartas
+            foreach (Control ctrl in panelCartas.Controls)
+            {
+                // Excluir los botones específicos del desplazamiento
+                if (ctrl is RoundButton || ctrl is RombeButton)
+                {
+                    continue;
+                }
+
+                // Desplazar hacia abajo solo hasta el punto de partida
+                if (e.Delta > 0 && ctrl.Top < panelCartasTop)
+                {
+                    ctrl.Top += desplazamiento;
+                    if (ctrl.Top > panelCartasTop)
+                    {
+                        ctrl.Top = panelCartasTop;
+                    }
+                }
+                // Desplazar hacia arriba
+                else if (e.Delta < 0)
+                {
+                    ctrl.Top -= desplazamiento;
+                }
+            }
+            panelCartas.ResumeLayout();
+            panelCartas.Update(); // Forzar la redibujación del panel
+        }
+        public void PrimerPokemon()
+        {
+            bool escogerPokemon = true;
+            int ancho = 770;
+            int alto = 410;
+
+            panelElegirPokemon = new PanelDobleBuffer
+            {
+                Size = new Size(ancho, alto),
+                Location = new Point(this.Width / 2 - (ancho / 2), this.Height / 2 - (alto / 2)),
+                BackColor = Color.FromArgb(44, 44, 44),
+                Padding = new Padding(5)
+            };
+            redondearPanel(panelElegirPokemon, 20); // Método para redondear
+            this.Controls.Add(panelElegirPokemon);
+            panelElegirPokemon.BringToFront();
+            panelElegirPokemon.Visible = true;
+
+            List<CartaPokemon> pokemonsIniciales = new List<CartaPokemon>();
+            pokemonsIniciales.Add(new CartaPokemon("Charmander", 100, "Fuego", "images/Charmander.png", new List<(string, int)> { ("Llamarada", 20) }));
+            pokemonsIniciales.Add(new CartaPokemon("Squirtle", 100, "Agua", "images/Squirtle.png", new List<(string, int)> { ("Chorro de Agua", 20) }));
+            pokemonsIniciales.Add(new CartaPokemon("Bulbasaur", 100, "Planta", "images/Bulbasaur.png", new List<(string, int)> { ("Hoja Afilada", 20) }));
+
+            gestorCartas.DibujarCartas(pokemonsIniciales, panelElegirPokemon, false, escogerPokemon);
+
+            System.Windows.Forms.Label labelElegirPokemon = new System.Windows.Forms.Label
+            {
+                Text = "Elige tu Pokemon Inicial",
+                ForeColor = Color.FromArgb(255, 255, 255),
+                Location = new Point(panelElegirPokemon.Width / 2 - 100, panelElegirPokemon.Height - 10),
+                AutoSize = true,
+                Font = new Font("Arial", 16, FontStyle.Bold)
+            };
+            panelElegirPokemon.Controls.Add(labelElegirPokemon);
+            labelElegirPokemon.Location = new Point(panelElegirPokemon.Width / 2 - labelElegirPokemon.Width / 2, panelElegirPokemon.Height - labelElegirPokemon.Height - 10);
+        }
+
+        private void PokedexBox_Click(object sender, EventArgs e)
+        {
+            // Si el panel ya está visible, simplemente lo ocultamos
+            if (pokedexVisible)
+            {
+                panelCartas.Visible = false;
+                pokedexVisible = false;
+                return;
+            }
+
+            // Si el panel no se ha creado nunca, lo creamos
+            if (!panelPokedexCreado)
+            {
+                int PanelSizeX = 780; // Ancho del panel
+                int PanelSizeY = 600; // Alto del panel
+                panelCartas = new PanelDobleBuffer
+                {
+                    Size = new Size(PanelSizeX, PanelSizeY),
+                    Location = new Point(panelInferior.Left + panelInferior.Width/2 - (PanelSizeX / 2) , panelInferior.Top - PanelSizeY - 20),
+                    BackColor = Color.FromArgb(22, 22, 22),
+                    Anchor = AnchorStyles.Bottom | AnchorStyles.Right,
+                    Visible = true
+                };
+                // Evento para manejar el desplazamiento
+                panelCartas.MouseWheel += PanelCartas_MouseWheel;
+                redondearPanel(panelCartas, 20); 
+
+                this.Controls.Add(panelCartas);
+                panelCartas.BringToFront();
+                panelPokedexCreado = true;
+            }
+
+            // Enviamos la petición al servidor para obtener la lista de Pokémon
+            string mensaje = "3/" + user;
+            byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
+            server.Send(msg);
+        }
+
+        
+        public void MostrarPokedex(string datosPokemon)
+        {
+            if (panelCartas == null || this.IsDisposed) return;
+
+            // Usamos Invoke para asegurarnos de que la actualización se hace en el hilo de la UI
+            this.Invoke((MethodInvoker)delegate
+            {
+                List<Pokemon> listaPokemon = new List<Pokemon>();
+                
+                listaPokemon = Pokemon.ParsearDatos(datosPokemon, listaPokemon);
+
+                if (listaPokemon.Count > 0)
+                {
+                    List<CartaPokemon> cartas = new List<CartaPokemon>();
+                    foreach (Pokemon pokemon in listaPokemon)
+                    {
+                        cartas.Add(new CartaPokemon(
+                            pokemon.Nombre,
+                            pokemon.Vida,
+                            pokemon.Elemento,
+                            "images/" + pokemon.Nombre + ".png",
+                            new List<(string, int)> { (pokemon.Ataque, pokemon.Daño) }
+                        ));
+                    }
+
+                    panelCartas.Controls.Clear();
+                    gestorCartas.DibujarCartas(cartas, panelCartas, true, false); 
+                    panelCartas.Visible = true;
+                    pokedexVisible = true;
+                    panelCartas.BringToFront();
+                    btnMisPokemon.BringToFront();
+                }
+                else
+                {
+                    MessageBox.Show("No tienes ningún Pokémon en tu Pokedex.");
+                }
+            });
+        }
+        public void SincronizarPokemonesEnMapa(string datosCompletos)
+        {
+            // Aseguramos que la operación se ejecute en el hilo de la UI
+            this.Invoke((MethodInvoker)delegate
+            {
+                pokemonesEnElMapa.Clear(); // Limpiamos la lista por si acaso
+
+                // Separamos cada Pokémon usando el carácter '#'
+                string[] pokemonesData = datosCompletos.Split(new char[] { '#' }, StringSplitOptions.RemoveEmptyEntries);
+
+                foreach (string pokemonData in pokemonesData)
+                {
+                    // Separamos los campos de cada Pokémon por '/'
+                    string[] partes = pokemonData.Split('/');
+                    if (partes.Length < 4) continue;
+
+                    int instanciaId = int.Parse(partes[0]);
+                    int pokedexId = int.Parse(partes[1]);
+                    float x = float.Parse(partes[2]);
+                    float y = float.Parse(partes[3]);
+
+                    // Buscamos la info del pokémon en nuestra lista de Pokedex para obtener el nombre y cargar la imagen
+                    Pokemon infoPokemon = listaPokedex.FirstOrDefault(p => p.Id == pokedexId);
+                    if (infoPokemon == null) continue;
+
+                    var nuevoPokemon = new PokemonEnMapa
+                    {
+                        PokedexId = pokedexId,
+                        X = x, // Posición inicial
+                        Y = y, // Posición inicial
+                        TargetX = x, // El destino inicial es la misma posición
+                        TargetY = y, // El destino inicial es la misma posición
+                        Sprite = Image.FromFile(Path.Combine(directorioBase, "Resources", "images", infoPokemon.Nombre + ".png"))
+                    };
+                    pokemonesEnElMapa[instanciaId] = nuevoPokemon;
+                }
+            });
+        }
+        public void ActualizarDestinoPokemon(string datos)
+        {
+            // Formato esperado: <instancia_id>/<nueva_x>/<nueva_y>
+            string[] partes = datos.Split('/');
+            if (partes.Length < 3) return;
+
+            int instanciaId = int.Parse(partes[0]);
+            float nuevaX = float.Parse(partes[1]);
+            float nuevaY = float.Parse(partes[2]);
+
+            this.Invoke((MethodInvoker)delegate {
+                // Buscamos el pokémon en nuestro diccionario
+                if (pokemonesEnElMapa.TryGetValue(instanciaId, out PokemonEnMapa pokemon))
+                {
+                    // Actualizamos su DESTINO
+                    pokemon.TargetX = nuevaX;
+                    pokemon.TargetY = nuevaY;
+                }
+            });
         }
     }
 }

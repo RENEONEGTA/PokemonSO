@@ -355,7 +355,7 @@ namespace WindowsFormsApplication1
                 GraphicsPath path = CrearPathRedondeado(rect, radio);
                 control.Region = new Region(path);
 
-                // 🎨 Pintar fondo interior (degradado o sólido)
+                //Pintar fondo interior (degradado o sólido)
                 if (colorFondo != null)
                 {
                     if (colorFondo2 != null)
@@ -374,7 +374,7 @@ namespace WindowsFormsApplication1
                     }
                 }
 
-                // 🌑 Sombra exterior (opcional)
+                //sombra exterior (opcional)
                 if (usarSombra)
                 {
                     using (GraphicsPath sombra = CrearPathRedondeado(new Rectangle(rect.X + 2, rect.Y + 2, rect.Width - 4, rect.Height - 4), radio))
@@ -384,7 +384,7 @@ namespace WindowsFormsApplication1
                     }
                 }
 
-                // 🟦 Borde exterior
+                // borde exterior
                 using (LinearGradientBrush gradiente = new LinearGradientBrush(rect, colorBorde1, colorBorde2, LinearGradientMode.ForwardDiagonal))
                 using (Pen pen = new Pen(gradiente, grosorBorde))
                 {

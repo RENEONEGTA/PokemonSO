@@ -463,7 +463,7 @@ public class Conectados
 
     }
 
-    public void RecibirInvitacionMundo(Conectados jugadorInvitador, Form formulario, Socket server, int idPartidaInvitada)
+    public void RecibirInvitacionMundo(Conectados jugadorInvitador, Form formulario, Socket server2, int idPartidaInvitada)
     {
         // Crear panel principal de la invitación
         Panel panelInvitacion = new Panel();
@@ -531,7 +531,7 @@ public class Conectados
         {
             string mensajeAceptar = "92/" + idPartidaInvitada;
             byte[] datos = Encoding.ASCII.GetBytes(mensajeAceptar);
-            server.Send(datos);
+            server2.Send(datos);
 
             formulario.Controls.Remove(panelInvitacion);
         };
