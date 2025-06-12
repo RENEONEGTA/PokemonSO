@@ -499,8 +499,46 @@ void *AtenderCliente(void *data)
 			}
 			
 			mysql_free_result(resSockets);			
+		}
+		else if (codigo == 98) // El cliente quiere iniciar un combate
+		{
+			p = strtok(NULL, "/");
+			if (p != NULL)
+			{
+				int instancia_id_combatir = atoi(p);
+				printf("Cliente en socket %d quiere combatir con Pokémon de instancia %d\n", socket_conn, instancia_id_combatir);
+				
+				pthread_mutex_lock(&mutex);
+				// Buscamos el Pokémon en nuestro array
+				for (int k = 0; k < MAX_POKEMON_EN_MAPA; k++)
+				{
+					if (pokemonesDelMapa[k].activo == 1 && pokemonesDelMapa[k].instancia_id == instancia_id_combatir)
+					{
+						// 1. Lo "consumimos" del mapa
+						pokemonesDelMapa[k].activo = 0;
+						numPokemonesActivos--;
+						// 2. Notificamos a TODOS los jugadores que este Pokémon ha desaparecido
+						char mensajeDespawn[50];
+						sprintf(mensajeDespawn, "96~$%d<EOM>", instancia_id_combatir);
+						for (int j = 0; j < 100; j++)
+							if (sockets[j] != -1)
+								write(sockets[j], mensajeDespawn, strlen(mensajeDespawn));
+						// 3. Notificamos al jugador que inició el combate que la batalla empieza
+						//    Usamos un nuevo código, 103, y le enviamos el ID de la Pokedex
+						char mensajeCombate[50];
+						sprintf(mensajeCombate, "103~$%d<EOM>", pokemonesDelMapa[k].pokedex_id);
+						write(socket_conn, mensajeCombate, strlen(mensajeCombate));
+						
+						break;
+					}
+				}
+				pthread_mutex_unlock(&mutex);
+			}
 		}								
-	}	
+	}
+	
+					
+			
 	
 	terminar = 0;
 	while(terminar == 0)

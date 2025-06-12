@@ -258,6 +258,51 @@ namespace WindowsFormsApplication1
             if (e.KeyCode == Keys.S) down = true;
             if (e.KeyCode == Keys.A) left = true;
             if (e.KeyCode == Keys.D) right = true;
+            // --- Interaccion para capturar pokemons ---
+            if (e.KeyCode == Keys.E)
+            {
+                PokemonEnMapa pokemonMasCercano = null;
+                float distanciaMinima = float.MaxValue;
+
+                // Buscamos el Pokémon más cercano al jugador
+                foreach (var pokemonEntry in pokemonesEnElMapa)
+                {
+                    float dx = pokemonEntry.Value.X - jugador.x;
+                    float dy = pokemonEntry.Value.Y - jugador.y;
+                    float distancia = (float)Math.Sqrt(dx * dx + dy * dy);
+
+                    if (distancia < distanciaMinima)
+                    {
+                        distanciaMinima = distancia;
+                        pokemonMasCercano = pokemonEntry.Value;
+                    }
+                }
+
+                // Comprobamos si el Pokémon más cercano está dentro del rango de interacción
+                float rangoDeInteraccion = 50.0f; // 50 píxeles de distancia
+                if (pokemonMasCercano != null && distanciaMinima <= rangoDeInteraccion)
+                {
+                    Console.WriteLine($"Intentando interactuar con Pokémon ID de instancia: {pokemonMasCercano.PokedexId}"); // Usamos PokedexId para el log
+
+                    // Si está en rango, notificamos al servidor
+                    NotificarInteraccionAlServidor(pokemonMasCercano);
+                }
+            }
+        }
+        private void NotificarInteraccionAlServidor(PokemonEnMapa pokemon)
+        {
+            if (server2 == null || !server2.Connected) return;
+
+            // Buscamos la clave (instancia_id) del pokmon en el diccionario
+            var entry = pokemonesEnElMapa.FirstOrDefault(kvp => kvp.Value == pokemon);
+            if (entry.Key == 0) return; // No se encontró la clave
+
+            int instanciaId = entry.Key;
+
+            // Enviamos el nuevo mensaje 98 con el ID del Pokemon
+            string mensaje = $"98/{instanciaId}";
+            byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
+            server2.Send(msg);
         }
 
         private void FormJuego_KeyUp(object sender, KeyEventArgs e)
@@ -332,7 +377,7 @@ namespace WindowsFormsApplication1
                 try
                 {
                     byte[] msg = Encoding.ASCII.GetBytes(mensaje);
-                    //server.Send(msg);
+                    server.Send(msg);
 
                     // Actualiza la última posición enviada
                     lastPosX = jugador.x;
@@ -856,6 +901,49 @@ namespace WindowsFormsApplication1
                     Console.WriteLine("Error procesando AnadirPokemonAlMapa: " + ex.Message);
                 }
             });
+        }
+
+
+        public void IniciarCombate(string datosOponente)
+        {
+            this.Invoke((MethodInvoker)delegate
+            {
+                try
+                {
+                    // Pausamos el juego del mapa para mayor endimiento
+                    gameLoop.Stop();
+
+                    int pokedexIdOponente = int.Parse(datosOponente);
+
+                    Pokemon oponente = listaPokedex.FirstOrDefault(p => p.Id == pokedexIdOponente);
+                    if (oponente != null)
+                    {
+                        
+                        Combate.pantallaCombate(this, oponente);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error al iniciar el combate: " + ex.Message);
+                    gameLoop.Start(); // Si hay un error, reanudamos el juego.
+                }
+            });
+        }
+        
+
+        public void TerminarCombate()
+        {
+            // Buscamos el panel de combate por su nombre
+            Control panelCombate = this.Controls.Find("panelCombate", true).FirstOrDefault();
+            if (panelCombate != null)
+            {
+                // Lo eliminamos y liberamos sus recursos
+                this.Controls.Remove(panelCombate);
+                panelCombate.Dispose();
+            }
+
+            // ¡La línea clave! Reanudamos el bucle del juego.
+            gameLoop.Start();
         }
     }
 }

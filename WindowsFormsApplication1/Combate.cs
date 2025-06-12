@@ -407,5 +407,300 @@ namespace WindowsFormsApplication1
             return path;
         }
 
+
+
+        
+        //Nueva version de pantallaCombate que acepta un Pokemn
+        public static void pantallaCombate(Form ventana, Pokemon oponenteSalvaje)
+        {
+            PanelDobleBuffer panelCombate = new PanelDobleBuffer
+            {
+                Name = "panelCombate",
+                Size = ventana.ClientSize,
+                Location = new Point(0, 0),
+                BackgroundImage = Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "fondo_planta.jpeg")),
+                BackgroundImageLayout = ImageLayout.Stretch,
+            };
+
+            ventana.Controls.Add(panelCombate);
+            panelCombate.BringToFront();
+
+            // Llamamos a la nueva version de crearUICombate
+            crearUICombate(panelCombate, ventana, oponenteSalvaje);
+        }
+
+
+        //Nueva version de crearUICombate para el oponente salvaje
+        private static void crearUICombate(PanelDobleBuffer panelCombate, Form ventana, Pokemon oponente)
+        {
+            // Panel del jugador ------------------------------------------------------------------------------------------------------
+            Panel panelJugador = new Panel
+            {
+                Size = new Size(500, 160),
+                Location = new Point(20, 20),
+                BackColor = Color.Transparent,
+                BorderStyle = BorderStyle.None
+            };
+
+            panelCombate.Controls.Add(panelJugador);
+            RedondearControlConEstilo(
+                panelJugador,
+                radio: 10,
+                colorBorde1: Color.Yellow,
+                colorBorde2: Color.Orange,
+                grosorBorde: 3,
+                usarSombra: true,
+                colorFondo: Color.LightYellow,
+                colorFondo2: Color.Yellow
+            );
+
+            // Nombre del jugador
+            Label lblJugador = new Label
+            {
+                Text = "Pikachu",
+                Font = new Font("Arial", 20, FontStyle.Bold),
+                Location = new Point(20, 20),
+                AutoSize = true
+
+            };
+            panelJugador.Controls.Add(lblJugador);
+
+            // Vida del jugador
+            int alturaVida = 10;
+            ProgressBar vidaJugador = new ProgressBar
+            {
+                Location = new Point(200, lblJugador.Top + lblJugador.Height / 2 - alturaVida / 2),
+                Size = new Size(250, alturaVida),
+                Value = 70,
+                ForeColor = Color.Red
+            };
+            panelJugador.Controls.Add(vidaJugador);
+            redondearControl(vidaJugador, 10);
+
+            // Nivel jugador
+            int tamanoNivel = 30;
+            Label nivelJugador = new Label
+            {
+                Text = "10",
+                Font = new Font("Arial", 9, FontStyle.Bold),
+                Size = new Size(tamanoNivel, tamanoNivel),
+                Location = new Point(455, vidaJugador.Top + vidaJugador.Height / 2 - tamanoNivel / 2),
+                BackColor = Color.Yellow,
+                TextAlign = ContentAlignment.MiddleCenter,
+                AutoSize = false
+            };
+            panelJugador.Controls.Add(nivelJugador);
+            redondearControl(nivelJugador, 10);
+
+            //Imagen Pokemon Jugador
+            string jugadorPath = Path.Combine(directorioBase, "Resources", "images", "Pikachu.png");
+            PictureBox fotoPokemonJugador = new PictureBox
+            {
+                Size = new Size(80, 80),
+                Location = new Point(20, 70),
+                Image = Image.FromFile(jugadorPath), // Cambia la ruta a la imagen del Pokémon
+                SizeMode = PictureBoxSizeMode.StretchImage,
+                BackColor = Color.Transparent
+            };
+            panelJugador.Controls.Add(fotoPokemonJugador);
+
+            string PokemonJugadorPath = Path.Combine(directorioBase, "Resources", "images", "Pikachu_Jugador.png");
+            PictureBox pokemonJugador = new PictureBox
+            {
+                Size = new Size(500, 500),
+                Location = new Point(panelCombate.Width / 2 - 500 - 150, panelCombate.Height / 2),
+                Image = Image.FromFile(PokemonJugadorPath), // Cambia la ruta a la imagen del Pokémon
+                SizeMode = PictureBoxSizeMode.StretchImage,
+                BackColor = Color.Transparent
+            };
+            panelCombate.Controls.Add(pokemonJugador);
+
+
+            // --- Panel del Enemigo Pokemon salvaje -----------------------------------------------------------------------------
+            Panel panelEnemigo = new Panel
+            {
+                Size = new Size(500, 160),
+                Location = new Point(ventana.ClientSize.Width - 520, 20),
+                BackColor = Color.Transparent,
+                BorderStyle = BorderStyle.None
+            };
+            panelCombate.Controls.Add(panelEnemigo);
+            RedondearControlConEstilo(panelEnemigo, 10, Color.Red, Color.DarkRed, 3, true, Color.LightSalmon, Color.Red);
+
+            
+            Label lblEnemigo = new Label
+            {
+                Text = oponente.Nombre, // OPONENTE
+                Font = new Font("Arial", 20, FontStyle.Bold),
+                Location = new Point(20, 20),
+                AutoSize = true
+            };
+            panelEnemigo.Controls.Add(lblEnemigo);
+
+            ProgressBar vidaEnemigo = new ProgressBar
+            {
+                Location = new Point(200, lblEnemigo.Top + lblEnemigo.Height / 2 - 5),
+                Size = new Size(250, 10),
+                Value = oponente.Vida, 
+                Maximum = oponente.Vida, 
+                ForeColor = Color.Red
+            };
+
+            panelEnemigo.Controls.Add(vidaEnemigo);
+            redondearControl(vidaEnemigo, 10);
+            // Nivel enemigo
+            int tamanoNivelEnemigo = 30;
+            Label nivelEnemigo = new Label
+            {
+                Text = "12",
+                Font = new Font("Arial", 9, FontStyle.Bold),
+                Size = new Size(tamanoNivelEnemigo, tamanoNivelEnemigo),
+                Location = new Point(455, vidaEnemigo.Top + vidaEnemigo.Height / 2 - tamanoNivelEnemigo / 2),
+                BackColor = Color.OrangeRed,
+                TextAlign = ContentAlignment.MiddleCenter,
+                AutoSize = false
+            };
+            panelEnemigo.Controls.Add(nivelEnemigo);
+            redondearControl(nivelEnemigo, 10);
+
+            // icono pokoemon enemigo panel superior
+            string enemigoIconoPath = Path.Combine(directorioBase, "Resources", "images", oponente.Nombre + ".png");
+            PictureBox fotoPokemonEnemigo = new PictureBox
+            {
+                Size = new Size(80, 80),
+                Location = new Point(panelEnemigo.Width - 20 - 80, 70),
+                SizeMode = PictureBoxSizeMode.StretchImage,
+                BackColor = Color.Transparent
+            };
+            if (File.Exists(enemigoIconoPath))
+            {
+                fotoPokemonEnemigo.Image = Image.FromFile(enemigoIconoPath);
+            }
+
+            panelEnemigo.Controls.Add(fotoPokemonEnemigo);
+
+            // Imagen del Pokemon enemigo grande
+            string enemigoSpritePath = Path.Combine(directorioBase, "Resources", "images", oponente.Nombre + ".png");
+            PictureBox pokemonEnemigo = new PictureBox
+            {
+                Size = new Size(350, 350),
+                Location = new Point(panelCombate.Width / 2 + 150, panelCombate.Height / 2 - 200),
+                SizeMode = PictureBoxSizeMode.StretchImage,
+                BackColor = Color.Transparent
+            };
+            if (File.Exists(enemigoSpritePath))
+            {
+                pokemonEnemigo.Image = Image.FromFile(enemigoSpritePath);
+            }
+            panelCombate.Controls.Add(pokemonEnemigo);
+
+            // Otros del Panel de combate -------------------------------------------------------------------------------------------------
+
+            string pokeballPath = Path.Combine(directorioBase, "Resources", "images", "pokeball.png");
+            int tamanoPokeball = 25;
+            // Pokemon disponibles del Jugador
+            for (int i = 0; i < 5; i++)
+            {
+                PictureBox pokeballsJugador = new PictureBox
+                {
+                    Size = new Size(tamanoPokeball, tamanoPokeball),
+                    Location = new Point(panelJugador.Right + 20, panelJugador.Top + i * 30),
+                    Image = Image.FromFile(pokeballPath), // Cambia la ruta a la imagen del Pokémon
+                    SizeMode = PictureBoxSizeMode.StretchImage,
+                    BackColor = Color.Transparent
+                };
+                panelCombate.Controls.Add(pokeballsJugador);
+                pokeballsJugador.BringToFront();
+            }
+
+
+            // Pokemon disponibles del Enemigo
+            for (int i = 0; i < 5; i++)
+            {
+                PictureBox pokeballsEnemigo = new PictureBox
+                {
+                    Size = new Size(tamanoPokeball, tamanoPokeball),
+                    Location = new Point(panelEnemigo.Left - 20 - tamanoPokeball, panelEnemigo.Top + i * 30),
+                    Image = Image.FromFile(pokeballPath), // Cambia la ruta a la imagen del Pokémon
+                    SizeMode = PictureBoxSizeMode.StretchImage,
+                    BackColor = Color.Transparent
+                };
+                panelCombate.Controls.Add(pokeballsEnemigo);
+                pokeballsEnemigo.BringToFront();
+            }
+
+            // Panel inferior con botones
+            Panel panelBotones = new Panel
+            {
+                Size = new Size(430, 70),
+                Location = new Point((panelCombate.Width - 430) / 2, panelCombate.Height - 80),
+                BackColor = Color.FromArgb(180, 240, 255),
+                BorderStyle = BorderStyle.FixedSingle
+            };
+            panelCombate.Controls.Add(panelBotones);
+            RedondearControlConEstilo(
+                panelBotones,
+                radio: 10,
+                colorBorde1: Color.Blue,
+                colorBorde2: Color.DarkBlue,
+                grosorBorde: 3,
+                usarSombra: true,
+                colorFondo: Color.LightSkyBlue,
+                colorFondo2: Color.White
+            );
+            panelBotones.BringToFront();
+
+            List<CartaPokemon> cartas = new List<CartaPokemon>();
+
+
+
+            //Crear la carta correctamente y añadirla al panel
+            PanelDobleBuffer panelCarta = new PanelDobleBuffer
+            {
+                Size = new Size(250, 350),
+                Location = new Point((panelCombate.Width - 240) / 2, panelCombate.Height - 80 - 350),
+                BackColor = Color.Transparent,
+                BorderStyle = BorderStyle.None
+            };
+            panelCombate.Controls.Add(panelCarta);
+            CartaPokemon carta = new CartaPokemon(
+                "Pikachu",
+                39,
+                "rayo",
+                "images/" + "Pikachu" + ".png",
+                new List<(string, int)>
+                    {
+                        ("Ataque Boltio", 30),
+                        ("Rugido", 10)
+                    }
+            );
+            bool escogerPokemon = false;
+            cartas.Add(carta); // Agregar la carta a la lista
+            gestorCartas.DibujarCartas(cartas, panelCarta, false, escogerPokemon);
+            panelCarta.BringToFront();
+
+
+
+            // Botones de combate-----------------------------------------------------------
+            CrearBoton(panelBotones, "Pokemon", 10, 10, Color.LightPink, (s, e) =>
+            {
+                MessageBox.Show("Has hecho clic en Pokémon");
+            });
+
+            CrearBoton(panelBotones, "Mochila", 150, 10, Color.Thistle, (s, e) =>
+            {
+                MessageBox.Show("Has hecho clic en Mochila");
+            });
+
+            CrearBoton(panelBotones, "Huir", 290, 10, Color.MediumAquamarine, (s, e) =>
+            {
+                if (ventana is FormJuego formJuego)
+                {
+                    // Llamamos al nuevo método para terminar el combate
+                    formJuego.TerminarCombate();
+                }
+            });
+        }
+
     }
 }
