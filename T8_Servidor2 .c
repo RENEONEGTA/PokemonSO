@@ -148,8 +148,6 @@ void* HiloDeMovimiento(void* arg)
 	
 	return NULL;
 }
-	
-
 
 void *AtenderCliente(void *data)
 {
@@ -248,6 +246,10 @@ void *AtenderCliente(void *data)
 			userId=atoi(userIdChar);
 			
 			printf("Usuario %s con Id %d conectado al servidor de partidas", user, userId);
+		}
+		else if (codigo == 1) {
+			printf("Cliente %s desconectado del servidor de partidas", user);
+			terminar == 1;
 		}
 /*		else if(codigo == 90) */// El cliente notifica que se ha unido a una partida
 /*		{*/
@@ -651,6 +653,4 @@ int main(int argc, char *argv[])
 		}
 	}
 	return 0;
-	
-
 }
