@@ -994,7 +994,9 @@ void *AtenderCliente(void *socket)
 		}						
 	}	
 	//Cerramos la conexion con el servidor
-close(socket_conn); 
+	close(socket_conn); 
+	server.ShutDown(SocketShutDown.Both);
+	server.Close();
 }
 
 
