@@ -110,7 +110,7 @@ CREATE TABLE `Pokedex` (
 
 LOCK TABLES `Pokedex` WRITE;
 /*!40000 ALTER TABLE `Pokedex` DISABLE KEYS */;
-INSERT INTO `Pokedex` VALUES (1,'Pikachu','Impactrueno*40*20*Ataque eléctrico rápido',35,4,5,0,'FASE1(1)','Ratón eléctrico veloz'),(2,'Charmander','Ascuas*30*15*Llamas débiles',39,1,2,6,'FASE1(2),FASE2(5),FASE3(6)','Lagarto de fuego'),(3,'Squirtle','Pistola Agua*35*15*Chorro de agua',44,2,4,1,'FASE1(3),FASE2(8),FASE3(9)','Tortuga acuática')(4,'Gyarados','Canonazo*40*20*Ataque acuatico eficaz',60,2,4,8,'Fase1(1)','Lagarto acuatico gigante')(5,'Onix','Pedrolo*40*20*Ataque piedra eficaz',60,4,2,8,'Fase1(1)','Lagarto de piedra gigante')(6,'Bulbasaur','Latigazo*30*20*Ataque latigo rapido',40,2,4,8,'Fase1(1)','Planta con vida')(7,'Celebi','PistolaSol*80*20*Pistolazo',90,2,4,8,'Fase1(1)','Planta viviente que viaja en el tiempo');
+INSERT INTO `Pokedex` VALUES (1,'Pikachu','Impactrueno*40*20*Ataque eléctrico rápido',35,4,5,0,'FASE1(1)','Ratón eléctrico veloz'),(2,'Charmander','Ascuas*30*15*Llamas débiles',39,1,2,6,'FASE1(2),FASE2(5),FASE3(6)','Lagarto de fuego'),(3,'Squirtle','Pistola Agua*35*15*Chorro de agua',44,2,4,1,'FASE1(3),FASE2(8),FASE3(9)','Tortuga acuática'),(4,'Gyarados','Canonazo*40*20*Ataque acuatico eficaz',60,2,4,8,'Fase1(1)','Lagarto acuatico gigante'),(5,'Onix','Pedrolo*40*20*Ataque piedra eficaz',60,4,2,8,'Fase1(1)','Lagarto de piedra gigante'),(6,'Bulbasaur','Latigazo*30*20*Ataque latigo rapido',40,2,4,8,'Fase1(1)','Planta con vida'),(7,'Celebi','PistolaSol*80*20*Pistolazo',90,2,4,8,'Fase1(1)','Planta viviente que viaja en el tiempo');
 /*!40000 ALTER TABLE `Pokedex` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -138,7 +138,7 @@ CREATE TABLE `Relacio` (
 
 LOCK TABLES `Relacio` WRITE;
 /*!40000 ALTER TABLE `Relacio` DISABLE KEYS */;
-INSERT INTO `Relacio` VALUES (1,1,7),(2,2,5),(3,3,9);
+INSERT INTO `Relacio` VALUES (1,1,7),(2,2,5),(3,3,9),(1,7,1),(1,6,1),(1,5,1);
 /*!40000 ALTER TABLE `Relacio` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;

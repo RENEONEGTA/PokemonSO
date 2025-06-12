@@ -337,15 +337,10 @@ namespace WindowsFormsApplication1
                     colorBorde = Color.LightGray;
                     panelCarta.Invalidate();
                 }
-
-
             }
 
             if (botones)
             {
-
-
-
                 string filterPath = Path.Combine(directorioBase, "Resources", "images", "filter.png");
                 string fuegoPath = Path.Combine(directorioBase, "Resources", "images", "icono_fuego.png");
                 string aguaPath = Path.Combine(directorioBase, "Resources", "images", "icono_agua.png");

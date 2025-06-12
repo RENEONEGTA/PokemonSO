@@ -332,7 +332,7 @@ namespace WindowsFormsApplication1
                 try
                 {
                     byte[] msg = Encoding.ASCII.GetBytes(mensaje);
-                    server2.Send(msg);
+                    //server.Send(msg);
 
                     // Actualiza la última posición enviada
                     lastPosX = jugador.x;
