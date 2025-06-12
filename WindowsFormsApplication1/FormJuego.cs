@@ -203,7 +203,7 @@ namespace WindowsFormsApplication1
                 this.Invoke((MethodInvoker)(() => ActualizarListaConectados(listaconectados)));
                 return;
             }
-            conectados.DibujarConectadosEnLista(listaconectados, panelAmigos, this, user, server, panelAmigos.Width, panelAmigos.Height, idPartida);
+            conectados.DibujarConectadosEnLista(listaconectados, menu.panelAmigos, this, user, server, panelAmigos.Width, panelAmigos.Height, idPartida);
             // Actualiza la lista de conectados
             listaConectados.Clear();
             listaConectados = listaconectados;
@@ -288,17 +288,17 @@ namespace WindowsFormsApplication1
                 float dxp = pokemon.TargetX - pokemon.X;
                 float dyp = pokemon.TargetY - pokemon.Y;
                 float distancia = (float)Math.Sqrt(dxp * dxp + dyp * dyp);
+                float velocidadPokemon = 1.0f;
 
-                // Si está a más de 1 píxel de su destino, lo movemos
-                if (distancia > 1)
+                if (velocidadPokemon < distancia)
                 {
-                    float velocidadPokemon = 1.0f; // Puedes ajustar esta velocidad
                     pokemon.X += (dxp / distancia) * velocidadPokemon;
                     pokemon.Y += (dyp / distancia) * velocidadPokemon;
                 }
                 else
                 {
-                    // Si ya está muy cerca, lo colocamos en la posición exacta para evitar vibraciones
+                    // Si la velocidad es mayor que la distancia, nos colocamos directamente en el destino
+                    // para evitar pasarnos o vibrar.
                     pokemon.X = pokemon.TargetX;
                     pokemon.Y = pokemon.TargetY;
                 }
@@ -778,6 +778,82 @@ namespace WindowsFormsApplication1
                     // Actualizamos su DESTINO
                     pokemon.TargetX = nuevaX;
                     pokemon.TargetY = nuevaY;
+                }
+            });
+        }
+        public void EliminarPokemonDelMapa(string instanciaIdStr)
+        {
+            try
+            {
+                int instanciaId = int.Parse(instanciaIdStr.Trim());
+
+                this.Invoke((MethodInvoker)delegate {
+                    if (pokemonesEnElMapa.ContainsKey(instanciaId))
+                    {
+                        pokemonesEnElMapa.Remove(instanciaId);
+                        Console.WriteLine($"Se ha eliminado el Pokémon con ID de instancia: {instanciaId}");
+                    }
+                });
+            }
+            catch (FormatException ex)
+            {
+                Console.WriteLine("Error al parsear el ID de instancia para eliminar: " + ex.Message);
+            }
+        }
+        public void AnadirPokemonAlMapa(string datos)
+        {
+            // Usamos Invoke para garantizar que cualquier cambio en los datos del formulario
+            // se haga de forma segura desde el hilo principal.
+            this.Invoke((MethodInvoker)delegate
+            {
+                try
+                {
+                    string[] partes = datos.Split('/');
+                    if (partes.Length < 4) return;
+
+                    int instanciaId = int.Parse(partes[0]);
+                    int pokedexId = int.Parse(partes[1]);
+                    float x = float.Parse(partes[2]);
+                    float y = float.Parse(partes[3]);
+
+                    // Comprobamos si el pokémon ya existe en el diccionario, por si acaso
+                    if (pokemonesEnElMapa.ContainsKey(instanciaId)) return;
+
+                    // Buscamos la información del Pokémon en la Pokedex para obtener su nombre
+                    // (Es crucial que 'listaPokedex' tenga datos)
+                    Pokemon infoPokemon = listaPokedex.FirstOrDefault(p => p.Id == pokedexId);
+                    if (infoPokemon == null)
+                    {
+                        Console.WriteLine($"Error: No se encontró Pokémon en la Pokedex con ID: {pokedexId}");
+                        return;
+                    }
+
+                    // Construimos la ruta de la imagen y verificamos que existe
+                    string imagePath = Path.Combine(directorioBase, "Resources", "images", infoPokemon.Nombre + ".png");
+                    if (!File.Exists(imagePath))
+                    {
+                        Console.WriteLine($"Error: No se encontró la imagen en la ruta: {imagePath}");
+                        return;
+                    }
+
+                    // Creamos el nuevo objeto para el Pokémon en el mapa
+                    var nuevoPokemon = new PokemonEnMapa
+                    {
+                        PokedexId = pokedexId,
+                        X = x,
+                        Y = y,
+                        TargetX = x, // El destino inicial es su propia posición de aparición
+                        TargetY = y,
+                        Sprite = Image.FromFile(imagePath)
+                    };
+
+                    // Finalmente, lo añadimos al diccionario para que el gameLoop y el Paint lo usen
+                    pokemonesEnElMapa[instanciaId] = nuevoPokemon;
+                    Console.WriteLine($"Se ha añadido a {infoPokemon.Nombre} (ID de instancia: {instanciaId}) al mapa.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error procesando AnadirPokemonAlMapa: " + ex.Message);
                 }
             });
         }

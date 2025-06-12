@@ -671,6 +671,7 @@ namespace WindowsFormsApplication1
                                                     {
                                                         Conectados.DibujarConectados(listaConectadosGlobal, panelCargarCombate, this, user, server);
                                                     }
+                                                    Conectados.DibujarConectadosEnLista(listaConectadosGlobal, menu.panelAmigos, this, user, server, menu.panelAmigos.Width, menu.panelAmigos.Height, 0);
                                                     ConectadosActualizados?.Invoke(listaConectadosGlobal);
                                                 });
                                                 break;
@@ -1587,6 +1588,10 @@ namespace WindowsFormsApplication1
 
         private async void AtenderServidorDePartidas()
         {
+            // Búfer para acumular los datos que llegan
+            string bufferAcumulado = "";
+            string delimitador = "<EOM>";
+
             await Task.Run(() =>
             {
                 while (true)
@@ -1596,71 +1601,107 @@ namespace WindowsFormsApplication1
                     {
                         try
                         {
-                            byte[] msg2 = new byte[2048];
+                            byte[] msg2 = new byte[4096];
                             // La clave: Recibimos mensajes del socket 'server2'
                             int bytesRecibidos = server2.Receive(msg2);
 
+
                             if (bytesRecibidos > 0)
                             {
-                                string datos = Encoding.ASCII.GetString(msg2, 0, bytesRecibidos);
-                                string[] mensajes = datos.Split(new string[] { "~$" }, StringSplitOptions.None);
-
-                                if (mensajes.Length < 2) continue;
-
-                                int codigo = Convert.ToInt32(mensajes[0]);
-                                string mensaje = mensajes[1].Trim();
-
-                                // Este switch solo manejará códigos del servidor de partidas
-                                switch (codigo)
+                                bufferAcumulado += Encoding.ASCII.GetString(msg2, 0, bytesRecibidos);
+                                // Procesamos todos los mensajes completos que haya en el búfer
+                                while (bufferAcumulado.Contains(delimitador))
                                 {
-                                    case 90: // Sincronizar la lista inicial de Pokémon en el mapa
-                                        
-                                        if (formJuego != null && !formJuego.IsDisposed)
-                                        {
-                                            Invoke((MethodInvoker)delegate
+                                    // Encontramos la posición del primer delimitador
+                                    int indiceDelimitador = bufferAcumulado.IndexOf(delimitador);
+
+                                    // Extraemos el mensaje completo desde el inicio hasta el delimitador
+                                    string mensajeCompleto = bufferAcumulado.Substring(0, indiceDelimitador);
+                                    bufferAcumulado = bufferAcumulado.Substring(indiceDelimitador + delimitador.Length);
+
+                                   
+                                    string[] partes = mensajeCompleto.Split(new string[] { "~$" }, StringSplitOptions.None);
+                                    if (partes.Length < 2) continue;
+
+                                    int codigo = Convert.ToInt32(partes[0].Trim());
+                                    string mensaje = partes[1].Trim();
+
+                                    // Este switch solo manejará códigos del servidor de partidas
+                                    switch (codigo)
+                                    {
+                                        case 90: // Sincronizar la lista inicial de Pokémon en el mapa
+
+                                            if (formJuego != null && !formJuego.IsDisposed)
                                             {
-                                                formJuego.SincronizarPokemonesEnMapa(mensaje);
-                                            });                                      
-                                        }
-                                        break;
-
-                                    case 91: // Respuesta de Crear Partida (ahora desde server2)
-                                        CrearPartida(Convert.ToInt32(mensaje));
-                                        break;
-
-                                    case 94: // Actualización de coordenadas de otros jugadores
-                                        string[] partesJugadores = mensaje.Split('/');
-                                        Invoke((MethodInvoker)delegate
-                                        {
-                                            foreach (string entrada in partesJugadores)
-                                            {
-                                                if (string.IsNullOrWhiteSpace(entrada)) continue;
-                                                string[] datosPos = entrada.Split(':');
-                                                if (datosPos.Length != 3) continue;
-
-                                                int id = int.Parse(datosPos[0]);
-                                                int x = int.Parse(datosPos[1]);
-                                                int y = int.Parse(datosPos[2]);
-
-                                                if (Application.OpenForms.OfType<FormJuego>().FirstOrDefault() is FormJuego fj)
+                                                Invoke((MethodInvoker)delegate
                                                 {
-                                                    fj.ActualizarJugadorRemoto(id, x, y);
-                                                }
+                                                    formJuego.SincronizarPokemonesEnMapa(mensaje);
+                                                });
                                             }
-                                        });
-                                        
-                                        break;
+                                            break;
 
-                                    case 97: // Un Pokémon se ha movido
-                                        if (formJuego != null && !formJuego.IsDisposed)
-                                        {
+                                        case 91: // Respuesta de Crear Partida (ahora desde server2)
+                                            CrearPartida(Convert.ToInt32(mensaje));
+                                            break;
+
+                                        case 94: // Actualización de coordenadas de otros jugadores
+                                            string[] partesJugadores = mensaje.Split('/');
                                             Invoke((MethodInvoker)delegate
                                             {
-                                                formJuego.ActualizarDestinoPokemon(mensaje);
+                                                foreach (string entrada in partesJugadores)
+                                                {
+                                                    if (string.IsNullOrWhiteSpace(entrada)) continue;
+                                                    string[] datosPos = entrada.Split(':');
+                                                    if (datosPos.Length != 3) continue;
+
+                                                    int id = int.Parse(datosPos[0]);
+                                                    int x = int.Parse(datosPos[1]);
+                                                    int y = int.Parse(datosPos[2]);
+
+                                                    if (Application.OpenForms.OfType<FormJuego>().FirstOrDefault() is FormJuego fj)
+                                                    {
+                                                        fj.ActualizarJugadorRemoto(id, x, y);
+                                                    }
+                                                }
                                             });
-                                            
-                                        }
-                                        break;
+
+                                            break;
+
+                                        case 95: // Spawn de un nuevo Pokémon
+
+                                            if (formJuego != null && !formJuego.IsDisposed)
+                                            {
+                                                Invoke((MethodInvoker)delegate
+                                                {
+
+                                                    formJuego.AnadirPokemonAlMapa(mensaje);
+                                                });
+
+                                            }
+                                            break;
+
+                                        case 96: // Despawn de un Pokémon
+                                            if (formJuego != null && !formJuego.IsDisposed)
+                                            {
+                                                Invoke((MethodInvoker)delegate
+                                                {
+                                                    formJuego.EliminarPokemonDelMapa(mensaje);
+                                                });
+
+                                            }
+                                            break;
+
+                                        case 97: // Un Pokémon se ha movido
+                                            if (formJuego != null && !formJuego.IsDisposed)
+                                            {
+                                                Invoke((MethodInvoker)delegate
+                                                {
+                                                    formJuego.ActualizarDestinoPokemon(mensaje);
+                                                });
+
+                                            }
+                                            break;
+                                    }
                                 }
                             }
                         }

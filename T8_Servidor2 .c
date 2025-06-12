@@ -24,19 +24,23 @@ typedef struct {
 	int pokedex_id;
 	float x;
 	float y;
+	time_t tiempo_despawn; 
+	int activo;
 } PokemonEnMapa;
-// LISTA FIJA DE POKEMON PARA EL MAPA DE LA PARTIDA
-PokemonEnMapa pokemonesDelMapa[] = {
-	{1, 2, 800, 800},   // Un Charmander (pokedex_id=2) en (800, 800)
-	{2, 3, 1500, 3500}, // Un Squirtle (pokedex_id=3) en (1500, 3500)
-	{3, 1, 3000, 1200}  // Un Pikachu (pokedex_id=1) en (3000, 1200)
-};
-int numPokemonesEnMapa = 3;
+
+typedef struct {
+	int socket;
+	int indice;
+} ThreadData;
+
+#define MAX_POKEMON_EN_MAPA 30
+PokemonEnMapa pokemonesDelMapa[MAX_POKEMON_EN_MAPA];
+int numPokemonesActivos = 0; // Para llevar la cuenta de cuantos hay vivos
+int proximo_instancia_id = 1; // Para asegurar que cada ID es unico
 
 void* HiloDeMovimiento(void* arg)
 {
-	printf("Hilo de movimiento iniciado.\n");
-	
+	printf("Motor del mundo iniciado (movimiento, spawn y despawn).\n");	
 	while(1)
 	{
 		// Pausa de 5 segundos antes de mover los Pokemon de nuevo
@@ -44,25 +48,101 @@ void* HiloDeMovimiento(void* arg)
 		
 		pthread_mutex_lock(&mutex);
 		
+		// ========================
+		// SECCION 1: DESPAWN Y MOVIMIENTO
+		// ========================
+		
 		// Recorremos todos los Pokemon del mapa
-		for (int k = 0; k < numPokemonesEnMapa; k++)
+		for (int k = 0; k < MAX_POKEMON_EN_MAPA; k++)
 		{
-			// Calculamos una nueva posicion aleatoria en un radio de 200 pi�xeles
-			int radioMovimiento = 200;
-			pokemonesDelMapa[k].x += (rand() % (2 * radioMovimiento)) - radioMovimiento;
-			pokemonesDelMapa[k].y += (rand() % (2 * radioMovimiento)) - radioMovimiento;
-			
-			char mensajeMovimiento[200];
-			sprintf(mensajeMovimiento, "97~$%d/%.0f/%.0f", 
-					pokemonesDelMapa[k].instancia_id,
-					pokemonesDelMapa[k].x,
-					pokemonesDelMapa[k].y);
-			printf("Enviando actualizacion de movimiento: %s\n", mensajeMovimiento);
-			for (int j = 0; j < i; j++)
+			// Solo procesamos los Pokémon activos
+			if (pokemonesDelMapa[k].activo == 1)
 			{
-				write(sockets[j], mensajeMovimiento, strlen(mensajeMovimiento));
+				// Comprobamos si el Pokémon ha expirado
+				if (time(NULL) > pokemonesDelMapa[k].tiempo_despawn)
+				{
+					printf("Despawneando Pokemon con instancia_id %d\n", pokemonesDelMapa[k].instancia_id);
+					pokemonesDelMapa[k].activo = 0; // Lo marcamos como inactivo
+					numPokemonesActivos--;
+					
+					char mensajeDespawn[2048];
+					sprintf(mensajeDespawn, "96~$%d<EOM>", pokemonesDelMapa[k].instancia_id);
+					
+					for (int j = 0; j < 100; j++) // Recorremos todo el array
+					{
+						// Si el socket es valido (no es -1), enviamos el mensaje
+						if (sockets[j] != -1)
+						{
+							write(sockets[j], mensajeDespawn, strlen(mensajeDespawn));
+						}
+					}
+				}
+				else // Si no ha expirado, lo movemos
+				{
+					int radioMovimiento = 200;
+					pokemonesDelMapa[k].x += (rand() % (2 * radioMovimiento)) - radioMovimiento;
+					pokemonesDelMapa[k].y += (rand() % (2 * radioMovimiento)) - radioMovimiento;
+					
+					char mensajeMovimiento[2048];
+					printf("Moviendo pokemon con Id %d a la posicion %.0f/%.0f\n", pokemonesDelMapa[k].instancia_id, pokemonesDelMapa[k].x, pokemonesDelMapa[k].y);
+					sprintf(mensajeMovimiento, "97~$%d/%.0f/%.0f<EOM>", 
+							pokemonesDelMapa[k].instancia_id, pokemonesDelMapa[k].x, pokemonesDelMapa[k].y);
+					
+					
+					for (int j = 0; j < 100; j++) // Recorremos todo el array
+					{
+						// Si el socket es valido (no es -1), enviamos el mensaje
+						if (sockets[j] != -1)
+						{
+							write(sockets[j], mensajeMovimiento, strlen(mensajeMovimiento));
+						}
+					}
+				}
 			}
 		}
+		
+		// ========================
+		// SECCIoN 2: SPAWN
+		// ========================
+		// Si hay hueco y con un 30% de probabilidad, creamos un nuevo Pokemon
+		if (numPokemonesActivos < MAX_POKEMON_EN_MAPA && (rand() % 100) < 30)
+		{
+			// Buscamos un hueco libre en el array
+			for (int k = 0; k < MAX_POKEMON_EN_MAPA; k++)
+			{
+				if (pokemonesDelMapa[k].activo == 0)
+				{
+					// Encontramos un hueco, creamos el nuevo Pokemon aqui
+					pokemonesDelMapa[k].activo = 1;
+					pokemonesDelMapa[k].instancia_id = proximo_instancia_id++;
+					pokemonesDelMapa[k].pokedex_id = (rand() % 3) + 1; // Pikachu, Charmander o Squirtle
+					pokemonesDelMapa[k].x = rand() % 4000; // Coordenada X aleatoria
+					pokemonesDelMapa[k].y = rand() % 4000; // Coordenada Y aleatoria
+					pokemonesDelMapa[k].tiempo_despawn = time(NULL) + 120; // Durara 2 minutos
+					
+					numPokemonesActivos++;
+					
+					printf("Spawneando Pokemon ID %d (Pokedex %d) en (%f, %f)\n",
+						   pokemonesDelMapa[k].instancia_id, pokemonesDelMapa[k].pokedex_id,
+						   pokemonesDelMapa[k].x, pokemonesDelMapa[k].y);
+					
+					char mensajeSpawn[2048];
+					sprintf(mensajeSpawn, "95~$%d/%d/%.0f/%.0f<EOM>",
+							pokemonesDelMapa[k].instancia_id, pokemonesDelMapa[k].pokedex_id,
+							pokemonesDelMapa[k].x, pokemonesDelMapa[k].y);
+					
+					for (int j = 0; j < 100; j++) // Recorremos todo el array
+					{
+						// Si el socket es valido (no es -1), enviamos el mensaje
+						if (sockets[j] != -1)
+						{
+							write(sockets[j], mensajeSpawn, strlen(mensajeSpawn));
+						}
+					}
+					break; // Salimos del bucle for para no crear mas de uno a la vez
+				}
+			}
+		}		
 		pthread_mutex_unlock(&mutex);
 	}
 	
@@ -71,21 +151,24 @@ void* HiloDeMovimiento(void* arg)
 	
 
 
-void *AtenderCliente(void *socket)
+void *AtenderCliente(void *data)
 {
-	
-	int socket_conn;
+
 	char user[80];
 	int userId;
-	int *s;
-	int ret;
-	s =(int *) socket;
-	socket_conn = *s;
+	
 	char peticion[512];
 	char buff2[16384];
 	int idPartida;
 	
+	ThreadData* threadData = (ThreadData*)data;
+	int socket_conn = threadData->socket;
+	int mi_indice = threadData->indice;
+	free(threadData); // Liberamos la memoria de la estructura, ya no la necesitamos
 	
+
+
+	printf("Cliente atendido en socket %d (i�ndice %d)\n", socket_conn, mi_indice);
 	
 	strcpy(ubicacion, "localhost");
 	printf("Socket del cliente: %d\n", socket_conn);
@@ -123,7 +206,7 @@ void *AtenderCliente(void *socket)
 	while(terminar == 0)
 	{
 		//Ahora recibimos la peticion
-		ret = read(socket_conn, peticion, sizeof(peticion));
+		int ret = read(socket_conn, peticion, sizeof(peticion));
 		printf("Recibido\n");
 		
 		//Tenemos que a�adirle la marca de fin de string
@@ -166,22 +249,26 @@ void *AtenderCliente(void *socket)
 			
 			printf("Usuario %s con Id %d conectado al servidor de partidas", user, userId);
 		}
-		else if(codigo == 90) // El cliente notifica que se ha unido a una partida
-		{
-			printf("Recibida notificacion de  union a partida.\n");
-			char mensajeLista[2048] = "90~$";			
-			for (int k = 0; k < numPokemonesEnMapa; k++) {
-				char bufferPokemon[100];
-				sprintf(bufferPokemon, "%d/%d/%.0f/%.0f#",
-						pokemonesDelMapa[k].instancia_id,
-						pokemonesDelMapa[k].pokedex_id,
-						pokemonesDelMapa[k].x,
-						pokemonesDelMapa[k].y);
-				strcat(mensajeLista, bufferPokemon);
-			}
-			printf("Enviando lista de Pokemon por union: %s\n", mensajeLista);
-			write(socket_conn, mensajeLista, strlen(mensajeLista));
-		}
+/*		else if(codigo == 90) */// El cliente notifica que se ha unido a una partida
+/*		{*/
+/*			printf("Recibida notificacion de  union a partida.\n");*/
+/*			char mensajeLista[2048] = "90~$";			*/
+			// Recorremos el array y enviamos solo los Pokemon activos
+/*			for (int k = 0; k < MAX_POKEMON_EN_MAPA; k++) {*/
+/*				if (pokemonesDelMapa[k].activo == 1) { */// Solo si esta activo
+/*					char bufferPokemon[100];*/
+/*					sprintf(bufferPokemon, "%d/%d/%.0f/%.0f#",*/
+/*							pokemonesDelMapa[k].instancia_id,*/
+/*							pokemonesDelMapa[k].pokedex_id,*/
+/*							pokemonesDelMapa[k].x,*/
+/*							pokemonesDelMapa[k].y);*/
+/*					strcat(mensajeLista, bufferPokemon);*/
+/*				}*/
+							
+/*			}				*/
+/*			printf("Enviando lista de Pokemon por union: %s\n", mensajeLista);*/
+/*			write(socket_conn, mensajeLista, strlen(mensajeLista));*/
+/*		}*/
 		else if(codigo == 91) // Crear Partida
 		{
 			char query[512];
@@ -210,15 +297,19 @@ void *AtenderCliente(void *socket)
 			//Enviamos la lista de pokemons
 			char mensajeLista[2048] = "90~$"; 
 			
-			for (int k = 0; k < numPokemonesEnMapa; k++) {
-				char bufferPokemon[100];
-				// Formato: <instancia_id>/<pokedex_id>/<x>/<y>#
-				sprintf(bufferPokemon, "%d/%d/%.0f/%.0f#",
-						pokemonesDelMapa[k].instancia_id,
-						pokemonesDelMapa[k].pokedex_id,
-						pokemonesDelMapa[k].x,
-						pokemonesDelMapa[k].y);
-				strcat(mensajeLista, bufferPokemon);
+			for (int k = 0; k < MAX_POKEMON_EN_MAPA; k++) {
+				// Solo procesamos los Pokémon activos
+				if (pokemonesDelMapa[k].activo == 1)
+				{
+					char bufferPokemon[100];
+					// Formato: <instancia_id>/<pokedex_id>/<x>/<y>#
+					sprintf(bufferPokemon, "%d/%d/%.0f/%.0f#",
+							pokemonesDelMapa[k].instancia_id,
+							pokemonesDelMapa[k].pokedex_id,
+							pokemonesDelMapa[k].x,
+							pokemonesDelMapa[k].y);
+					strcat(mensajeLista, bufferPokemon);
+				}
 			}
 			printf("Enviando a socket %d la lista de Pokemon: %s\n", socket_conn, mensajeLista);
 			// Enviamos el mensaje completo al cliente que crea la partida
@@ -296,15 +387,19 @@ void *AtenderCliente(void *socket)
 			//Enviamos la lista de pokemons
 			char mensajeLista[2048] = "90~$"; 
 			
-			for (int k = 0; k < numPokemonesEnMapa; k++) {
-				char bufferPokemon[100];
-				// Formato: <instancia_id>/<pokedex_id>/<x>/<y>#
-				sprintf(bufferPokemon, "%d/%d/%.0f/%.0f#",
-						pokemonesDelMapa[k].instancia_id,
-						pokemonesDelMapa[k].pokedex_id,
-						pokemonesDelMapa[k].x,
-						pokemonesDelMapa[k].y);
-				strcat(mensajeLista, bufferPokemon);
+			for (int k = 0; k < MAX_POKEMON_EN_MAPA; k++) {
+				// Solo procesamos los Pokémon activos
+				if (pokemonesDelMapa[k].activo == 1)
+				{
+					char bufferPokemon[100];
+					// Formato: <instancia_id>/<pokedex_id>/<x>/<y>#
+					sprintf(bufferPokemon, "%d/%d/%.0f/%.0f#",
+							pokemonesDelMapa[k].instancia_id,
+							pokemonesDelMapa[k].pokedex_id,
+							pokemonesDelMapa[k].x,
+							pokemonesDelMapa[k].y);
+					strcat(mensajeLista, bufferPokemon);
+				}
 			}
 			printf("Enviando a socket %d la lista de Pokemon: %s\n", socket_conn, mensajeLista);
 			// Enviamos el mensaje completo al cliente que crea la partida
@@ -366,6 +461,7 @@ void *AtenderCliente(void *socket)
 				snprintf(linea, sizeof(linea), "%d:%d:%d/", jugador, x, y); // formato id:x:y/
 				strcat(mensajeCoordenadas, linea);
 			}
+			strcat(mensajeCoordenadas, "<EOM>");
 			mysql_free_result(resCoords);
 			
 			// Paso 2: Obtener sockets de todos los jugadores de esta partida
@@ -403,8 +499,30 @@ void *AtenderCliente(void *socket)
 			mysql_free_result(resSockets);			
 		}								
 	}	
-	//Cerramos la conexion con el servidor
-close(socket_conn); 
+	
+	terminar = 0;
+	while(terminar == 0)
+	{
+		char peticion[512];
+		int ret = read(socket_conn, peticion, sizeof(peticion));
+		
+		if (ret <= 0) // Si read devuelve 0 o -1, el cliente se desconectó
+		{
+			printf("Cliente en índice %d (socket %d) se ha desconectado.\n", mi_indice, socket_conn);
+			terminar = 1; // Salimos del bucle
+		}
+		else
+		{
+			peticion[ret] = '\0';
+			printf("Recibido del cliente en índice %d: %s\n", mi_indice, peticion);
+			// ... tu lógica de strtok y el switch para los códigos ...
+		}
+	}
+	// --- LOGICA DE LIMPIEZA ---
+	printf("Limpiando puesto del i�ndice %d.\n", mi_indice);
+	sockets[mi_indice] = -1; // Marcamos el hueco como libre
+	close(socket_conn);      // Cerramos el socket
+	return NULL;
 }
 
 
@@ -448,6 +566,9 @@ int main(int argc, char *argv[])
 	
 	int sock_conn, sock_listen, ret;
 	struct sockaddr_in serv_adr;
+	pthread_t threads[100]; // Usamos un array de threads
+	// Inicializamos todos los sockets a -1 para saber que están libres
+	for(int k = 0; k < 100; k++) sockets[k] = -1;
 
 	// INICIALITZACIONS
 	// Obrim el socket
@@ -471,6 +592,10 @@ int main(int argc, char *argv[])
 	}
 		
 
+	// Inicializamos nuestro array de Pokémon
+	for (int k = 0; k < MAX_POKEMON_EN_MAPA; k++) {
+		pokemonesDelMapa[k].activo = 0;
+	}
 	
 	
 	// INICIAMOS EL HILO DE MOVIMIENTO
@@ -483,38 +608,49 @@ int main(int argc, char *argv[])
 	}
 
 	printf("DEBUG: Intentando crear el hilo de movimiento...\n");
-	fflush(stdout); 
+
 	
 	if (pthread_create(&thread_movimiento, NULL, HiloDeMovimiento, NULL) != 0) {
 		perror("ERROR: No se pudo crear el hilo de movimiento");
 		return 1;
 	}
-	printf("DEBUG: �Hilo de movimiento creado con Exito!\n");
-	fflush(stdout);
+	printf(" �Hilo de movimiento creado con Exito!\n");
+
 	
-	//Aqui iniciariamos la listas de conectados
+
+
+
 	
-	pthread_t thread;
-	for(;;){
-		printf ("Servidor 2 Escuchando\n");
-		
+	// BUCLE PARA ACEPTAR CLIENTES
+	while(1)
+	{
+		printf("Servidor 2 esperando conexiones...\n");
 		sock_conn = accept(sock_listen, NULL, NULL);
-		printf ("He recibido conexi?n\n");
 		
-		//sockets[i] es el socket que usaremos para este cliente
-		sockets[i] = sock_conn;
+		int i = -1;
+		// Buscamos el primer hueco libre (-1) en el array de sockets
+		for (int j = 0; j < 100; j++) {
+			if (sockets[j] == -1) {
+				i = j;
+				break;
+			}
+		}
 		
-		//Creatr thead y decirle lo que tiene que hacer
-		pthread_create(&thread, NULL, AtenderCliente, &sockets[i]); //Le passas el socket por referencia. Para no passar le una copia 
-		
-		i++;
+		if (i != -1) {
+			sockets[i] = sock_conn;
+			// Creamos la estructura para pasar el socket y el índice al hilo
+			ThreadData* data = (ThreadData*)malloc(sizeof(ThreadData));
+			data->socket = sock_conn;
+			data->indice = i;
+			
+			pthread_create(&threads[i], NULL, AtenderCliente, (void*)data);
+			printf("Conexión aceptada en el índice %d.\n", i);
+		} else {
+			printf("Servidor lleno. Conexión rechazada.\n");
+			close(sock_conn);
+		}
 	}
-	
-	
-	
-
-	//Cerramos la conexion MYSQL
-	mysql_close(conn);
-
 	return 0;
+	
+
 }

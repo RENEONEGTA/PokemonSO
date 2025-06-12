@@ -35,7 +35,7 @@ namespace WindowsFormsApplication1
         PictureBox btnMenu = new PictureBox();
         public PanelDobleBuffer contenedorMenu = new PanelDobleBuffer();
         public PanelDobleBuffer panelMenu = new PanelDobleBuffer();
-        PanelDobleBuffer panelAmigos = new PanelDobleBuffer();
+        public PanelDobleBuffer panelAmigos = new PanelDobleBuffer();
         Label tituloChat = new Label();
         Label tituloAmigos = new Label();
         PanelDobleBuffer panelTextBox = new PanelDobleBuffer();
