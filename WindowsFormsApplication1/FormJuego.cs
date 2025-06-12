@@ -377,7 +377,7 @@ namespace WindowsFormsApplication1
                 try
                 {
                     byte[] msg = Encoding.ASCII.GetBytes(mensaje);
-                    server.Send(msg);
+                    server2.Send(msg);
 
                     // Actualiza la última posición enviada
                     lastPosX = jugador.x;
@@ -904,33 +904,51 @@ namespace WindowsFormsApplication1
         }
 
 
+        // En FormJuego.cs
+
         public void IniciarCombate(string datosOponente)
         {
             this.Invoke((MethodInvoker)delegate
             {
                 try
                 {
-                    // Pausamos el juego del mapa para mayor endimiento
+                    // Pausamos el juego del mapa por rendimiento
                     gameLoop.Stop();
 
-                    int pokedexIdOponente = int.Parse(datosOponente);
+                    // buscamos al oponente usando el ID que nos dio el servidor
+                    string[] partes = datosOponente.Split('/');
+                    if (partes.Length < 2) return;
 
-                    Pokemon oponente = listaPokedex.FirstOrDefault(p => p.Id == pokedexIdOponente);
-                    if (oponente != null)
+                    int instanciaId = int.Parse(partes[0]);
+                    int pokedexId = int.Parse(partes[1]);
+                    Pokemon oponente = listaPokedex.FirstOrDefault(p => p.Id == pokedexId);
+
+                    // Buscamos el pokemon que nos dio el server y usamos elk primer pokemon en la lista del jugador(mas adelante se podria cambiar para seleccionar el pokemon a usar)
+                    Pokemon jugadorPokemon = listaPokedex.FirstOrDefault();
+
+                    //vrificamos que hemos encontrado a ambos luchadores
+                    if (oponente != null && jugadorPokemon != null)
                     {
-                        
-                        Combate.pantallaCombate(this, oponente);
+                        Combate.pantallaCombate(this, jugadorPokemon, oponente, instanciaId);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Error: No se encontraron los datos de los Pokémon para el combate.");
+                        gameLoop.Start(); 
                     }
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine("Error al iniciar el combate: " + ex.Message);
-                    gameLoop.Start(); // Si hay un error, reanudamos el juego.
+                    gameLoop.Start(); 
                 }
             });
         }
-        
 
+        public void ResultadoDeCaptura(string resultado)
+        {
+            Combate.ProcesarResultadoCaptura(resultado);
+        }
         public void TerminarCombate()
         {
             // Buscamos el panel de combate por su nombre

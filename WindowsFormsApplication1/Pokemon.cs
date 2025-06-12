@@ -18,6 +18,9 @@ public class Pokemon
     public string Descripcion { get; set; }
     public int Numero { get; set; }
 
+    // Lista para guardar todos los ataques de un Pokémon
+    public List<(string Nombre, int Daño)> Ataques { get; set; }
+
     public static List<Pokemon> ParsearDatos(string datos, List<Pokemon> lista)
     {
         string[] registros = datos.Split(new char[] { '#' }, StringSplitOptions.RemoveEmptyEntries);
@@ -70,8 +73,18 @@ public class Pokemon
                 Fortaleza = ObtenerElemento(fortaleza),
                 Fase = campos[8],
                 Descripcion = campos[9],
-                Numero = numero
+                Numero = numero,
+                Ataques = new List<(string, int)>()
             };
+
+            //Añadimos el ataque que hemos parseado a la lista
+            if (!string.IsNullOrEmpty(ataque) && ataque != "Desconocido")
+            {
+                pokemon.Ataques.Add((ataque, daño));
+                
+            }
+            pokemon.Ataques.Add(("Placaje", 10));
+            
             lista.Add(pokemon);
         }
         return lista;

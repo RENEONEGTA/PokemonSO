@@ -33,7 +33,7 @@ typedef struct {
 	int indice;
 } ThreadData;
 
-#define MAX_POKEMON_EN_MAPA 30
+#define MAX_POKEMON_EN_MAPA 45
 PokemonEnMapa pokemonesDelMapa[MAX_POKEMON_EN_MAPA];
 int numPokemonesActivos = 0; // Para llevar la cuenta de cuantos hay vivos
 int proximo_instancia_id = 1; // Para asegurar que cada ID es unico
@@ -506,35 +506,90 @@ void *AtenderCliente(void *data)
 			if (p != NULL)
 			{
 				int instancia_id_combatir = atoi(p);
-				printf("Cliente en socket %d quiere combatir con Pok茅mon de instancia %d\n", socket_conn, instancia_id_combatir);
+				printf("Cliente en socket %d quiere combatir con Pokemon de instancia %d\n", socket_conn, instancia_id_combatir);
 				
 				pthread_mutex_lock(&mutex);
-				// Buscamos el Pok茅mon en nuestro array
+				// Buscamos el Pokemon en nuestro array
 				for (int k = 0; k < MAX_POKEMON_EN_MAPA; k++)
 				{
 					if (pokemonesDelMapa[k].activo == 1 && pokemonesDelMapa[k].instancia_id == instancia_id_combatir)
 					{
-						// 1. Lo "consumimos" del mapa
+						// Lo "consumimos" del mapa
 						pokemonesDelMapa[k].activo = 0;
 						numPokemonesActivos--;
-						// 2. Notificamos a TODOS los jugadores que este Pok茅mon ha desaparecido
+						// Notificamos a TODOS los jugadores que este Pokemon ha desaparecido
 						char mensajeDespawn[50];
 						sprintf(mensajeDespawn, "96~$%d<EOM>", instancia_id_combatir);
 						for (int j = 0; j < 100; j++)
 							if (sockets[j] != -1)
 								write(sockets[j], mensajeDespawn, strlen(mensajeDespawn));
-						// 3. Notificamos al jugador que inici贸 el combate que la batalla empieza
-						//    Usamos un nuevo c贸digo, 103, y le enviamos el ID de la Pokedex
-						char mensajeCombate[50];
-						sprintf(mensajeCombate, "103~$%d<EOM>", pokemonesDelMapa[k].pokedex_id);
-						write(socket_conn, mensajeCombate, strlen(mensajeCombate));
+						// Notificamos al jugador que inicia el combate que la batalla empieza
+						
+						 char mensajeCombate[50];
+						 sprintf(mensajeCombate, "103~$%d/%d<EOM>", pokemonesDelMapa[k].instancia_id, pokemonesDelMapa[k].pokedex_id);						
+						 write(socket_conn, mensajeCombate, strlen(mensajeCombate));
 						
 						break;
 					}
 				}
 				pthread_mutex_unlock(&mutex);
 			}
-		}								
+		}	
+		else if (codigo == 99) // El cliente intenta una captura
+		{
+			// Formato esperado: 99/instancia_id/vida_actual
+			char *idInstanciaStr = strtok(NULL, "/");
+			char *vidaActualStr = strtok(NULL, "/");
+			
+			if (idInstanciaStr != NULL && vidaActualStr != NULL)
+			{
+				int instancia_id = atoi(idInstanciaStr);
+				int vida_actual = atoi(vidaActualStr);
+				int pokedex_id = -1;
+				int vida_maxima = -1;
+				// Buscamos el Pokemon en el array para obtener su pokedex_id
+				for (int k = 0; k < MAX_POKEMON_EN_MAPA; k++)
+				{
+					if (pokemonesDelMapa[k].instancia_id == instancia_id)
+					{
+						pokedex_id = pokemonesDelMapa[k].pokedex_id;
+						break;
+					}
+				}
+				// Ahora buscamos la vida maxima en la base de datos
+				char query[256];
+				sprintf(query, "SELECT hp FROM Pokedex WHERE id = %d", pokedex_id);
+				mysql_query(conn, query);
+				MYSQL_RES *res = mysql_store_result(conn);
+				MYSQL_ROW row = mysql_fetch_row(res);
+				if (row != NULL) vida_maxima = atoi(row[0]);
+				mysql_free_result(res);
+				// en funcion de la vida se decide la captura
+				int exito = 0;
+				if (vida_maxima > 0)
+				{
+					float probabilidad = (float)(vida_maxima - vida_actual) / vida_maxima; // 0.0 a 1.0
+					float tirada = (float)(rand() % 100) / 100.0f; // num aleatorio de 0.0 a 0.99
+					
+					if (tirada < probabilidad) exito = 1;
+				}// Si la captura es exitosa, lo anadimos a la BBDD
+				if (exito == 1)
+				{
+					printf("aptura exitosa! Anadiendo Pokemon %d al jugador %d\n", pokedex_id, userId);
+					sprintf(query, "INSERT INTO Relacio (IdJ, IdP, Nivell) VALUES (%d, %d, 1)", userId, pokedex_id);
+					mysql_query(conn, query);
+					// Tambi茅n actualizamos el contador de Pok茅mon del jugador
+					sprintf(query, "UPDATE Jugadores SET numeroPokemons = numeroPokemons + 1 WHERE id = %d", userId);
+					mysql_query(conn, query);
+				}
+				// Enviamos el resultado al cliente (1 = exito, 0 = fallo)
+				char respuesta[50];
+				sprintf(respuesta, "104~$%d<EOM>", exito);
+				write(socket_conn, respuesta, strlen(respuesta));
+			}
+				
+				
+		}		
 	}
 	
 					
@@ -546,16 +601,16 @@ void *AtenderCliente(void *data)
 		char peticion[512];
 		int ret = read(socket_conn, peticion, sizeof(peticion));
 		
-		if (ret <= 0) // Si read devuelve 0 o -1, el cliente se desconect贸
+		if (ret <= 0) // Si read devuelve 0 o -1, el cliente se desconecta
 		{
-			printf("Cliente en 铆ndice %d (socket %d) se ha desconectado.\n", mi_indice, socket_conn);
+			printf("Cliente en i璶dice %d (socket %d) se ha desconectado.\n", mi_indice, socket_conn);
 			terminar = 1; // Salimos del bucle
 		}
 		else
 		{
 			peticion[ret] = '\0';
-			printf("Recibido del cliente en 铆ndice %d: %s\n", mi_indice, peticion);
-			// ... tu l贸gica de strtok y el switch para los c贸digos ...
+			printf("Recibido del cliente en i璶dice %d: %s\n", mi_indice, peticion);
+			
 		}
 	}
 	// --- LOGICA DE LIMPIEZA ---

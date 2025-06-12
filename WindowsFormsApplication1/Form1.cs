@@ -1703,7 +1703,19 @@ namespace WindowsFormsApplication1
                                             break;
 
                                         case 103: // El servidor confirma el inicio del combate
-                                            formJuego?.IniciarCombate(mensaje);
+                                            Invoke((MethodInvoker)delegate
+                                            {
+                                                formJuego?.IniciarCombate(mensaje);
+                                            });
+                                            
+                                            break;
+
+                                        case 104: // Resultado del intento de captura
+                                            Invoke((MethodInvoker)delegate
+                                            {
+                                                formJuego?.ResultadoDeCaptura(mensaje);
+                                            });
+                                            
                                             break;
                                     }
                                 }

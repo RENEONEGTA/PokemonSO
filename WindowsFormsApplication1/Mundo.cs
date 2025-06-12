@@ -212,22 +212,22 @@ namespace WindowsFormsApplication1
             // Cargar imágenes de caminar
             caminarArriba = new Image[] {
                 Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "mapa", "jugador", "arriba_caminando.png")),
-                Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "mapa", "jugador", "arriba_caminando.png"))
+                Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "mapa", "jugador", "arriba_caminando2.png"))
             };
 
             caminarAbajo = new Image[] {
                 Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "mapa", "jugador", "abajo_caminando.png")),
-                Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "mapa", "jugador", "abajo_caminando.png"))
+                Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "mapa", "jugador", "abajo_caminando2.png"))
             };
 
             caminarIzquierda = new Image[] {
-                Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "mapa", "jugador", "arriba_caminando.png")),
-                Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "mapa", "jugador", "arriba_caminando.png"))
+                Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "mapa", "jugador", "izquierda_caminando.png")),
+                Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "mapa", "jugador", "izquierda_caminando2.png"))
             };
 
             caminarDerecha = new Image[] {
-                Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "mapa", "jugador", "arriba_caminando.png")),
-                Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "mapa", "jugador", "arriba_caminando.png"))
+                Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "mapa", "jugador", "derecha_caminando.png")),
+                Image.FromFile(Path.Combine(directorioBase, "Resources", "images", "mapa", "jugador", "derecha_caminando2.png"))
             };
 
 
