@@ -291,7 +291,7 @@ void *AtenderCliente(void *data)
 				printf("Partida creada con exito por %s\n", jugador1);
 				idGenerado = (int)mysql_insert_id(conn);
 			}
-			sprintf(mensaje, "91~$%d", idGenerado);
+			sprintf(mensaje, "91~$%d<EOM>", idGenerado);
 			
 			write(socket_conn, mensaje, strlen(mensaje));
 			
@@ -314,6 +314,7 @@ void *AtenderCliente(void *data)
 				}
 			}
 			printf("Enviando a socket %d la lista de Pokemon: %s\n", socket_conn, mensajeLista);
+			strcat(mensajeLista, "<EOM>");
 			// Enviamos el mensaje completo al cliente que crea la partida
 			write(socket_conn, mensajeLista, strlen(mensajeLista));
 			

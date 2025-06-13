@@ -53,7 +53,7 @@ public class Partida
     }
     
 
-    public void DibujarPartidas(List<Partida> partidas, PanelDobleBuffer panelPartidas)
+    public void DibujarPartidas(List<Partida> partidas, FlowLayoutPanel panelPartidas)
     {
         int y = 10;
         foreach (var partida in partidas)

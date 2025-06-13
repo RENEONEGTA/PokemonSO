@@ -77,6 +77,15 @@ namespace WindowsFormsApplication1
         List<Pokemon> listaPokedex = new List<Pokemon>();
         PanelDobleBuffer PanelSobre = new PanelDobleBuffer();
 
+        private PanelDobleBuffer btnHistorial;
+        private PanelDobleBuffer panelHistorial;
+        private System.Windows.Forms.TextBox txtBusquedaHistorial;
+        private FlowLayoutPanel flpHistorialJugadores;
+
+        // Variables para gestionar los datos
+        private List<string> oponentesHistorial = new List<string>();
+        private bool historialCargado = false;
+
         Mapa mapa;
         Jugador jugador;
         PanelDobleBuffer panelMapa;
@@ -107,7 +116,8 @@ namespace WindowsFormsApplication1
             ConectarServidor();
             ConectarServidor2();
             AtenderServidorPrincipal();
-            
+            CrearPanelHistorial();
+
             this.SizeChanged += Form1_SizeChanged;
 
             // Ejecutar la función después de que el formulario se muestre
@@ -409,7 +419,8 @@ namespace WindowsFormsApplication1
             salirJuegoBox.Location = new Point(32, 320);
             Cerrar.Visible = false;
             AbrirSobre.Visible = true;
-            menu.contenedorMenu.Visible = true; // Mostrar el menú
+            menu.contenedorMenu.Visible = true; // Mostrar el menúç
+            btnHistorial.Visible = true;
 
 
             crearPanelCombate();
@@ -528,6 +539,46 @@ namespace WindowsFormsApplication1
 
                                                 break;
 
+                                            case 13: // Respuesta del servidor con la lista de jugadores anteriores
+                                                this.Invoke((MethodInvoker)delegate
+                                                {
+                                                    string[] jugadores = mensaje.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+
+                                                    // Guardamos la lista completa en nuestra variable de clase
+                                                    oponentesHistorial = new List<string>(jugadores);
+
+                                                    // Marcamos que ya hemos cargado los datos
+                                                    historialCargado = true;
+
+                                                    // Llamamos al método para que dibuje la lista completa por primera vez
+                                                    PoblarListaHistorial(oponentesHistorial);
+                                                });
+                                                break;
+
+                                            case 15: // Respuesta del servidor con las partidas por fecha
+                                                this.Invoke((MethodInvoker)delegate
+                                                {
+                                                    string[] partidas = mensaje.Split(new char[] { '#' }, StringSplitOptions.RemoveEmptyEntries);
+                                                    if (partidas.Length > 0)
+                                                    {
+                                                        string resultadoParaMostrar = "Partidas encontradas en ese periodo:\n\n";
+                                                        foreach (string partida in partidas)
+                                                        {
+                                                            string[] datosh = partida.Split('/');
+                                                            if (datosh.Length >= 6)
+                                                            {
+                                                                resultadoParaMostrar += $"ID: {datosh[0]}, Fecha: {datosh[1]}, Jugadores: {datosh[2]}, {datosh[3]}, {datosh[4]}, {datosh[5]}\n";
+                                                            }
+                                                        }
+                                                        MessageBox.Show(resultadoParaMostrar, "Historial de Partidas por Fecha");
+                                                    }
+                                                    else
+                                                    {
+                                                        MessageBox.Show("No se encontraron partidas en ese periodo de tiempo.", "Historial de Partidas por Fecha");
+                                                    }
+                                                });
+                                                break;
+
                                             case 2: // Iniciado Sesión
 
                                                 // El mensaje que llega es del tipo "1/42"
@@ -606,15 +657,22 @@ namespace WindowsFormsApplication1
 
                                                 Invoke((MethodInvoker)delegate
                                                 {
-                                                    List<Partida> listaPartidas = new List<Partida>();
-                                                    listaPartidas = Partida.ParsearRespuesta(mensaje, listaPartidas);
-                                                    if (listaPartidas.Count > 0)
+                                                    FlowLayoutPanel flowPanel = panelCargarPartida.Controls.OfType<FlowLayoutPanel>().FirstOrDefault();
+
+                                                    if (flowPanel != null)
                                                     {
-                                                        Partida.DibujarPartidas(listaPartidas, panelCargarPartida);
-                                                    }
-                                                    else
-                                                    {
-                                                        MessageBox.Show("No tienes partidas");
+                                                        List<Partida> listaPartidas = new List<Partida>();
+                                                        listaPartidas = Partida.ParsearRespuesta(mensaje, listaPartidas);
+
+                                                        if (listaPartidas.Count > 0)
+                                                        {
+                                                            // Llamamos a DibujarPartidas pasándole el FlowLayoutPanel
+                                                            Partida.DibujarPartidas(listaPartidas, flowPanel);
+                                                        }
+                                                        else
+                                                        {
+                                                            MessageBox.Show("No tienes partidas guardadas.");
+                                                        }
                                                     }
                                                 });
 
@@ -1159,6 +1217,16 @@ namespace WindowsFormsApplication1
                     panelCargarPartida.BringToFront();
                     boolPanelCargarPartida = false;
 
+                    // Creamos un FlowLayoutPanel que vivirá dentro del panel principal
+                    FlowLayoutPanel flowPanel = new FlowLayoutPanel
+                    {
+                        Size = new Size(panelCargarPartida.Width - 10, panelCargarPartida.Height - 10),
+                        Location = new Point(5, 5),
+                        BackColor = Color.Transparent,
+                        AutoScroll = true, // ¡La clave para el scroll!
+                        FlowDirection = FlowDirection.LeftToRight // Los elementos se ordenarán de izquierda a derecha
+                    };
+                    panelCargarPartida.Controls.Add(flowPanel);
 
                     // Configurar el evento Paint para aplicar bordes redondeados y degradado
                     panelCargarPartida.Paint += new PaintEventHandler((object senderPanel, PaintEventArgs ePanel) =>
@@ -1641,7 +1709,14 @@ namespace WindowsFormsApplication1
                                             break;
 
                                         case 91: // Respuesta de Crear Partida (ahora desde server2)
-                                            CrearPartida(Convert.ToInt32(mensaje));
+
+                                            Invoke((MethodInvoker)delegate
+                                            {
+                                                int nuevaPartidaId = Convert.ToInt32(mensaje);
+                                                // Ahora que tenemos el ID, llamamos al método que crea y muestra FormJuego
+                                                AbrirFormJuego(nuevaPartidaId);
+                                            });
+
                                             break;
 
                                         case 94: // Actualización de coordenadas de otros jugadores
@@ -1738,6 +1813,206 @@ namespace WindowsFormsApplication1
                     }
                 }
             });
+        }
+        private void CrearPanelHistorial()
+        {
+            // --- 1. El botón que abrirá el panel ---
+            btnHistorial = new PanelDobleBuffer
+            {
+                Size = new Size(60, 60),
+                Location = new Point(20, this.ClientSize.Height - 80), // Abajo a la izquierda
+                Anchor = AnchorStyles.Bottom | AnchorStyles.Left,
+                BackColor = Color.FromArgb(44, 44, 44),
+                Cursor = Cursors.Hand,
+                Visible = false
+            };
+            redondearPanel(btnHistorial, 20); // Usamos tu método para redondear
+                                              // (Opcional) Puedes añadir un PictureBox con un icono de historial dentro
+            btnHistorial.Click += BtnHistorial_Click;
+            this.Controls.Add(btnHistorial);
+            btnHistorial.BringToFront();
+
+            PictureBox iconoHistorial = new PictureBox
+            {
+                Size = new Size(60, 60),
+                Location = new Point(0,0),
+                SizeMode = PictureBoxSizeMode.Zoom,
+                BackColor = Color.Transparent // Para que el fondo no opaque el botón
+            };
+            iconoHistorial.Image = Image.FromFile(directorioBase + "/Resources/images/icono_historial.png");
+            btnHistorial.Controls.Add(iconoHistorial); // Añadimos el icono al botón
+            iconoHistorial.Click += BtnHistorial_Click; // Hacemos que el icono también abra el panel
+
+
+
+            // --- 2. El panel principal del historial (empieza oculto) ---
+            panelHistorial = new PanelDobleBuffer
+            {
+                Size = new Size(400, 500),
+                Location = new Point((this.ClientSize.Width - 400) / 2, (this.ClientSize.Height - 500) / 2),
+                Anchor = AnchorStyles.None, // No se ancla para que se quede centrado
+                BackColor = Color.FromArgb(28, 28, 28),
+                BorderStyle = BorderStyle.FixedSingle,
+                Visible = false
+            };
+            this.Controls.Add(panelHistorial);
+
+            // --- 3. La barra de búsqueda ---
+            txtBusquedaHistorial = new System.Windows.Forms.TextBox
+            {
+                Location = new Point(10, 10),
+                Size = new Size(panelHistorial.Width - 20, 30),
+                Font = new Font("Arial", 12F)
+            };
+            txtBusquedaHistorial.TextChanged += TxtBusquedaHistorial_TextChanged;
+            panelHistorial.Controls.Add(txtBusquedaHistorial);
+
+            // Ajustamos el tamaño de la barra de búsqueda para hacerle sitio
+            txtBusquedaHistorial.Size = new Size(panelHistorial.Width - 130, 30);
+
+            System.Windows.Forms.Button btnBuscarPorFecha = new System.Windows.Forms.Button
+            {
+                Text = "Buscar por Fecha",
+                Location = new Point(txtBusquedaHistorial.Left + txtBusquedaHistorial.Width + 5, 10),
+                Size = new Size(100, 30)
+            };
+            btnBuscarPorFecha.Click += BtnBuscarPorFecha_Click;
+            panelHistorial.Controls.Add(btnBuscarPorFecha);
+
+            
+            // --- 4. El panel para la lista de jugadores ---
+            flpHistorialJugadores = new FlowLayoutPanel
+            {
+                Location = new Point(10, 50),
+                Size = new Size(panelHistorial.Width - 20, panelHistorial.Height - 60),
+                BackColor = Color.FromArgb(40, 40, 40),
+                AutoScroll = true,
+                FlowDirection = FlowDirection.TopDown, // Los elementos se apilarán verticalmente
+                WrapContents = false // Evita que los elementos se pongan uno al lado del otro
+            };
+            panelHistorial.Controls.Add(flpHistorialJugadores);
+        }
+
+
+        private void BtnBuscarPorFecha_Click(object sender, EventArgs e)
+        {
+            // Creamos un pequeño formulario de diálogo para pedir las fechas
+            Form dialogoFecha = new Form
+            {
+                Text = "Seleccionar Rango de Fechas",
+                Size = new Size(300, 150),
+                StartPosition = FormStartPosition.CenterParent
+            };
+
+            DateTimePicker dtpInicio = new DateTimePicker { Location = new Point(10, 10), Format = DateTimePickerFormat.Short };
+            DateTimePicker dtpFin = new DateTimePicker { Location = new Point(10, 40), Format = DateTimePickerFormat.Short };
+            System.Windows.Forms.Button btnAceptar = new System.Windows.Forms.Button { Text = "Buscar", Location = new Point(100, 70) };
+
+            btnAceptar.Click += (s, a) => {
+                // Formateamos las fechas a YYYYMMDD para enviarlas al servidor
+                string fechaInicio = dtpInicio.Value.ToString("yyyyMMdd");
+                string fechaFin = dtpFin.Value.ToString("yyyyMMdd");
+
+                // Enviamos la petición con el nuevo código 15
+                string mensaje = $"15/{fechaInicio}/{fechaFin}";
+                byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
+                server.Send(msg);
+
+                dialogoFecha.Close();
+            };
+
+            dialogoFecha.Controls.Add(new System.Windows.Forms.Label { Text = "Fecha de inicio:", Location = new Point(120, 15), AutoSize = true });
+            dialogoFecha.Controls.Add(new System.Windows.Forms.Label { Text = "Fecha de fin:", Location = new Point(120, 45), AutoSize = true });
+            dialogoFecha.Controls.Add(dtpInicio);
+            dialogoFecha.Controls.Add(dtpFin);
+            dialogoFecha.Controls.Add(btnAceptar);
+
+            dialogoFecha.ShowDialog();
+        }
+        private void BtnHistorial_Click(object sender, EventArgs e)
+        {
+            // Si los datos no se han cargado nunca, se los pedimos al servidor
+            if (!historialCargado)
+            {
+                if (server != null && server.Connected)
+                {
+                    string mensaje = "13/";
+                    byte[] msg = System.Text.Encoding.ASCII.GetBytes(mensaje);
+                    server.Send(msg);
+                }
+                else
+                {
+                    MessageBox.Show("No estás conectado al servidor.");
+                    return;
+                }
+            }
+
+            // Mostramos u ocultamos el panel
+            panelHistorial.Visible = !panelHistorial.Visible;
+            if (panelHistorial.Visible)
+            {
+                panelHistorial.BringToFront();
+            }
+        }
+
+        // Este método dibujará la lista de jugadores en el FlowLayoutPanel
+        private void PoblarListaHistorial(List<string> listaJugadores)
+        {
+            flpHistorialJugadores.Controls.Clear(); // Limpiamos la lista anterior
+
+            foreach (string nombreJugador in listaJugadores)
+            {
+                System.Windows.Forms.Label lblJugador = new System.Windows.Forms.Label
+                {
+                    Text = nombreJugador,
+                    ForeColor = Color.White,
+                    Font = new Font("Arial", 11, FontStyle.Bold),
+                    BackColor = Color.FromArgb(60, 60, 60),
+                    Margin = new Padding(3),
+                    Padding = new Padding(5),
+                    Size = new Size(flpHistorialJugadores.ClientSize.Width - 10, 30)
+                };
+                flpHistorialJugadores.Controls.Add(lblJugador);
+            }
+        }
+        private void TxtBusquedaHistorial_TextChanged(object sender, EventArgs e)
+        {
+            // Obtenemos el texto de búsqueda en minúsculas para que no distinga mayúsculas
+            string textoBusqueda = txtBusquedaHistorial.Text.ToLower();
+
+            // Filtramos la lista ORIGINAL de oponentes
+            var oponentesFiltrados = oponentesHistorial
+                .Where(nombre => nombre.ToLower().Contains(textoBusqueda))
+                .ToList();
+
+            // Volvemos a poblar el panel, pero esta vez solo con los resultados filtrados
+            PoblarListaHistorial(oponentesFiltrados);
+        }
+
+
+        private void AbrirFormJuego(int idPartida)
+        {
+            // Creamos una nueva instancia limpia para cada partida
+            formJuego = new FormJuego();
+
+            // Configuramos todas las propiedades necesarias
+            formJuego.user = this.user;
+            formJuego.server = this.server;
+            formJuego.server2 = this.server2;
+            formJuego.idPartida = idPartida;
+            formJuego.userId = this.userId;
+            formJuego.listaPokedex = this.listaPokedex;
+
+            // Nos suscribimos a las notificaciones de conectados para este nuevo formulario
+            this.ConectadosActualizados += formJuego.ActualizarListaConectados;
+
+            // Si ya tenemos una lista de conectados, se la pasamos
+            if (listaConectadosGlobal.Count > 0)
+            {
+                formJuego.ActualizarListaConectados(listaConectadosGlobal);
+            }
+
+            formJuego.Show();
         }
     }
 }

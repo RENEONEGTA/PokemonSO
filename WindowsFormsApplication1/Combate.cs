@@ -87,7 +87,7 @@ namespace WindowsFormsApplication1
         {
             if (pokemonOponente.Ataques == null || pokemonOponente.Ataques.Count == 0)
             {
-                // Si el oponente no tiene ataques, no hace nada y nos devuelve el turno
+                // Si el oponente no tiene ataques, no hace nada y nos devuelve el turno 
                 panelAtaquesJugador.Enabled = true;
                 return;
             }
