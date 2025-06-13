@@ -84,7 +84,7 @@
             this.IP.Size = new System.Drawing.Size(194, 19);
             this.IP.TabIndex = 2;
             this.IP.TabStop = false;
-            this.IP.Text = "192.168.56.101"; //10.4.119.5
+            this.IP.Text = "10.4.119.5"; //10.4.119.5
             // 
             // aunNoCuenta
             // 

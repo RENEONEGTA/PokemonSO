@@ -534,6 +534,12 @@ public class Conectados
             server2.Send(datos);
 
             formulario.Controls.Remove(panelInvitacion);
+
+            //    Convertimos el 'formulario' genérico a 'Form1' para poder llamar a su método.
+            if (formulario is Form1 form1)
+            {
+                form1.CrearPartida(idPartidaInvitada);
+            }
         };
 
         // Acción de rechazar

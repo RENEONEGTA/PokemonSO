@@ -29,8 +29,8 @@ namespace WindowsFormsApplication1
         Socket server;
         Socket server2;
         FormJuego formJuego = new FormJuego();
-        private int puertoServidor = 9020; // Puerto del servidor
-        private int puertoServidor2 = 9040;
+        private int puertoServidor = 50084; // Puerto del servidor
+        private int puertoServidor2 = 50082;
         private Timer parpadeoTimer = new Timer();
         private bool serverRun = false;
         private bool serverRun2 = false;
